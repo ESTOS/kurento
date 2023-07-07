@@ -1,6 +1,6 @@
 {
     "numAudioMedias": 1,
-    "numVideoMedias": 1,
+    "numVideoMedias": 0,
     "audioCodecs": [
         {
             "name": "opus/48000/2",
@@ -14,6 +14,7 @@
                 "//usedtx": "0"
             }
         },
+        { "name": "PCMA/8000" },
         { "name": "PCMU/8000" },
         { "name": "AMR/8000" }
     ],

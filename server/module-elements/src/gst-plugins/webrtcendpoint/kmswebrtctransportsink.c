@@ -33,12 +33,11 @@ G_DEFINE_TYPE (KmsWebrtcTransportSink, kms_webrtc_transport_sink, GST_TYPE_BIN);
 #define SRTPENC_FACTORY_NAME "srtpenc"
 #define DTLS_ENCODER_FACTORY_NAME "dtlsenc"
 
-
-
 // {{{{ FIXME: This can be deleted when we start using GStreamer >=1.18 for Kurento.
 // Code sourced from GStreamer/gstbin.c >=1.18
 //
 // https://gitlab.freedesktop.org/gstreamer/gstreamer/-/blob/10f72da5040b74678c8f81723971127ee8bee04f/subprojects/gstreamer/gst/gstbin.c#L4526-4537
+/*
 static gint
 compare_factory_names (const GValue *velement, GValue *factory_name_val)
 {
@@ -51,8 +50,10 @@ compare_factory_names (const GValue *velement, GValue *factory_name_val)
 
   return g_strcmp0 (GST_OBJECT_NAME (factory), factory_name);
 }
+*/
 //
 // https://gitlab.freedesktop.org/gstreamer/gstreamer/-/blob/10f72da5040b74678c8f81723971127ee8bee04f/subprojects/gstreamer/gst/gstbin.c#L4553-4574
+/*
 static GstIterator *
 gst_bin_iterate_all_by_element_factory_name (GstBin *bin,
     const gchar *factory_name)
@@ -75,18 +76,19 @@ gst_bin_iterate_all_by_element_factory_name (GstBin *bin,
 
   return result;
 }
+*/
 // }}}}
 
 static GstElement *
-kms_webrtc_transport_sink_get_element_in_dtlssrtpenc (
-    KmsWebrtcTransportSink *self,
-    const gchar *factory_name)
+kms_webrtc_transport_sink_get_element_in_dtlssrtpenc (KmsWebrtcTransportSink *
+    self, const gchar * factory_name)
 {
   GstElement *element = NULL;
   GValue velement = G_VALUE_INIT;
 
-  GstIterator *iter = gst_bin_iterate_all_by_element_factory_name (
-      GST_BIN (self->dtlssrtpenc), factory_name);
+  GstIterator *iter =
+      gst_bin_iterate_all_by_element_factory_name (GST_BIN (self->dtlssrtpenc),
+      factory_name);
 
   if (gst_iterator_next (iter, &velement) == GST_ITERATOR_OK) {
     // Assume only one element of the given type. This is the case in dtlssrtpenc.
@@ -129,7 +131,7 @@ kms_webrtc_transport_sink_init (KmsWebrtcTransportSink * self)
 }
 
 void
-kms_webrtc_transport_sink_connect_elements (KmsWebrtcTransportSink *self)
+kms_webrtc_transport_sink_connect_elements (KmsWebrtcTransportSink * self)
 {
   GstElement *funnel, *srtpenc;
 
@@ -168,14 +170,14 @@ kms_webrtc_transport_sink_configure_default (KmsWebrtcTransportSink * self,
 }
 
 void
-kms_webrtc_transport_sink_set_dtls_is_client_default (KmsWebrtcTransportSink * self,
-    gboolean is_client)
+kms_webrtc_transport_sink_set_dtls_is_client_default (KmsWebrtcTransportSink *
+    self, gboolean is_client)
 {
   g_object_set (G_OBJECT (self->dtlssrtpenc), "is-client", is_client, NULL);
   if (is_client) {
-    GST_DEBUG_OBJECT(self, "Set as DTLS client (handshake initiator)");
+    GST_DEBUG_OBJECT (self, "Set as DTLS client (handshake initiator)");
   } else {
-    GST_DEBUG_OBJECT(self, "Set as DTLS server (wait for handshake)");
+    GST_DEBUG_OBJECT (self, "Set as DTLS server (wait for handshake)");
   }
 }
 
@@ -205,7 +207,8 @@ kms_webrtc_transport_sink_class_init (KmsWebrtcTransportSinkClass * klass)
   GstElementClass *gstelement_class = GST_ELEMENT_CLASS (klass);
 
   klass->configure = kms_webrtc_transport_sink_configure_default;
-  klass->set_dtls_is_client = kms_webrtc_transport_sink_set_dtls_is_client_default;
+  klass->set_dtls_is_client =
+      kms_webrtc_transport_sink_set_dtls_is_client_default;
 
   GST_DEBUG_CATEGORY_INIT (GST_CAT_DEFAULT, GST_DEFAULT_NAME, 0,
       GST_DEFAULT_NAME);
