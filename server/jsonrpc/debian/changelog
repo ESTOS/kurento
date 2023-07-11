@@ -1,8 +1,8 @@
-kurento-jsonrpc (7.0.0-1kurento1) UNRELEASED; urgency=medium
+kurento-jsonrpc (7.0.2-1kurento1) UNRELEASED; urgency=medium
 
   * UNRELEASED
 
- -- Juan Navarro <juan.navarro@gmx.es>  Tue, 20 Sep 2022 17:15:31 +0200
+ -- Juan Navarro <juan.navarro@gmx.es>  Tue, 13 Jun 2023 18:02:35 +0200
 
 kms-jsonrpc (6.18.0-0kurento1) testing; urgency=medium
 

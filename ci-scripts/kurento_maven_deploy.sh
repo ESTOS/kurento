@@ -43,6 +43,7 @@ MAVEN_SOURCE_PLUGIN="org.apache.maven.plugins:maven-source-plugin:3.2.1"
 # ====================
 
 CFG_MAVEN_SETTINGS_PATH=""
+CFG_MAVEN_SIGN_KEY_PATH=""
 CFG_MAVEN_SIGN_ARTIFACTS="true"
 
 while [[ $# -gt 0 ]]; do
@@ -53,6 +54,15 @@ while [[ $# -gt 0 ]]; do
                 shift
             else
                 log "ERROR: --maven-settings expects <Path>"
+                exit 1
+            fi
+            ;;
+        --maven-sign-key)
+            if [[ -n "${2-}" ]]; then
+                CFG_MAVEN_SIGN_KEY_PATH="$(realpath "$2")"
+                shift
+            else
+                log "ERROR: --maven-sign-key expects <Path>"
                 exit 1
             fi
             ;;
@@ -72,7 +82,13 @@ done
 # Validate config
 # ===============
 
+if [[ "$CFG_MAVEN_SIGN_ARTIFACTS" == "true" ]] && [[ -z "$CFG_MAVEN_SIGN_KEY_PATH" ]]; then
+    log "ERROR: Either of '--maven-sign-key' or '--no-sign-artifacts' must be used"
+    exit 1
+fi
+
 log "CFG_MAVEN_SETTINGS_PATH=$CFG_MAVEN_SETTINGS_PATH"
+log "CFG_MAVEN_SIGN_KEY_PATH=$CFG_MAVEN_SIGN_KEY_PATH"
 log "CFG_MAVEN_SIGN_ARTIFACTS=$CFG_MAVEN_SIGN_ARTIFACTS"
 
 
@@ -91,7 +107,7 @@ if [[ -n "${CFG_MAVEN_SETTINGS_PATH:-}" ]]; then
 fi
 
 kurento_check_version.sh "${CHECK_VERSION_ARGS[@]}" || {
-    log "ERROR: Command failed: kurento_check_version (tagging disabled)"
+    log "ERROR: Command failed: kurento_check_version"
     exit 1
 }
 
@@ -124,7 +140,7 @@ fi
 # The repo is set by the `ci-build` profile from Maven's `settings.xml`.
 
 mvn "${MVN_ARGS[@]}" -Pci-build clean package "$MAVEN_DEPLOY_PLUGIN:deploy" || {
-    log "ERROR: Command failed: mvn deploy (Jenkins repo)"
+    log "ERROR: Command failed: mvn deploy (local repo)"
     exit 1
 }
 
@@ -146,17 +162,22 @@ PROJECT_VERSION="$(kurento_get_version.sh "${GET_VERSION_ARGS[@]}")" || {
 
 log "Build and deploy version: $PROJECT_VERSION"
 
-# If SNAPSHOT, deploy to snapshots repository and exit.
-if [[ $PROJECT_VERSION == *-SNAPSHOT ]]; then
-    log "Version to deploy is SNAPSHOT"
-
+# Always deploy to snapshots repository.
+# Having all versions (snapshot or not) in the snapshots repository can be handy
+# for development when trying to test a release version but not wanting to wait
+# until Maven Central makes the published packages available (which can take
+# 30 or more minutes).
+{
     MVN_ARGS+=(-Psnapshot)
 
     source kurento_maven_deploy_github.sh || {
         log "ERROR: Command failed: kurento_maven_deploy_github"
         exit 1
     }
+}
 
+if [[ $PROJECT_VERSION == *-SNAPSHOT ]]; then
+    log "Version to deploy is SNAPSHOT"
     exit 0
 fi
 
@@ -177,6 +198,12 @@ MVN_ARGS+=(-Pkurento-release)
 
 if [[ $CFG_MAVEN_SIGN_ARTIFACTS == "true" ]]; then
     log "Artifact signing on deploy is ENABLED"
+
+    {
+        # Load the private key into the GPG keyring.
+        export GNUPGHOME="/tmp/.gnupg"
+        gpg --import "$CFG_MAVEN_SIGN_KEY_PATH"
+    }
 
     MVN_ARGS+=(-Pgpg-sign)
 
@@ -226,18 +253,3 @@ else
         exit 1
     }
 fi
-
-
-
-# Create git tag
-# ==============
-
-# Only create a tag if the deployment process was successful.
-# Allow errors because the tag might already exist (like if the release
-# is being done again after solving some deployment issue).
-
-CHECK_VERSION_ARGS+=(--create-git-tag)
-
-kurento_check_version.sh "${CHECK_VERSION_ARGS[@]}" || {
-    log "WARNING: Command failed: kurento_check_version (tagging enabled)"
-}

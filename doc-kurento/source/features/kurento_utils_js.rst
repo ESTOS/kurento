@@ -2,7 +2,15 @@
 Kurento Utils JS
 %%%%%%%%%%%%%%%%
 
-[TODO full review]
+
+
+.. warning::
+
+   This library is not actively maintained. It was written to simplify the :doc:`Kurento Tutorials </user/tutorials>` and has several shortcomings for more advanced uses.
+
+   For real-world applications we recommend to **avoid using this library** and instead to write your JavaScript code directly against the browser’s `WebRTC API <https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API>`__.
+
+
 
 .. contents:: Table of Contents
 
@@ -15,8 +23,7 @@ Kurento Utils is a wrapper object of an
 `RTCPeerConnection <https://w3c.github.io/webrtc-pc/>`__. This object is aimed
 to simplify the development of WebRTC-based applications.
 
-The source code of this project can be cloned from the
-`GitHub repository <https://github.com/Kurento/kurento
+The source code of this project can be cloned from the `GitHub repository <https://github.com/Kurento/kurento>`__.
 
 
 How to use it

@@ -5,7 +5,7 @@ on:
   workflow_call:
     inputs:
       jobRelease:
-        description: "Enable to build release versions; disable for development builds"
+        description: "jobRelease: Enable to build release versions; disable for development builds"
         required: false
         type: "boolean"
         default: false
@@ -18,7 +18,7 @@ jobs:
   build:
     # AWS templates are not updated for development builds.
     if: ${{ inputs.jobRelease }}
-    runs-on: ["self-hosted", "dev"]
+    runs-on: ["self-hosted"]
     timeout-minutes: 30
     steps:
       # Action: https://github.com/actions/checkout

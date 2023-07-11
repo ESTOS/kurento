@@ -1,6 +1,6 @@
 {
   "name": "kurento-module-tests-api",
-  "version": "7.0.0-dev",
+  "version": "7.0.1-dev",
   "description": "Kurento Module Tests API",
   "homepage": "https://kurento.openvidu.io/",
   "license": "ALv2",
@@ -27,7 +27,7 @@
     "WebRTC"
   ],
   "dependencies": {
-    "kurento-client": "https://gitpkg.now.sh/Kurento/kurento/clients/javascript/client?main",
+    "kurento-client": "git+https://github.com/Kurento/kurento-client-js.git",
     "kurento-module-chroma": "git+https://github.com/Kurento/kurento-module-chroma-js.git",
     "kurento-module-crowddetector": "git+https://github.com/Kurento/kurento-module-crowddetector-js.git",
     "kurento-module-platedetector": "git+https://github.com/Kurento/kurento-module-platedetector-js.git",

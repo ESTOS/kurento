@@ -223,7 +223,7 @@ For example, to build the Kurento *core* module:
    source /etc/upstream-release/lsb-release 2>/dev/null || source /etc/lsb-release
 
    sudo apt-get update ; sudo mk-build-deps --install --remove \
-       --tool="apt-get -o Debug::pkgProblemResolver=yes --target-release 'a=${DISTRIB_CODENAME}-backports' --no-install-recommends --no-remove" \
+       --tool="apt-get -o Debug::pkgProblemResolver=yes --target-release 'a=$DISTRIB_CODENAME-backports' --no-install-recommends --no-remove" \
        ./debian/control
 
 
@@ -236,6 +236,7 @@ Run:
 .. code-block:: shell
 
    git clone https://github.com/Kurento/kurento.git
+
    cd kurento/
 
    git submodule update --init --recursive
@@ -264,38 +265,13 @@ After the build has been completed, you can change into the build directory and 
 Clean up your system
 --------------------
 
-To leave the system in a clean state, remove all Kurento packages and related development libraries.
-
-This command should be fairly safe to use; it works perfectly fine for us on a daily basis (we even use it with the option ``--yes``, which makes the process automatic and unattended). Still, please carefully review the list of packages marked for uninstalling.
-
-Run:
+To leave the system in a clean state, remove all Kurento packages and related development libraries. All Kurento packages contain the word "*kurento*" in the version number, so Aptitude makes it very easy to uninstall them all:
 
 .. code-block:: shell
 
-    PACKAGES=(
-        # Main modules.
-        '^(kms|kurento).*'
+   sudo aptitude remove '?installed?version(kurento)'
 
-        # External libraries.
-        ffmpeg
-        '^gir1.2-gst.*1.5'
-        gir1.2-nice-0.1
-        '^(lib)?gstreamer.*1.5.*'
-        '^lib(nice|s3-2|srtp|usrsctp).*'
-        '^srtp-.*'
-        '^openh264(-gst-plugins-bad-1.5)?'
-        '^openwebrtc-gst-plugins.*'
-
-        # System development libraries.
-        '^libboost-?(filesystem|log|program-options|regex|system|test|thread)?-dev'
-        '^lib(glib2.0|glibmm-2.4|opencv|sigc++-2.0|soup2.4|ssl|tesseract|vpx)-dev'
-        uuid-dev
-    )
-
-    # Run a loop over all package names and uninstall them.
-    for PACKAGE in "${PACKAGES[@]}"; do
-        sudo apt-get purge --auto-remove "$PACKAGE" || { echo "Skip unknown package"; }
-    done
+Use ``purge`` instead of ``remove`` to also delete any leftover configuration files in ``/etc/``.
 
 
 
@@ -318,13 +294,13 @@ After having :doc:`installed Kurento </user/installation>`, first thing to do is
    # Add Ubuntu debug repository key for apt-get.
    apt-get update ; apt-get install --yes ubuntu-dbgsym-keyring \
    || apt-key adv \
-      --keyserver keyserver.ubuntu.com \
+      --keyserver hkp://keyserver.ubuntu.com:80 \
       --recv-keys F2EDC64DC5AEE1F6B9C621F0C8CAB6595FDFF622
 
    # Add Ubuntu debug repository line for apt-get.
    sudo tee "/etc/apt/sources.list.d/ddebs.list" >/dev/null <<EOF
    deb http://ddebs.ubuntu.com $DISTRIB_CODENAME main restricted universe multiverse
-   deb http://ddebs.ubuntu.com ${DISTRIB_CODENAME}-updates main restricted universe multiverse
+   deb http://ddebs.ubuntu.com $DISTRIB_CODENAME-updates main restricted universe multiverse
    EOF
 
 Now, install all debug packages that are relevant to Kurento:
@@ -535,7 +511,7 @@ This allows for the fastest development cycle, however the specific instructions
 Create Deb packages
 ===================
 
-You can easily create Debian packages (*.deb* files) for Kurento itself and for any of the forked libraries. Typically, Deb packages can be created directly by using standard system tools such as `dpkg-buildpackage <https://manpages.ubuntu.com/manpages/man1/dpkg-buildpackage.1.html>`__ or `debuild <https://manpages.ubuntu.com/manpages/man1/debuild.1.html>`__, but in order to integrate the build process with Git, we based our tooling on `gbp <https://manpages.ubuntu.com/manpages/man1/gbp.1.html>`__ (`git-buildpackage <https://honk.sigxcpu.org/piki/projects/git-buildpackage/>`__).
+You can easily create Debian packages (*.deb* files) for Kurento itself and for any of the forked libraries. Typically, Deb packages can be created directly by using standard system tools such as `dpkg-buildpackage <https://manpages.ubuntu.com/manpages/man1/dpkg-buildpackage.1.html>`__ or `debuild <https://manpages.ubuntu.com/manpages/man1/debuild.1.html>`__.
 
 
 
@@ -551,7 +527,9 @@ For example, say you want to build the development branch of *kurento-module-cor
 .. code-block:: shell
 
    git clone https://github.com/Kurento/kurento.git
+
    cd kurento/server/module-core/
+
    ../../ci-scripts/kurento-buildpackage.sh \
        --install-kurento 7.0.0 \
        --apt-add-repo
