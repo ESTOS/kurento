@@ -168,6 +168,7 @@ source "$SELF_DIR/../../ci-scripts/bash.conf.sh" || exit 1
 # ====================
 
 CFG_BUILD_ONLY="false"
+CFG_CMAKECONFIG_ONLY="false"
 CFG_RELEASE="false"
 CFG_JEMALLOC="false"
 CFG_GDB="false"
@@ -180,10 +181,13 @@ CFG_ADDRESS_SANITIZER="false"
 CFG_THREAD_SANITIZER="false"
 CFG_UNDEFINED_SANITIZER="false"
 CFG_KMS_ARGS=""
+CFG_MSYS="false"
+CFG_ADD_CMAKE_ARGS="false"
 
 while [[ $# -gt 0 ]]; do
     case "${1-}" in
         --build-only) CFG_BUILD_ONLY="true" ;;
+		--cmakeconfig-only) CFG_CMAKECONFIG_ONLY="true" ;;
         --release) CFG_RELEASE="true" ;;
         --jemalloc) CFG_JEMALLOC="true" ;;
         --gdb) CFG_GDB="true" ;;
@@ -195,6 +199,11 @@ while [[ $# -gt 0 ]]; do
         --address-sanitizer) CFG_ADDRESS_SANITIZER="true" ;;
         --thread-sanitizer) CFG_THREAD_SANITIZER="true" ;;
         --undefined-sanitizer) CFG_UNDEFINED_SANITIZER="true" ;;
+		--msys) CFG_MSYS="true" ;;
+		--addcmakeargs)
+            CFG_ADD_CMAKE_ARGS="${2-}"
+			shift
+			;;
         *)
             log "Argument '${1-}' will be passed to KMS"
             CFG_KMS_ARGS+=" ${1-}"
@@ -244,6 +253,7 @@ if [[ -n "${CC:-}" || -n "${CXX:-}" ]]; then
 fi
 
 log "CFG_BUILD_ONLY=$CFG_BUILD_ONLY"
+log "CFG_CMAKECONFIG_ONLY=$CFG_CMAKECONFIG_ONLY"
 log "CFG_RELEASE=$CFG_RELEASE"
 log "CFG_JEMALLOC=$CFG_JEMALLOC"
 log "CFG_GDB=$CFG_GDB"
@@ -255,6 +265,8 @@ log "CFG_VALGRIND_CALLGRIND=$CFG_VALGRIND_CALLGRIND"
 log "CFG_ADDRESS_SANITIZER=$CFG_ADDRESS_SANITIZER"
 log "CFG_THREAD_SANITIZER=$CFG_THREAD_SANITIZER"
 log "CFG_UNDEFINED_SANITIZER=$CFG_UNDEFINED_SANITIZER"
+log "CFG_MSYS=$CFG_MSYS"
+log "CFG_ADD_CMAKE_ARGS=$CFG_ADD_CMAKE_ARGS"
 
 
 
@@ -270,8 +282,17 @@ if [[ "$CFG_RELEASE" == "true" ]]; then
     BUILD_TYPE="RelWithDebInfo"
 fi
 
+if [[ "$CFG_MSYS" == "true" ]]; then
+    CMAKE_ARGS=('-G "MSYS Makefiles"')
+fi
+
 if [[ "$CFG_VERBOSE" == "true" ]]; then
     CMAKE_ARGS+=("-DCMAKE_VERBOSE_MAKEFILE=TRUE")
+	CMAKE_ARGS+=("--trace-expand")
+fi
+
+if [[ "$CFG_ADD_CMAKE_ARGS" != "false" ]]; then
+    CMAKE_ARGS+=" ${CFG_ADD_CMAKE_ARGS}"
 fi
 
 if [[ "$CFG_CLANG" == "true" ]]; then
@@ -333,7 +354,7 @@ CMAKE_ARGS+=(
 
 if [[ ! -f "$BUILD_DIR/media-server/server/kurento-media-server" ]]; then
     # If only a partial build exists (or none at all), delete it.
-    rm -rf "$BUILD_DIR"
+    #rm -rf "$BUILD_DIR"
 
     mkdir -p "$BUILD_DIR"
     pushd "$BUILD_DIR" || exit 1  # Enter $BUILD_DIR
@@ -352,6 +373,9 @@ if [[ ! -f "$BUILD_DIR/media-server/server/kurento-media-server" ]]; then
     popd || exit 1  # Exit $BUILD_DIR
 fi
 
+if [[ "$CFG_CMAKECONFIG_ONLY" == "true" ]]; then
+    exit 0
+fi
 
 
 # Prepare run command
@@ -529,7 +553,9 @@ fi
 
 # System limits: Set maximum open file descriptors
 # Maximum limit value allowed by Ubuntu: 2^20 = 1048576
+if [[ "$CFG_MSYS" == "false" ]]; then
 ulimit -n 1048576
+fi
 
 # System limits: Enable kernel core dump
 ulimit -c unlimited

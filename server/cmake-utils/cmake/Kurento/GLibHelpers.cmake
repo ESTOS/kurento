@@ -42,6 +42,7 @@ macro(add_glib_enumtypes outsources outheaders name includeguard)
   string(TOUPPER ${name} name_upper)
   string(REPLACE "-" "_" name_upper ${name_upper})
 
+if(NOT CMAKE_GENERATOR MATCHES "MSYS Makefiles")
   add_custom_command(
     OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${name}.h"
     COMMAND ${GLIB-MKENUMS_EXECUTABLE}
@@ -66,6 +67,32 @@ macro(add_glib_enumtypes outsources outheaders name includeguard)
     DEPENDS ${ARGN}
             "${CMAKE_CURRENT_BINARY_DIR}/${name}.h"
   )
+else()
+  add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${name}.h"
+    COMMAND ${GLIB-MKENUMS_EXECUTABLE}
+        --fhead \"\#ifndef __${includeguard}_${name_upper}_ENUM_TYPES_H__\\n\#define __${includeguard}_${name_upper}_ENUM_TYPES_H__\\n\\n\#include <glib-object.h>\\n\\nG_BEGIN_DECLS\\n\"
+        --fprod \"\\n/* enumerations from @filename@ */\\n\"
+        --vhead \"GType @enum_name@_get_type \(void\)\;\\n\#define ${includeguard}_TYPE_@ENUMSHORT@ \(@enum_name@_get_type\(\)\)\\n\"
+        --ftail \"\\nG_END_DECLS\\n\\n\#endif /* __${includeguard}_${name_upper}_ENUM_TYPES_H__ */\"
+        ${ARGN} > "${CMAKE_CURRENT_BINARY_DIR}/${name}.h"
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    DEPENDS ${ARGN}
+  )
+  add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${name}.c"
+    COMMAND ${GLIB-MKENUMS_EXECUTABLE}
+        --fhead \"\#include \\"${name}.h\\"\\n${HEADERS}\"
+        --fprod \"\\n/* enumerations from @filename@ */\"
+        --vhead \"GType\\n@enum_name@_get_type \(void\)\\n{\\nstatic GType initialization_value = 0\;\\nif \(g_once_init_enter \(&initialization_value\)\) {\\nstatic const G@Type@Value values[] = {\"
+        --vprod \"{ @VALUENAME@, \\"@VALUENAME@\\", \\"@valuenick@\\" },\"
+        --vtail \"{ 0, NULL, NULL }\\n}\;\\nGType type = g_\@type\@_register_static \(\\"@EnumName@\\", values\)\;\\ng_once_init_leave \(&initialization_value, type\)\;\\n}\\nreturn initialization_value\;\\n}\\n\"
+            ${ARGN} > "${CMAKE_CURRENT_BINARY_DIR}/${name}.c"
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    DEPENDS ${ARGN}
+            "${CMAKE_CURRENT_BINARY_DIR}/${name}.h"
+  )
+endif()
   list(APPEND ${outsources} "${CMAKE_CURRENT_BINARY_DIR}/${name}.c")
   list(APPEND ${outheaders} "${CMAKE_CURRENT_BINARY_DIR}/${name}.h")
 endmacro(add_glib_enumtypes)

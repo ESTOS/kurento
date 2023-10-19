@@ -171,7 +171,7 @@ load_from_url (gchar *file_name, gchar *url)
     goto end;
   }
 
-  GST_DEBUG ("Write %ld bytes to temp file: %s", msg->response_body->length,
+  GST_DEBUG ("Write %" G_GUINT64_FORMAT " bytes to temp file: %s", msg->response_body->length,
       file_name);
   fwrite (msg->response_body->data, 1, msg->response_body->length, dst);
 

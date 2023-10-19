@@ -43,6 +43,10 @@
 
 #include "MediaSet.hpp"
 
+#ifdef G_OS_WIN32
+#include <windows.h>
+#endif
+
 #define GST_CAT_DEFAULT kurento_media_server
 GST_DEBUG_CATEGORY_STATIC (GST_CAT_DEFAULT);
 #define GST_DEFAULT_NAME "KurentoMediaServer"
@@ -73,6 +77,7 @@ createTransportFromConfig (boost::property_tree::ptree &config)
   return transport;
 }
 
+#ifdef G_OS_UNIX
 static void
 signal_handler (int signo)
 {
@@ -97,6 +102,7 @@ signal_handler (int signo)
     break;
   }
 }
+#endif
 
 static void
 kms_init_dependencies (int *argc, char ***argv)
@@ -116,7 +122,9 @@ kms_init_dependencies (int *argc, char ***argv)
 int
 main (int argc, char **argv)
 {
+#ifdef G_OS_UNIX
   struct sigaction signalAction {};
+#endif
   std::shared_ptr<Transport> transport;
   boost::property_tree::ptree config;
   std::string confFile;
@@ -137,6 +145,25 @@ main (int argc, char **argv)
   try {
     boost::program_options::options_description desc ("kurento-media-server usage");
 
+#ifdef G_OS_WIN32
+    HMODULE hModule = GetModuleHandleA (NULL);
+    static char pathToModule[MAX_PATH];
+    GetModuleFileNameA (hModule, pathToModule, MAX_PATH);
+    char *finish = pathToModule + strlen (pathToModule);
+
+    for (int bsc = 0; (bsc < 2) && (finish > pathToModule); finish--) {
+      if (*finish == '\\') {
+        bsc++;
+      }
+    }
+
+    *++finish = '\0';
+    const std::string default_config_file = std::string (pathToModule) +
+                                            "\\etc\\kurento\\kurento.conf.json";
+#else
+    const std::string default_config_file = DEFAULT_CONFIG_FILE;
+#endif
+
     desc.add_options()
     ("help,h", "Display this help message")
     ("version,v", "Display the version number")
@@ -144,7 +171,7 @@ main (int argc, char **argv)
     ("modules-path,p", boost::program_options::value<std::string>
      (&modulesPath), "Colon-separated path(s) where Kurento modules can be found")
     ("conf-file,f", boost::program_options::value<std::string>
-     (&confFile)->default_value (DEFAULT_CONFIG_FILE),
+     (&confFile)->default_value (default_config_file),
      "Configuration file location")
     ("logs-path,d", boost::program_options::value <std::string> (&logsPath),
      "Path where rotating log files will be stored")
@@ -230,12 +257,14 @@ main (int argc, char **argv)
     exit (1);
   }
 
+#ifdef G_OS_UNIX
   /* Install our signal handler */
   signalAction.sa_handler = signal_handler;
 
   sigaction(SIGINT, &signalAction, nullptr);
   sigaction(SIGTERM, &signalAction, nullptr);
   sigaction(SIGPIPE, &signalAction, nullptr);
+#endif
 
   GST_INFO ("Kurento Media Server version: %s", get_version () );
 

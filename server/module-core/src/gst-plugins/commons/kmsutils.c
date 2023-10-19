@@ -19,7 +19,12 @@
 #include "constants.h"
 #include "kmsagnosticcaps.h"
 #include <gst/video/video-event.h>
+#ifdef _WIN32
+#include <rpc.h>
+#include <ole2.h>
+#else
 #include <uuid/uuid.h>
+#endif
 #include <string.h>
 
 #define GST_CAT_DEFAULT kmsutils
@@ -503,7 +508,7 @@ gap_detection_probe (GstPad * pad, GstPadProbeInfo * info, gpointer data)
 
     if (GST_CLOCK_TIME_IS_VALID(gap_duration) && gap_duration > 0) {
       GST_WARNING_OBJECT (pad,
-          "GAP of %lu ms at PTS=%" GST_TIME_FORMAT
+          "GAP of %" G_GINT64_FORMAT " ms at PTS=%" GST_TIME_FORMAT
           " (packet loss?); will request a new keyframe",
           GST_TIME_AS_MSECONDS (gap_duration), GST_TIME_ARGS (gap_pts));
       send_force_key_unit_event (pad, FALSE);
@@ -1138,11 +1143,25 @@ gchar *
 kms_utils_generate_uuid ()
 {
   gchar *uuid_str;
-  uuid_t uuid;
 
+#ifdef _WIN32
+  RPC_CSTR uuid_rpc_str;
+
+  GUID uuid;
+#else
+  uuid_t uuid;
+#endif
+
+#ifdef _WIN32
+  CoCreateGuid (&uuid);
+  UuidToStringA (&uuid, &uuid_rpc_str);
+  uuid_str = g_strdup ((gchar *) uuid_rpc_str);
+  RpcStringFree (&uuid_rpc_str);
+#else
   uuid_str = (gchar *) g_malloc0 (UUID_STR_SIZE);
   uuid_generate (uuid);
   uuid_unparse (uuid, uuid_str);
+#endif
 
   return uuid_str;
 }

@@ -87,7 +87,7 @@ ServerMethods::ServerMethods (const boost::property_tree::ptree &config) :
 
   GST_INFO ("Using above %.0f%% of system limits will throw NOT_ENOUGH_RESOURCES exception",
             resourceLimitPercent * 100.0f);
-
+#ifndef _WIN32
   std::string maxThreadsStr;
   const rlim_t maxThreads = getMaxThreads ();
   if (maxThreads == RLIM_INFINITY) {
@@ -106,7 +106,7 @@ ServerMethods::ServerMethods (const boost::property_tree::ptree &config) :
 
   GST_INFO ("System limits: %s threads, %s files",
       maxThreadsStr.c_str(), maxOpenFilesStr.c_str());
-
+#endif
   instanceId = generateUUID();
 
   for (auto moduleIt : moduleManager.getModules () ) {
@@ -751,7 +751,7 @@ ServerMethods::transaction (const Json::Value &params, Json::Value &response)
   JsonRpc::getArray (params, "operations", operations);
   Json::Value responses;
 
-  for (uint i = 0; i < operations.size(); i++) {
+  for (unsigned int i = 0; i < operations.size(); i++) {
     bool ret;
 
     Json::Value &reqParams = operations[i][JSON_RPC_PARAMS];

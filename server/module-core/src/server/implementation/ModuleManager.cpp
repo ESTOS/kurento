@@ -28,6 +28,38 @@
 GST_DEBUG_CATEGORY_STATIC (GST_CAT_DEFAULT);
 #define GST_DEFAULT_NAME "KurentoModuleManager"
 
+#if _WIN32
+#include <iostream>
+#include <string>
+#include <string.h>
+#include <windows.h>
+#include <shlwapi.h>
+#define MODULE_EXTENSION_STRING ".dll"
+#undef KURENTO_MODULES_DIR
+std::string getWin32ModulesDir()
+{
+  HMODULE hModule = GetModuleHandleA (NULL);
+  static char path[MAX_PATH];
+  GetModuleFileNameA (hModule, path, MAX_PATH);
+  char *finish = path + strlen (path);
+
+  for (int bsc = 0; (bsc < 2) && (finish > path); finish--) {
+    if (*finish == '\\') {
+      bsc++;
+    }
+  }
+
+  *++finish = '\0';
+  std::string a = std::string (path) + "\\lib\\kurento\\modules\\";
+  return a;
+}
+#define KURENTO_MODULES_DIR getWin32ModulesDir().c_str()
+#elif __APPLE__
+#define MODULE_EXTENSION_STRING ".dylib"
+#else
+#define MODULE_EXTENSION_STRING ".so"
+#endif
+
 namespace kurento
 {
 
@@ -158,27 +190,27 @@ ModuleManager::loadModules (std::string dir)
   boost::filesystem::path path (dir);
 
   if (!boost::filesystem::exists (path) ) {
-    GST_INFO ("Skip non-existent path: %s", path.c_str() );
+    GST_INFO ("Skip non-existent path: %s", dir.c_str() );
     return;
   }
 
   path = boost::filesystem::canonical(path);
 
   if (!boost::filesystem::is_directory (path) ) {
-    GST_INFO ("Skip non-directory path: %s", path.c_str() );
+    GST_INFO ("Skip non-directory path: %s", dir.c_str() );
     return;
   }
 
-  GST_DEBUG ("Looking for modules in path: %s", path.c_str() );
+  GST_DEBUG ("Looking for modules in path: %s", dir.c_str() );
 
   boost::filesystem::directory_iterator end_itr;
 
   for ( boost::filesystem::directory_iterator itr ( path ); itr != end_itr;
         ++itr ) {
-    if (boost::filesystem::is_regular (*itr) ) {
+    if (boost::filesystem::is_regular_file (*itr) ) {
       boost::filesystem::path extension = itr->path().extension();
 
-      if (extension.string() == ".so") {
+      if (extension.string() == MODULE_EXTENSION_STRING) {
         GST_DEBUG ("Found file: %s", itr->path().string().c_str() );
         loadModule (itr->path().string() );
       }

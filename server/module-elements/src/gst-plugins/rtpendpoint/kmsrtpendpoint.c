@@ -1023,7 +1023,8 @@ kms_rtp_endpoint_set_property (GObject * object, guint prop_id,
           && key_data_size != KMS_SRTP_CIPHER_AES_CM_256_SIZE)
       {
         GST_ERROR_OBJECT (self,
-            "Bad Base64-decoded master key size: got %lu, expected %lu or %lu",
+            "Bad Base64-decoded master key size: got %" G_GSIZE_FORMAT
+            ", expected %" G_GSIZE_FORMAT " or %" G_GSIZE_FORMAT "",
             key_data_size, KMS_SRTP_CIPHER_AES_CM_128_SIZE,
             KMS_SRTP_CIPHER_AES_CM_256_SIZE);
         break;

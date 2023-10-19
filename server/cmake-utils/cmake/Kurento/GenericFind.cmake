@@ -117,7 +117,7 @@ function(generic_find)
     find_package(${GF_LIBNAME} QUIET)
   endif ()
 
-  if (NOT (DEFINED ${GF_LIBNAME}_FOUND AND ${${GF_LIBNAME}_FOUND}))
+  if (NOT (DEFINED ${GF_LIBNAME}_FOUND) OR NOT (${${GF_LIBNAME}_FOUND}))
     if (DEFINED GF_REQUIRED)
       pkg_check_modules(${GF_LIBNAME} ${GF_LIBNAME})
     else()

@@ -24,6 +24,11 @@
 #include <KurentoException.hpp>
 #include <MediaSet.hpp>
 
+#if defined(_WIN32)
+#include <windows.h>
+#include <tlhelp32.h>
+#endif
+
 #define GST_CAT_DEFAULT kurento_resource_manager
 GST_DEBUG_CATEGORY_STATIC (GST_CAT_DEFAULT);
 #define GST_DEFAULT_NAME "KurentoResourceManager"
@@ -31,6 +36,7 @@ GST_DEBUG_CATEGORY_STATIC (GST_CAT_DEFAULT);
 namespace kurento
 {
 
+#ifndef _WIN32
 static long int
 get_int (std::string &str, char sep, int nToken)
 {
@@ -160,12 +166,33 @@ checkOpenFiles (float limit_percent)
     throw KurentoException (NOT_ENOUGH_RESOURCES, exMessage);
   }
 }
+#endif
+
+#ifdef _WIN32
+static void
+checkMemory (float limit_percent)
+{
+  MEMORYSTATUSEX statex;
+
+  statex.dwLength = sizeof (statex);
+
+  GlobalMemoryStatusEx (&statex);
+
+  if (statex.dwMemoryLoad > 100 * limit_percent) {
+    throw KurentoException (NOT_ENOUGH_RESOURCES, "Insufficient memory");
+  }
+}
+#endif
 
 void
 checkResources (float limit_percent)
 {
+#ifdef __linux__
   checkThreads (limit_percent);
   checkOpenFiles (limit_percent);
+#elif defined(_WIN32)
+  checkMemory (limit_percent);
+#endif
 }
 
 void killServerOnLowResources (float limit_percent)
@@ -179,7 +206,11 @@ void killServerOnLowResources (float limit_percent)
       if (e.getCode() == NOT_ENOUGH_RESOURCES) {
         GST_ERROR ("Resources over the limit, server will be killed: %s",
             e.what());
+#ifdef __linux__
         kill ( getpid(), SIGTERM );
+#else
+        exit (0);
+#endif
       }
     }
   });

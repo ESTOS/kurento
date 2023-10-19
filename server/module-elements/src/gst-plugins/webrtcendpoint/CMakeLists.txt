@@ -189,9 +189,16 @@ set_property (TARGET webrtcendpoint
     ${gstreamer-sctp-1.0_INCLUDE_DIRS}
 )
 
+if(NOT CMAKE_GENERATOR MATCHES "MSYS Makefiles")
 target_link_libraries(webrtcendpoint
   kmswebrtcendpoint
 )
+else()
+target_link_libraries(webrtcendpoint
+  kmswebrtcendpoint
+  ${CMAKE_CURRENT_BINARY_DIR}/../../gst-plugins/webrtcendpoint/CMakeFiles/kmswebrtcendpoint.dir/objects.a
+)
+endif()
 
 install(
   TARGETS webrtcendpoint

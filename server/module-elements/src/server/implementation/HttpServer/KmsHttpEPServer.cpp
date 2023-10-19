@@ -15,10 +15,19 @@
  *
  */
 
+#if _WIN32
+#include <winsock2.h>
+#include <time.h>
+#include <libsoup/soup.h>
+#include <rpc.h>
+#include <ole2.h>
+#include <string.h>
+#else
 #include <ctime>
 #include <libsoup/soup.h>
 #include <uuid/uuid.h>
 #include <cstring>
+#endif
 #include <gio/gio.h>
 #include <nice/interfaces.h>
 #include <commons/kmsloop.h>
@@ -985,11 +994,23 @@ register_end_point_cb (struct tmp_register_data *tdata)
   GError *gerr = nullptr;
   gchar *uuid_str;
   gchar *uri;
+#ifdef _WIN32
+  RPC_CSTR uuid_rpc_str;
+  GUID uuid;
+#else
   uuid_t uuid;
+#endif
 
+#ifdef _WIN32
+  CoCreateGuid (&uuid);
+  UuidToStringA (&uuid, &uuid_rpc_str);
+  uuid_str = g_strdup ( (const gchar *) uuid_rpc_str);
+  RpcStringFree (&uuid_rpc_str);
+#else
   uuid_str = (gchar *) g_malloc (UUID_STR_SIZE);
   uuid_generate (uuid);
   uuid_unparse (uuid, uuid_str);
+#endif
 
   /* Create URI from uuid string and add it to list of handlers */
   uri = g_strdup_printf ("/%s", uuid_str);

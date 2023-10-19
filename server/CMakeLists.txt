@@ -42,10 +42,17 @@ include(GenericFind)
 
 if(NOT KurentoModuleCreator_FOUND)
   message(STATUS "Building kurento-module-creator")
-  execute_process(COMMAND mvn package -DskipTests
+  if(NOT CMAKE_GENERATOR MATCHES "MSYS Makefiles")
+   execute_process(COMMAND mvn package -DskipTests
       -DbuildDirectory=${CMAKE_CURRENT_BINARY_DIR}/module-creator
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/module-creator
     RESULT_VARIABLE MAVEN_RET)
+  else()
+  execute_process(COMMAND mvn.cmd package -DskipTests
+      -DbuildDirectory=${CMAKE_CURRENT_BINARY_DIR}/module-creator
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/module-creator
+    RESULT_VARIABLE MAVEN_RET)
+  endif()
   if(MAVEN_RET)
     message("Command result: ${MAVEN_RET}")
     message(FATAL_ERROR "Command failed: mvn package")
@@ -54,6 +61,10 @@ if(NOT KurentoModuleCreator_FOUND)
   execute_process(COMMAND cp
       ${CMAKE_CURRENT_SOURCE_DIR}/module-creator/scripts/kurento-module-creator
       ${CMAKE_CURRENT_BINARY_DIR}/module-creator/kurento-module-creator)
+	  
+  execute_process(COMMAND cp
+      ${CMAKE_CURRENT_SOURCE_DIR}/module-creator/scripts/kurento-module-creator.cmd
+      ${CMAKE_CURRENT_BINARY_DIR}/module-creator/kurento-module-creator.cmd)
 
   execute_process(COMMAND touch
       ${CMAKE_CURRENT_BINARY_DIR}/module-creator/kurento-module-creator.generated)
@@ -69,11 +80,19 @@ add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/module-creator/kurento-mod
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 )
 
-add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/module-creator/kurento-module-creator-jar-with-dependencies.jar
+if(NOT CMAKE_GENERATOR MATCHES "MSYS Makefiles")
+ add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/module-creator/kurento-module-creator-jar-with-dependencies.jar
   COMMAND mvn package -DskipTests -DbuildDirectory=${CMAKE_CURRENT_BINARY_DIR}/module-creator
   DEPENDS ${MODULE_CREATOR_SOURCES}
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/module-creator
   )
+else()
+add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/module-creator/kurento-module-creator-jar-with-dependencies.jar
+  COMMAND mvn.cmd package -DskipTests -DbuildDirectory=${CMAKE_CURRENT_BINARY_DIR}/module-creator
+  DEPENDS ${MODULE_CREATOR_SOURCES}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/module-creator
+  )
+endif()
 
 add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/module-creator/kurento-module-creator
   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/module-creator/kurento-module-creator.generated ${CMAKE_CURRENT_SOURCE_DIR}/module-creator/scripts/kurento-module-creator
@@ -176,7 +195,9 @@ add_custom_target(kurento-media-server-run
   DEPENDS kurento-media-server
 )
 
-
+# dont build the examples
+# if(TRUE)
+if(NOT CMAKE_GENERATOR MATCHES "MSYS Makefiles")
 
 # kurento-module-gstreamer-example
 # ================================
@@ -211,3 +232,5 @@ set(KURENTO_MODULES_DIR "${KURENTO_MODULES_DIR};${CMAKE_CURRENT_BINARY_DIR}/modu
 add_subdirectory(module-examples/datachannelexample)
 
 set(KURENTO_MODULES_DIR "${KURENTO_MODULES_DIR};${CMAKE_CURRENT_BINARY_DIR}/module-examples/datachannelexample/src/server/kmd" CACHE PATH "Path to Kurento Module Descriptor files" FORCE)
+
+endif()

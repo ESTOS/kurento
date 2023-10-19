@@ -192,7 +192,7 @@ loadModulesConfigFromDir (boost::property_tree::ptree &config,
 
   for ( boost::filesystem::directory_iterator itr ( dir ); itr != end_itr;
         ++itr ) {
-    if (boost::filesystem::is_regular (*itr) ) {
+    if (boost::filesystem::is_regular_file (*itr) ) {
       const std::string pathStr = itr->path().string();
       try {
         boost::property_tree::ptree moduleConfig;
@@ -230,12 +230,15 @@ loadModulesConfig (boost::property_tree::ptree &config,
 
     modulesConfigPath = modulesConfigDir.string();
   }
-
+#ifndef G_OS_WIN32
   locations = split (modulesConfigPath, ':');
+#else
+  locations = split (modulesConfigPath, G_SEARCHPATH_SEPARATOR);
+#endif
 
   for (std::string location : locations) {
     boost::filesystem::path dir (location);
-    dir.normalize();
+    dir.lexically_normal();
 
     loadModulesConfigFromDir (config, dir, dir);
   }

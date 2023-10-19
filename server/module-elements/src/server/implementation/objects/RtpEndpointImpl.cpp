@@ -101,7 +101,7 @@ RtpEndpointImpl::RtpEndpointImpl (const boost::property_tree::ptree &conf,
 
   if (key_data_size != expect_size) {
     GST_ERROR_OBJECT (element,
-        "Bad Base64-decoded master key size: got %lu, expected %lu",
+        "Bad Base64-decoded master key size: got %" G_GSIZE_FORMAT ", expected %" G_GSIZE_FORMAT "",
         key_data_size, expect_size);
     throw KurentoException (MEDIA_OBJECT_ILLEGAL_PARAM_ERROR,
                             "Master key size is wrong");

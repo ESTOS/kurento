@@ -34,8 +34,8 @@ class WebSocketRegistrar
 {
 public:
   WebSocketRegistrar(const std::string &registrarAddress,
-                     std::string localAddress, ushort localPort,
-                     ushort localSecurePort, std::string path);
+                     std::string localAddress, unsigned short localPort,
+                     unsigned short localSecurePort, std::string path);
   ~WebSocketRegistrar();
 
   void start ();
@@ -44,8 +44,8 @@ public:
 private:
 
   std::string localAddress;
-  ushort localPort;
-  ushort localSecurePort;
+  unsigned short localPort;
+  unsigned short localSecurePort;
   std::string path;
 
   std::string registrarAddress;
