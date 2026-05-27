@@ -2052,8 +2052,12 @@ bus_sync_signal_handler (GstBus *bus, GstMessage *msg, gpointer data)
   case GST_MESSAGE_ERROR:
   case GST_MESSAGE_WARNING: {
     ErrorData *data = create_error_data (self, msg);
-    gst_task_pool_push (
+    gpointer task_id = gst_task_pool_push (
         self->priv->pool, kms_recorder_endpoint_post_error, data, NULL);
+
+    if (task_id != NULL) {
+      gst_task_pool_dispose_handle (self->priv->pool, task_id);
+    }
 
     // Generate a DOT file from the element's internal pipeline.
     gchar *dot_name = g_strdup_printf ("%s_bus_msg", GST_OBJECT_NAME (self));
@@ -2064,10 +2068,15 @@ bus_sync_signal_handler (GstBus *bus, GstMessage *msg, gpointer data)
 
     break;
   }
-  case GST_MESSAGE_EOS:
-    gst_task_pool_push (
+  case GST_MESSAGE_EOS: {
+    gpointer task_id = gst_task_pool_push (
         self->priv->pool, kms_recorder_endpoint_on_eos_message, self, NULL);
+
+    if (task_id != NULL) {
+      gst_task_pool_dispose_handle (self->priv->pool, task_id);
+    }
     break;
+  }
   case GST_MESSAGE_STATE_CHANGED:
     if (GST_OBJECT_CAST (KMS_BASE_MEDIA_MUXER_GET_PIPELINE (self->priv->mux))
         == GST_MESSAGE_SRC (msg)) {
