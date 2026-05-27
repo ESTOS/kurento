@@ -64,7 +64,6 @@ generate_code(
   SERVER_IMPL_LIB_EXTRA_LIBRARIES
       kmshttpep
       kmswebrtcendpoint
-	  ${CMAKE_CURRENT_BINARY_DIR}/../gst-plugins/webrtcendpoint/CMakeFiles/kmswebrtcendpoint.dir/objects.a
       ${nice_LIBRARIES}
       ${KmsGstCommons_LIBRARIES}
       ${openssl_LIBRARIES}

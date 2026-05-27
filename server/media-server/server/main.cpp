@@ -44,7 +44,7 @@
 #include "MediaSet.hpp"
 
 #ifdef G_OS_WIN32
-//#include <windows.h>
+#include <windows.h>
 #endif
 
 #define GST_CAT_DEFAULT kurento_media_server
@@ -127,10 +127,34 @@ signal_handler (int signo)
 }
 #endif
 
+#ifdef G_OS_WIN32
+static void
+kms_setup_win32_dll_search_path (void)
+{
+  wchar_t path[MAX_PATH];
+
+  if (GetModuleFileNameW (NULL, path, MAX_PATH) == 0) {
+    return;
+  }
+
+  wchar_t *slash = wcsrchr (path, L'\\');
+  if (!slash) {
+    return;
+  }
+
+  *slash = L'\0';
+  SetDllDirectoryW (path);
+}
+#endif
+
 static void
 kms_init_dependencies (int *argc, char ***argv)
 {
   Glib::init();
+
+#ifdef G_OS_WIN32
+  kms_setup_win32_dll_search_path ();
+#endif
 
   gst_init (argc, argv);
 
