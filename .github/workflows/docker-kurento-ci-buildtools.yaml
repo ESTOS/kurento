@@ -1,4 +1,4 @@
-name: "Docker: Build kurento-ci-buildtools"
+name: "docker/kurento-ci-buildtools"
 
 on:
   # Manual trigger.
@@ -10,7 +10,18 @@ on:
         # There is no `list` type, so use a raw JSON array and `fromJSON()`.
         # Example: '["xenial", "bionic", "focal"]'
         type: "string"
-        default: '["focal"]'
+        default: '["noble"]'
+      jobArchs:
+        description: "jobArchs: List of CPU architectures to build for"
+        required: true
+        # Example: '["amd64", "arm64"]'
+        type: "string"
+        default: '["amd64", "arm64"]'
+      runnerGroup:
+        description: "runnerGroup: Set of runners where the workflow jobs should be run"
+        required: false
+        type: "string"
+        default: "Linux"
 
 defaults:
   run:
@@ -18,18 +29,29 @@ defaults:
 
 jobs:
   build:
-    runs-on: ["self-hosted"]
+    runs-on: ["self-hosted", "${{ inputs.runnerGroup }}"]
     strategy:
       # Run each configuration sequentially.
       # Docker login & build fails if ran multiple times in parallel.
       max-parallel: 1
       matrix:
         jobDistro: ${{ fromJSON(inputs.jobDistros) }}
-    timeout-minutes: 30
+        jobArch: ${{ fromJSON(inputs.jobArchs) }}
+    timeout-minutes: 120
     steps:
       # Action: https://github.com/actions/checkout
       - name: "Checkout"
-        uses: "actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c" # v3.3.0
+        uses: "actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd" # v6.0.2
+
+      # Action: https://github.com/docker/setup-qemu-action
+      - name: "Set up QEMU for multi-arch builds"
+        uses: "docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a" # v4.0.0
+
+      # Action: https://github.com/docker/setup-buildx-action
+      - name: "Set up Docker Buildx"
+        uses: "docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd" # v4.0.0
+        with:
+          driver-opts: network=host
 
       - name: "Configure the environment for ci-scripts/"
         working-directory: "ci-scripts/"
@@ -41,6 +63,7 @@ jobs:
       - name: "Run job script"
         env:
           PUSH_IMAGES: "yes"
+          PLATFORMS: "linux/${{ matrix.jobArch }}"
           BUILD_ARGS: "UBUNTU_CODENAME=${{ matrix.jobDistro }}"
           TAG: "${{ matrix.jobDistro }}-${{ env.JOB_TIMESTAMP }}"
           # Moving tags, example: "1.2.3", "1.2", "1", "latest"
@@ -49,4 +72,4 @@ jobs:
           KURENTO_DOCKERHUB_USERNAME: "${{ secrets.KURENTO_DOCKERHUB_USERNAME }}"
           KURENTO_DOCKERHUB_TOKEN: "${{ secrets.KURENTO_DOCKERHUB_TOKEN }}"
         working-directory: docker/kurento-ci-buildtools/
-        run: kurento_container_build.sh
+        run: container_build_multiarch.sh

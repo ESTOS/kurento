@@ -1,6 +1,6 @@
 {
   "name": "core",
-  "version": "7.0.1",
+  "version": "7.3.1-dev",
   "code": {
     "kmd": {
       "java": {
@@ -28,7 +28,7 @@
     {
       "name": "MediaObject",
       "doc": "Base interface used to manage capabilities common to all Kurento elements.
-<h4>Properties</h4>
+<h2>Properties</h2>
 <ul>
   <li>
     <b>id</b>: unique identifier assigned to this <code>MediaObject</code> at
@@ -64,7 +64,7 @@
 </ul>
 <br />
 <br />
-<h4>Events</h4>
+<h2>Events</h2>
 <ul>
   <li>
     <strong>:rom:evt:`Error`</strong>: reports asynchronous error events. It is recommended to
@@ -346,6 +346,29 @@ It connects several :rom:cls:`endpoints <Endpoint>` together
             "doc": "The dot graph.",
             "type": "String"
           }
+        },
+        {
+          "name": "dumpGstreamerDot",
+          "doc": "If GST_DEBUG_DUMP_DOT_DIR  environment variable is defined dumps in that directoy a file with the GStreamer dot of the Hub.
+          <p>The element can be queried for certain type of data:</p>
+<ul>
+  <li>SHOW_ALL: default value</li>
+  <li>SHOW_CAPS_DETAILS</li>
+  <li>SHOW_FULL_PARAMS</li>
+  <li>SHOW_MEDIA_TYPE</li>
+  <li>SHOW_NON_DEFAULT_PARAMS</li>
+  <li>SHOW_STATES</li>
+  <li>SHOW_VERBOSE</li>
+</ul>
+          ",
+          "params": [
+            {
+              "name": "details",
+              "type": "GstreamerDotDetails",
+              "doc": "Details of graph",
+              "optional": true
+            }
+          ]
         }
       ]
     },
@@ -446,7 +469,7 @@ An example of this, would be a :rom:cls:`PlayerEndpoint` whose URI property coul
     {
       "name": "MediaPipeline",
       "extends": "MediaObject",
-      "doc": "A pipeline is a container for a collection of :rom:cls:`MediaElements<MediaElement>` and :rom:cls:`MediaMixers<MediaMixer>`.
+      "doc": "A pipeline is a container for a collection of :rom:cls:`MediaElements<MediaElement>`.
 It offers the methods needed to control the creation and connection of elements inside a certain pipeline.
       ",
       "constructor": {
@@ -478,6 +501,18 @@ It offers the methods needed to control the creation and connection of elements 
             "doc": "The dot graph.",
             "type": "String"
           }
+        },
+        {
+          "name": "dumpGstreamerDot",
+          "doc": "If GST_DEBUG_DUMP_DOT_DIR  environment variable is defined dumps in that directoy a file with the GStreamer dot of the pipeline",
+          "params": [
+            {
+              "name": "details",
+              "type": "GstreamerDotDetails",
+              "doc": "Details of graph",
+              "optional": true
+            }
+          ]
         }
       ]
     },
@@ -1240,6 +1275,29 @@ Pipeline, towards the associated producer. Only valid for video consumers.
           ]
         },
         {
+          "name": "dumpGstreamerDot",
+          "doc": "If GST_DEBUG_DUMP_DOT_DIR  environment variable is defined dumps in that directoy a file with the GStreamer dot of the Media Element.
+          <p>The element can be queried for certain type of data:</p>
+<ul>
+  <li>SHOW_ALL: default value</li>
+  <li>SHOW_CAPS_DETAILS</li>
+  <li>SHOW_FULL_PARAMS</li>
+  <li>SHOW_MEDIA_TYPE</li>
+  <li>SHOW_NON_DEFAULT_PARAMS</li>
+  <li>SHOW_STATES</li>
+  <li>SHOW_VERBOSE</li>
+</ul>
+          ",
+          "params": [
+            {
+              "name": "details",
+              "type": "GstreamerDotDetails",
+              "doc": "Details of graph",
+              "optional": true
+            }
+          ]
+        },
+        {
           "name": "getGstreamerDot",
           "doc": "Return a .dot file describing the topology of the media element.
 <p>The element can be queried for certain type of data:</p>
@@ -1599,6 +1657,9 @@ Pipeline, towards the associated producer. Only valid for video consumers.
     {
       "typeFormat": "ENUM",
       "values": [
+        "H265",
+        "AV1",
+        "VP9",
         "VP8",
         "H264",
         "RAW"
@@ -1611,6 +1672,7 @@ Pipeline, towards the associated producer. Only valid for video consumers.
       "values": [
         "OPUS",
         "PCMU",
+        "PCMA",
         "RAW"
       ],
       "name": "AudioCodec",
@@ -2353,7 +2415,7 @@ Pipeline, towards the associated producer. Only valid for video consumers.
       "properties": [
         {
           "name": "name",
-          "doc": "Name of the codec. Must follow this format: <encoding name>/<clock rate>[/<encoding parameters>]",
+          "doc": "Name of the codec. Must follow this format: <code>encoding name/clock rate[encoding parameters]</code>",
           "type": "String",
           "optional": true
         },

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.5)
 
 project("kurento-module-opencv-example")
 message(STATUS "CMake project: ${PROJECT_NAME}")
@@ -56,7 +56,7 @@ find_package(PkgConfig)
 pkg_check_modules(GSTREAMER REQUIRED gstreamer-1.0>=${GST_REQUIRED})
 
 include(GenericFind)
-generic_find(LIBNAME KMSCORE VERSION ^7.0.1 REQUIRED)
+generic_find(LIBNAME KMSCORE VERSION ^7.0.0 REQUIRED)
 generic_find(LIBNAME OpenCV VERSION ${OPENCV_REQUIRED} REQUIRED)
 
 # Generate file "config.h"

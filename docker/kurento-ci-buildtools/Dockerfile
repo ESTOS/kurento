@@ -23,9 +23,10 @@
 #
 #   Optional. Default: "focal".
 
-ARG UBUNTU_CODENAME=focal
+ARG UBUNTU_CODENAME=noble
+ARG TARGETPLATFORM
 
-FROM kurento/kurento-buildpackage:${UBUNTU_CODENAME}
+FROM --platform=$TARGETPLATFORM kurento/kurento-buildpackage:${UBUNTU_CODENAME}
 
 # Settings from parent image:
 # Re-enable the cleaning of Apt package cache
@@ -47,7 +48,7 @@ ENV NODE_OPTIONS="--dns-result-order=ipv4first"
 RUN \
 apt-get update && apt-get install --no-install-recommends --yes \
     wget \
-&& wget --no-verbose -O - https://deb.nodesource.com/setup_18.x | bash - \
+&& wget --no-verbose -O - https://deb.nodesource.com/setup_24.x | bash - \
 && apt-get update && apt-get install --no-install-recommends --yes \
     nodejs \
 && rm -rf /var/lib/apt/lists/* \
@@ -61,7 +62,7 @@ apt-get update && apt-get install --no-install-recommends --yes \
 
 # Install packages
 # * build-essential, cmake: For C/C++ server modules that generate client SDK files.
-# * curl: For CI script `kurento_deploy_js_http.sh`.
+# * curl: For CI script `deploy_js_http.sh`.
 # * default-jdk (Java JDK): For Java projects.
 # * jq: For some JavaScript tools and jobs.
 # * libnss-wrapper: Used by jobs that perform Git push/pull operations.
@@ -76,15 +77,25 @@ RUN \
 apt-get update && apt-get install --no-install-recommends --yes \
     build-essential cmake \
     curl \
-    default-jdk \
+    openjdk-25-jdk \
     ffmpeg \
     jq \
     libmediainfo-dev \
     libnss-wrapper \
-    maven \
     netcat-openbsd \
     rsync \
 && rm -rf /var/lib/apt/lists/*
+
+
+ENV MAVEN_VERSION=3.9.15
+ENV MAVEN_HOME=/usr/share/maven
+ENV PATH=$MAVEN_HOME/bin:$PATH
+RUN wget -q https://dlcdn.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz && \
+    tar -xzf apache-maven-${MAVEN_VERSION}-bin.tar.gz -C /opt && \
+    ln -s /opt/apache-maven-${MAVEN_VERSION} $MAVEN_HOME && \
+    rm apache-maven-${MAVEN_VERSION}-bin.tar.gz
+RUN mvn -v
+
 
 ENTRYPOINT ["/bin/bash"]
 CMD []

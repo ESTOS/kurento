@@ -4,6 +4,7 @@ Welcome to Kurento
 
 :term:`Kurento` Media Server (**KMS**) is a multimedia server package that can be used to develop advanced video applications for :term:`WebRTC` platforms. It is an Open Source project, with source code released under the terms of `Apache License Version 2.0 <https://www.apache.org/licenses/LICENSE-2.0>`__ and `available on GitHub <https://github.com/Kurento>`__.
 
+
 **Start here**: :doc:`/user/intro` and :doc:`/user/quickstart`, and then learn to write Kurento applications with :doc:`/user/tutorials`.
 
 The main documentation for the project is organized into different sections:

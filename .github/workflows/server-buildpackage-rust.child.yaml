@@ -1,0 +1,103 @@
+name: "server-buildpackage-rust.child"
+
+on:
+  # Triggered from other workflows.
+  workflow_call:
+    inputs:
+      jobDistros:
+        description: "List of Ubuntu codenames to build for"
+        required: true
+        # There is no `list` type, so use a raw JSON array and `fromJson()`.
+        # Example: '["xenial", "bionic", "focal"]'
+        type: "string"
+        default: '["noble"]'
+      jobArchs:
+        description: "List of CPU architectures to build for"
+        required: true
+        # Example: '["amd64", "arm64"]'
+        type: "string"
+        default: '["amd64", "arm64"]'
+      jobGitRepo:
+        description: "Git repo from where the Rust code is got to build package"
+        required: false
+        type: "string"
+        default: "https://github.com/GStreamer/gst-plugins-rs"
+      jobGitName:
+        description: "Non-default git branch or tag that should be checked out, if it exists"
+        required: false
+        type: "string"
+        default: "0.12.7"
+      jobKurentoGitName:
+        description: "Non-default Kurento git branch or tag that should be checked out, if it exists"
+        required: false
+        type: "string"
+        default: "main"
+      jobRelease:
+        description: "Enable to build release versions; disable for development builds"
+        required: false
+        type: "boolean"
+      directory:
+        description: "directory: Working directory for the job execution"
+        required: true
+        type: "string"
+        default: "./"
+      runnerGroup:
+        description: "runnerGroup: Set of runners where the workflow jobs should be run"
+        required: false
+        type: "string"
+        default: "Linux"
+      artifactName:
+        description: "Name of the artifact to be uploaded"
+        required: true
+        type: "string"
+
+
+jobs:
+  build:
+    runs-on: ["self-hosted", "${{ inputs.runnerGroup }}"]
+    strategy:
+      matrix:
+        jobDistro: ${{ fromJson(inputs.jobDistros) }}
+        jobArch: ${{ fromJSON(inputs.jobArchs) }}
+    timeout-minutes: 120
+    steps:
+      - name: "Check for non-default git ref"
+        id: "git-ref"
+        run: |
+          if [[ -n "${{ inputs.jobKurentoGitName }}" ]]; then
+            echo "value=${{ inputs.jobKurentoGitName }}" >>$GITHUB_OUTPUT
+          else
+            echo "value=main" >>$GITHUB_OUTPUT
+          fi
+
+      # Action: https://github.com/actions/checkout
+      - name: "Checkout"
+        uses: "actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd" # v6.0.2
+        with:
+          ref: "${{ steps.git-ref.outputs.value }}"
+      - name: "Configure the environment for ci-scripts/"
+        run: |
+          echo "$PWD"/ci-scripts >>$GITHUB_PATH
+          echo "KURENTO_SCRIPTS_HOME=$PWD"/ci-scripts >>$GITHUB_ENV
+          echo "GSTREAMER_RUST_PATCH_DIR=$PWD/server/gst-plugins-rs" >>$GITHUB_ENV
+          echo "JOB_TIMESTAMP=$(date --utc +%Y%m%d%H%M%S)" >>$GITHUB_ENV
+
+      - name: "Run job script"
+        env:
+          JOB_GIT_REPO: "${{ inputs.jobGitRepo }}"
+          JOB_GIT_NAME: "${{ inputs.jobGitName }}"
+          JOB_DISTRO: "${{ matrix.jobDistro }}"
+          JOB_ARCH: "${{ matrix.jobArch }}"
+          JOB_RELEASE: "${{ inputs.jobRelease }}"
+          APT_PROXY_URL: "${{ vars.APT_PROXY_URL }}"
+          DISABLE_APT_PROXY: "true"
+        working-directory: "${{ inputs.directory }}"
+        run: "ci_job_package_gst_rust_debian.sh"
+
+
+      # Action: https://github.com/actions/upload-artifact
+      - name: "Archive the artifacts"
+        uses: "actions/upload-artifact@v4"
+        with:
+          name: "${{ inputs.artifactName }}-${{ matrix.jobDistro }}-${{ matrix.jobArch }}"
+          path: "${{ inputs.directory }}*.*deb"

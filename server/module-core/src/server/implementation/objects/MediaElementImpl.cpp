@@ -1192,6 +1192,10 @@ void MediaElementImpl::setAudioFormat (std::shared_ptr<AudioCaps> caps)
     str_caps = "audio/x-mulaw";
     break;
 
+  case AudioCodec::PCMA:
+    str_caps = "audio/x-alaw";
+    break;
+
   case AudioCodec::RAW:
     str_caps = "audio/x-raw";
     break;
@@ -1220,6 +1224,18 @@ void MediaElementImpl::setVideoFormat (std::shared_ptr<VideoCaps> caps)
   fraction = caps->getFramerate();
 
   switch (codec->getValue() ) {
+  case VideoCodec::H265:
+    str_caps = "video/x-h265";
+    break;
+
+  case VideoCodec::AV1:
+    str_caps = "video/x-av1";
+    break;
+
+  case VideoCodec::VP9:
+    str_caps = "video/x-vp9";
+    break;
+
   case VideoCodec::VP8:
     str_caps = "video/x-vp8";
     break;
@@ -1257,6 +1273,17 @@ std::string MediaElementImpl::getGstreamerDot()
       GST_BIN(element),
       std::make_shared<GstreamerDotDetails>(GstreamerDotDetails::SHOW_VERBOSE));
 }
+
+void MediaElementImpl::dumpGstreamerDot ()
+{
+  dumpGstreamerDot (std::make_shared<GstreamerDotDetails>(GstreamerDotDetails::SHOW_VERBOSE));
+}
+
+void MediaElementImpl::dumpGstreamerDot (std::shared_ptr<GstreamerDotDetails> details)
+{
+  dumpDotGraph (GST_BIN(element), details, getId());
+}
+
 
 int
 MediaElementImpl::getEncoderBitrate ()

@@ -61,20 +61,6 @@ kms_utils_debug_graph_delay (GstBin * bin, guint interval)
 }
 
 gboolean
-kms_is_valid_uri (const gchar * url)
-{
-  gboolean ret;
-  GRegex *regex;
-
-  regex = g_regex_new ("^(?:((?:https?):)\\/\\/)([^:\\/\\s]+)(?::(\\d*))?(?:\\/"
-      "([^\\s?#]+)?([?][^?#]*)?(#.*)?)?$", 0, 0, NULL);
-  ret = g_regex_match (regex, url, G_REGEX_MATCH_ANCHORED, NULL);
-  g_regex_unref (regex);
-
-  return ret;
-}
-
-gboolean
 gst_element_sync_state_with_parent_target_state (GstElement * element)
 {
   GstElement *parent;
@@ -280,6 +266,12 @@ kms_utils_get_caps_codec_name_from_sdp (const gchar * codec_name)
   }
   if (g_ascii_strcasecmp (VP8_ENCONDING_NAME, codec_name) == 0) {
     return "VP8";
+  }
+  if (g_ascii_strcasecmp (VP9_ENCONDING_NAME, codec_name) == 0) {
+    return "VP9";
+  }
+  if (g_ascii_strcasecmp (AV1_ENCONDING_NAME, codec_name) == 0) {
+    return "AV1";
   }
 
   return codec_name;

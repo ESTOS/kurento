@@ -35,7 +35,7 @@
 #include "kmsrtpsdescryptosuite.h"
 #include "kmsrandom.h"
 
-#include <stdlib.h> // atoi()
+#include <stdlib.h> // strtoul()
 
 #define PLUGIN_NAME "rtpendpoint"
 
@@ -301,11 +301,15 @@ kms_rtp_endpoint_get_connection (KmsRtpEndpoint * self, KmsSdpSession * sess,
 
     conn = kms_srtp_session_get_connection (KMS_SRTP_SESSION (sess), handler);
 
-    data = sdes_ext_data_new (self, gst_sdp_media_get_media (media));
+    if (conn == NULL) {
+      GST_INFO_OBJECT (self, "No connection for media %s", (const gchar*)media->media);
+    } else {
+      data = sdes_ext_data_new (self, gst_sdp_media_get_media (media));
 
-    g_signal_connect_data (conn, "key-soft-limit",
-        G_CALLBACK (conn_soft_limit_cb), data,
-        (GClosureNotify) kms_ref_struct_unref, 0);
+      g_signal_connect_data (conn, "key-soft-limit",
+          G_CALLBACK (conn_soft_limit_cb), data,
+          (GClosureNotify) kms_ref_struct_unref, 0);
+    }
     return conn;
   } else {
     return kms_rtp_session_get_connection (KMS_RTP_SESSION (sess), handler);
@@ -987,7 +991,7 @@ kms_rtp_endpoint_start_transport_send (KmsBaseSdpEndpoint *base_sdp_endpoint,
       const gchar *attr_rtcp_port = gst_sdp_media_get_attribute_val(media,
           "rtcp");
       if (attr_rtcp_port != NULL) {
-        rtcp_port = (guint)atoi (attr_rtcp_port);
+        rtcp_port = (guint)strtoul (attr_rtcp_port, NULL, 10);
       }
 
       kms_rtp_base_connection_set_remote_info (conn,

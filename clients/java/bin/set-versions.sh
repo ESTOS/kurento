@@ -235,7 +235,7 @@ function git_commit {
     # Dependency on kurento-module-creator.
     xmlstarlet edit -S --inplace \
         --update "/_:project/_:dependencies/_:dependency[_:artifactId='kurento-module-creator']/_:version" \
-        --value "$VERSION_JAVA" \
+        --value "[${VERSION_JAVA},8.0.0)" \
         pom.xml
 
     git_commit pom.xml
@@ -268,7 +268,7 @@ function git_commit {
         for MODULE in "${MODULES[@]}"; do
             xmlstarlet edit -S --inplace \
                 --update "/_:project/_:properties/_:version.${MODULE}" \
-                --value "$VERSION_KMS" \
+                --value "[${VERSION_KMS},8.0.0)" \
                 pom.xml
         done
     fi

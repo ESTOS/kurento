@@ -4,9 +4,10 @@
 
 # Kurento Media Server
 
-| :house:[Homepage](https://kurento.openvidu.io/) | :books:[Documentation](https://doc-kurento.readthedocs.io/) | [![Docker Pulls](https://img.shields.io/docker/pulls/kurento/kurento-media-server?color=blue&label=Docker&logo=docker&logoColor=blue)](https://hub.docker.com/r/kurento/kurento-media-server) |
-| --- | --- | --- |
+| :house:[Homepage](https://kurento.openvidu.io/)                                                                                                                                                                                    | :books:[Documentation](https://doc-kurento.readthedocs.io/)                                                                                                                 | [![Docker Pulls](https://img.shields.io/docker/pulls/kurento/kurento-media-server?color=blue&label=Docker&logo=docker&logoColor=blue)](https://hub.docker.com/r/kurento/kurento-media-server)                           |
+| ---                                                                                                                                                                                                                                | ---                                                                                                                                                                         | ---                                                                                                                                                                                                                     |
 | [![GitHub commits](https://img.shields.io/github/commits-difference/Kurento/kurento?base=eabf6de352fb927df91baa2ec26794dac8c64d78&head=HEAD&label=Commits&logo=github)](https://github.com/Kurento/kurento/graphs/commit-activity) | [![GitHub contributors](https://img.shields.io/github/contributors/Kurento/kurento?label=Contributors&logo=github)](https://github.com/Kurento/kurento/graphs/contributors) | [![Stack Exchange questions](https://img.shields.io/stackexchange/stackoverflow/t/kurento?color=orange&label=Stack%20Overflow&logo=stackoverflow&logoColor=orange)](https://stackoverflow.com/questions/tagged/kurento) |
+| [![Sourcegraph](https://img.shields.io/badge/Explore%20with%20Sourcegraph-Kurento-00CBEC?logo=sourcegraph)](https://sourcegraph.com/github.com/Kurento/kurento)                                                                    |                                                                                                                                                                             |                                                                                                                                                                                                                         |
 
 Kurento Media Server is responsible for media transmission, processing, loading and recording. It is implemented in low level technologies based on the GStreamer multimedia toolkit, and provides the following features:
 
@@ -18,20 +19,11 @@ Kurento Media Server is responsible for media transmission, processing, loading 
 
 
 
-## About Kurento
-
-Kurento is an open source software project providing a platform suitable for creating modular applications with advanced real-time communication capabilities. To know more about Kurento, please visit the project website: https://kurento.openvidu.io/.
-
-All source code belonging to the Kurento project can be found in the [Kurento GitHub organization page](https://github.com/Kurento).
-
-[![Sourcegraph](https://img.shields.io/badge/Explore%20with%20Sourcegraph-Kurento-00CBEC?logo=sourcegraph)](https://sourcegraph.com/github.com/Kurento/kurento)
-
-
 
 ## FIWARE Platform
 
 | [![FIWARE Chapter](https://nexus.lab.fiware.org/repository/raw/public/badges/chapters/media-streams.svg)](https://www.fiware.org/developers/catalogue/) | [![FIWARE Member Status](https://nexus.lab.fiware.org/static/badges/statuses/kurento.svg)](https://www.fiware.org/developers/catalogue/) | :mortar_board: [FIWARE Academy](https://fiware-academy.readthedocs.io/en/latest/processing/kurento) |
-| --- | --- | --- |
+| ---                                                                                                                                                     | ---                                                                                                                                      | ---                                                                                                 |
 
 The Kurento project is part of [FIWARE]. For more information check the FIWARE documentation for [Real-Time Media Stream Processing](https://fiwaretourguide.readthedocs.io/en/latest/processing/kurento/introduction/).
 

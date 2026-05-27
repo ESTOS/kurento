@@ -27,6 +27,8 @@
 #include "CertificateKeyType.hpp"
 #include <webrtcendpoint/kmsicecandidate.h>
 #include <IceComponentState.hpp>
+#include <DtlsConnectionState.hpp>
+#include <DtlsConnection.hpp>
 #include <SignalHandler.hpp>
 #include <webrtcendpoint/kmsicebaseagent.h>
 
@@ -39,6 +41,7 @@
 #include <commons/gstsdpdirection.h>
 
 #include "webrtcendpoint/kmswebrtcdatachannelstate.h"
+#include "webrtcendpoint/kmswebrtcdtlsconnectionstate.h"
 #include <boost/algorithm/string.hpp>
 
 #include <CertificateManager.hpp>
@@ -66,6 +69,8 @@ GST_DEBUG_CATEGORY_STATIC (GST_CAT_DEFAULT);
 
 #define PARAM_QOS_DSCP "qos-dscp"
 
+#define PARAM_ENABLE_H265 "enable-h265"
+
 namespace kurento
 {
 
@@ -75,7 +80,7 @@ static std::once_flag check_openh264, certificates_flag;
 static std::string defaultCertificateRSA, defaultCertificateECDSA;
 
 // "H264" gets added at runtime by check_support_for_h264()
-static std::vector<std::string> supported_codecs = { "VP8", "opus", "PCMU" };
+static std::vector<std::string> supported_codecs = { "AV1", "VP9", "VP8", "opus", "PCMU", "PCMA" };
 
 static void
 remove_not_supported_codecs_from_array (GstElement *element, GArray *codecs)
@@ -128,6 +133,12 @@ remove_not_supported_codecs (GstElement *element)
   g_object_get (element, "video-codecs", &codecs, NULL);
   remove_not_supported_codecs_from_array (element, codecs);
   g_array_unref (codecs);
+}
+
+static void
+add_support_for_h265 ()
+{
+  supported_codecs.emplace_back("H265");
 }
 
 static void
@@ -270,14 +281,86 @@ void WebRtcEndpointImpl::onIceComponentStateChanged (gchar *sessId,
                              <std::string, std::shared_ptr <IceConnection>> (key, connectionState) );
 
   try {
+    int streamId_int = 0;
+    try {
+      streamId_int = std::stoi(streamId);
+    } catch (const std::invalid_argument& ia) {
+      GST_ERROR("Invalid streamId for IceComponentStateChanged event: %s", streamId);
+    } catch(std::exception &e) {
+      GST_ERROR("Error parsing streamId for IceComponentStateChanged event: %s, error: %s", streamId, e.what());
+    } 
+
     IceComponentStateChanged event (shared_from_this (),
-        IceComponentStateChanged::getName (), atoi (streamId), componentId,
+        IceComponentStateChanged::getName (), streamId_int, componentId,
         std::shared_ptr<IceComponentState> (componentState_event));
     sigcSignalEmit(signalIceComponentStateChanged, event);
   } catch (const std::bad_weak_ptr &e) {
     // shared_from_this()
     GST_ERROR ("BUG creating %s: %s",
         IceComponentStateChanged::getName ().c_str (), e.what ());
+  }
+}
+
+void WebRtcEndpointImpl::onDtlsConnectionStateChanged (gchar *sessId,
+    const gchar *streamId,
+    gchar *componentId, gchar *connection_id, guint state)
+{
+  DtlsConnectionState::type type;
+  std::shared_ptr<DtlsConnection> connectionState;
+  std::map < std::string, std::shared_ptr<DtlsConnection>>::iterator it;
+  std::string key;
+
+  switch (state) {
+  case DTLS_CONNECTION_STATE_NEW:
+    type = DtlsConnectionState::NEW;
+    break;
+
+  case DTLS_CONNECTION_STATE_CONNECTING:
+    type = DtlsConnectionState::CONNECTING;
+    break;
+
+  case DTLS_CONNECTION_STATE_CONNECTED:
+    type = DtlsConnectionState::CONNECTED;
+    break;
+
+  case DTLS_CONNECTION_STATE_FAILED:
+    type = DtlsConnectionState::FAILED;
+    break;
+
+  case DTLS_CONNECTION_STATE_CLOSED:
+    type = DtlsConnectionState::CLOSED;
+    break;
+
+  default:
+    type = DtlsConnectionState::FAILED;
+    break;
+  }
+
+  DtlsConnectionState *newComponentState_event = new DtlsConnectionState (type);
+  DtlsConnectionState *componentState_property = new DtlsConnectionState (type);
+
+  connectionState = std::make_shared<DtlsConnection> (std::string(streamId), std::string(componentId), std::string(connection_id),
+                    std::shared_ptr<DtlsConnectionState> (componentState_property) );
+
+  key = std::string (streamId) + '_' + std::string (componentId);
+
+  std::unique_lock<std::mutex> mutex (mut);
+  it = dtlsConnectionState.find (key);
+  dtlsConnectionState[key] = connectionState;
+  dtlsConnectionState.insert (std::pair
+                             <std::string, std::shared_ptr <DtlsConnection>> (key, connectionState) );
+
+  try {
+    DtlsConnectionStateChange event (shared_from_this (),
+        DtlsConnectionStateChange::getName (), streamId, componentId, connection_id,
+        std::shared_ptr<DtlsConnectionState> (newComponentState_event));
+    GST_DEBUG_OBJECT(element,"DTLS connection state change sesId: %s, connId: %s, comp: %s, source: %s, stream: %s, state: %s", 
+              sessId, connection_id,  event.getComponentId().c_str(), event.getSource()->getId().c_str(), event.getStreamId().c_str(), event.getState()->getString().c_str());
+    sigcSignalEmit(signalDtlsConnectionStateChange, event);
+  } catch (const std::bad_weak_ptr &e) {
+    // shared_from_this()
+    GST_ERROR ("BUG creating %s: %s",
+        DtlsConnectionStateChange::getName ().c_str (), e.what ());
   }
 }
 
@@ -396,6 +479,15 @@ void WebRtcEndpointImpl::postConstructor ()
                                       (std::bind (&WebRtcEndpointImpl::onIceComponentStateChanged, this,
                                           std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
                                           std::placeholders::_5) ),
+                                      std::dynamic_pointer_cast<WebRtcEndpointImpl>
+                                      (shared_from_this() ) );
+
+  handlerOnDtlsConnectionStateChanged = register_signal_handler (G_OBJECT (element),
+                                      "on-dtls-connection-state-changed",
+                                      std::function <void (GstElement *, gchar *, gchar *, gchar *, char *,guint) >
+                                      (std::bind (&WebRtcEndpointImpl::onDtlsConnectionStateChanged, this,
+                                          std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
+                                          std::placeholders::_5, std::placeholders::_6) ),
                                       std::dynamic_pointer_cast<WebRtcEndpointImpl>
                                       (shared_from_this() ) );
 
@@ -555,6 +647,15 @@ WebRtcEndpointImpl::WebRtcEndpointImpl (const boost::property_tree::ptree &conf,
   std::call_once (check_openh264, check_support_for_h264);
   std::call_once (certificates_flag,
                   std::bind (&WebRtcEndpointImpl::generateDefaultCertificates, this) );
+
+  std::string enableH265;
+
+  if (getConfigValue<std::string,WebRtcEndpoint>(&enableH265, PARAM_ENABLE_H265)) {
+    GST_INFO ("ENABLE-H265 configured value is %s", enableH265.c_str());
+    if (enableH265 == "true") {
+      add_support_for_h265 ();
+    }
+  }
 
   this->qosDscp = qosDscp;
   if (qosDscp->getValue () == DSCPValue::NO_VALUE) {
@@ -894,6 +995,20 @@ std::vector<std::shared_ptr<IceConnection>>
   std::unique_lock<std::mutex> mutex (mut);
 
   for (it = iceConnectionState.begin(); it != iceConnectionState.end(); it++) {
+    connections.push_back ( (*it).second);
+  }
+
+  return connections;
+}
+
+std::vector<std::shared_ptr<DtlsConnection>>
+    WebRtcEndpointImpl::getDtlsConnectionState ()
+{
+  std::vector<std::shared_ptr<DtlsConnection>> connections;
+  std::map<std::string, std::shared_ptr <DtlsConnection>>::iterator it;
+  std::unique_lock<std::mutex> mutex (mut);
+
+  for (it = dtlsConnectionState.begin(); it != dtlsConnectionState.end(); it++) {
     connections.push_back ( (*it).second);
   }
 

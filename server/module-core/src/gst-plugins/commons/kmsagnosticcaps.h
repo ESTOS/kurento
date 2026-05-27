@@ -120,12 +120,15 @@
   "video/x-theora;" \
   "video/x-h264;" \
   "video/x-gst_ff-libxvid;" \
-  "video/x-h264;" \
+  "video/x-h265;" \
   "video/x-xvid;" \
   "video/mpeg,mpegversion=[1, 2];" \
   "video/x-theora;" \
   "video/x-vp8;" \
-  "application/x-yuv4mpeg,y4mversion=2;"
+  "video/x-vp9;" \
+  "video/x-av1;" \
+  "application/x-yuv4mpeg,y4mversion=2;" \
+  "video/x-simulcast;" /* For simulcast support */
 
 #define KMS_AGNOSTIC_NO_RTP_VIDEO_CAPS \
   KMS_AGNOSTIC_RAW_VIDEO_CAPS \

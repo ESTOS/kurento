@@ -77,7 +77,7 @@ echo "CFG_DISTRIB_RELEASE=$CFG_DISTRIB_RELEASE"
 # Create Docker container
 # =======================
 
-# In-place Docker container commands BEGIN
+# BEGIN in-place Docker container commands.
 docker run -i --pull always \
     --name "kurento-dev-$CFG_DISTRIB_RELEASE" \
     "ubuntu:$CFG_DISTRIB_RELEASE" \
@@ -108,9 +108,9 @@ deb $APT_MIRROR $DISTRIB_CODENAME-backports main restricted universe multiverse
 deb http://security.ubuntu.com/ubuntu/ $DISTRIB_CODENAME-security main restricted universe multiverse
 #deb http://archive.canonical.com/ubuntu/ $DISTRIB_CODENAME partner
 
-#deb-src APT_MIRROR $DISTRIB_CODENAME main restricted universe multiverse
-#deb-src APT_MIRROR $DISTRIB_CODENAME-updates main restricted universe multiverse
-#deb-src APT_MIRROR $DISTRIB_CODENAME-backports main restricted universe multiverse
+#deb-src $APT_MIRROR $DISTRIB_CODENAME main restricted universe multiverse
+#deb-src $APT_MIRROR $DISTRIB_CODENAME-updates main restricted universe multiverse
+#deb-src $APT_MIRROR $DISTRIB_CODENAME-backports main restricted universe multiverse
 #deb-src http://security.ubuntu.com/ubuntu/ $DISTRIB_CODENAME-security main restricted universe multiverse
 #deb-src http://archive.canonical.com/ubuntu/ $DISTRIB_CODENAME partner
 EOF
@@ -188,20 +188,24 @@ EOF
 echo "# Install basic tools"
 # ==========================
 
-apt-get update ; apt-get install --no-install-recommends --yes \
-    apt-file \
-    aptitude \
-    bash-completion \
-    git \
-    iproute2 \
-    iputils-ping \
-    less \
-    mlocate \
-    nano \
-    net-tools \
-    procps \
-    tree \
+PACKAGES=(
+    apt-file
+    aptitude
+    bash-completion
+    git
+    iproute2 # ip
+    iputils-ping
+    less
+    mlocate # updatedb, locate
+    nano
+    net-tools # netstat, ifconfig
+    procps
+    psmisc # killall
+    tree
     wget
+)
+
+apt-get update ; apt-get install --no-install-recommends --yes "${PACKAGES[@]}"
 
 apt-file update
 
@@ -210,27 +214,47 @@ apt-file update
 echo "# Install development tools"
 # ================================
 
-apt-get update ; apt-get install --no-install-recommends --yes \
-    build-essential \
-    ccache \
-    gdb \
-    maven default-jdk-headless
+PACKAGES=(
+    # Compilation and debugging.
+    build-essential
+    ccache
+    gdb
+
+    # Java + Maven.
+    default-jdk-headless
+    maven
+)
+
+apt-get update ; apt-get install --no-install-recommends --yes "${PACKAGES[@]}"
 
 
 
 echo "# (Optional) Install tools for kurento-buildpackage"
 # ========================================================
 
-apt-get update ; apt-get install --no-install-recommends --yes \
-    python3 python3-pip python3-setuptools python3-wheel \
-    devscripts \
-    dpkg-dev \
-    lintian \
-    git \
-    openssh-client \
-    equivs \
-    coreutils \
+PACKAGES=(
+    # System tools.
+    coreutils
     lsb-release
+
+    # Dpkg tools.
+    devscripts
+    dpkg-dev
+    equivs
+    lintian
+
+    # Git + SSL/HTTPS.
+    git
+    openssh-client
+
+    # Python.
+    python3
+    python3-pip
+    python3-setuptools
+    python3-wheel
+)
+
+apt-get update ; apt-get install --no-install-recommends --yes "${PACKAGES[@]}"
 
 git config --system user.name "Kurento"
 git config --system user.email "kurento@openvidu.io"
@@ -260,11 +284,25 @@ echo "# (Optional) Install Kurento Media Server"
 apt-get update ; apt-get install --no-install-recommends --yes \
     gnupg
 
-apt-key adv \
-    --keyserver hkp://keyserver.ubuntu.com:80 \
-    --recv-keys 234821A61B67740F89BFD669FC8A16625AFA7A83
+# Add Kurento repository line for apt-get.
+if [[ "$DISTRIB_RELEASE" == "24.04" ]]; then
+    # Add Kurento repository key for apt-get.
+    gpg -k
+    gpg --no-default-keyring \
+        --keyring /etc/apt/keyrings/kurento.gpg \
+        --keyserver hkp://keyserver.ubuntu.com:80 \
+        --recv-keys 234821A61B67740F89BFD669FC8A16625AFA7A83
 
-if [[ "$DISTRIB_RELEASE" == "20.04" ]]; then
+    # Repo for Kurento 7.1 monorepo.
+    echo "deb [signed-by=/etc/apt/keyrings/kurento.gpg] http://ubuntu.openvidu.io/dev $DISTRIB_CODENAME main" \
+        >/etc/apt/sources.list.d/kurento.list
+
+elif [[ "$DISTRIB_RELEASE" == "20.04" ]]; then
+    # Add Kurento repository key for apt-get.
+    apt-key adv \
+        --keyserver hkp://keyserver.ubuntu.com:80 \
+        --recv-keys 234821A61B67740F89BFD669FC8A16625AFA7A83
+
     # Repo for Kurento 7 monorepo.
     echo "deb [arch=amd64] http://ubuntu.openvidu.io/dev $DISTRIB_CODENAME main" \
         >/etc/apt/sources.list.d/kurento.list
@@ -273,17 +311,22 @@ if [[ "$DISTRIB_RELEASE" == "20.04" ]]; then
     #echo "deb [arch=amd64] http://ubuntu.openvidu.io/dev-7.0.0 $DISTRIB_CODENAME kms6" \
     #    >/etc/apt/sources.list.d/kurento.list
 else
+    # Add Kurento repository key for apt-get.
+    apt-key adv \
+        --keyserver hkp://keyserver.ubuntu.com:80 \
+        --recv-keys 234821A61B67740F89BFD669FC8A16625AFA7A83
+
     echo "deb [arch=amd64] http://ubuntu.openvidu.io/dev $DISTRIB_CODENAME kms6" \
         >/etc/apt/sources.list.d/kurento.list
     echo "#deb [arch=amd64] http://ubuntu.openvidu.io/6.18.0 $DISTRIB_CODENAME kms6" \
         >>/etc/apt/sources.list.d/kurento.list
 fi
 
-# (Optional) Install Kurento Media Server.
+# Install Kurento Media Server.
 apt-get update ; apt-get install --no-install-recommends --yes \
     kurento-media-server
 
-# (Optional) Install Kurento Media Server development packages.
+# Install Kurento Media Server development packages.
 apt-get update ; apt-get install --no-install-recommends --yes \
     kurento-media-server-dev
 
@@ -294,7 +337,7 @@ apt-get update ; apt-get install --no-install-recommends --yes \
 #source /etc/default/kurento-media-server
 #unset GST_DEBUG_NO_COLOR
 #unset KURENTO_LOGS_PATH
-#/usr/bin/kurento-media-server # (Optional) Use `exec` to replace root PID
+#kurento-media-server # (Optional) Use `exec` to replace root PID
 
 
 
@@ -318,9 +361,13 @@ EOF
 
 # Install debug packages.
 # The debug packages repository fails very often due to bad server state.
-# Try to update, and only if it works install debug symbols.
-apt-get update && apt-get install --no-install-recommends --yes \
-    kurento-dbg
+# Try to update, and only if it works, install debug symbols. Otherwise, disable
+# the debug repository.
+apt-get update && apt-get install --no-install-recommends --yes kurento-dbg \
+|| {
+    echo "WARNING: Ubuntu debug repository is down! Leaving it disabled"
+    sed -i 's/^[^#]/#&/' /etc/apt/sources.list.d/ddebs.list
+}
 
 
 
@@ -333,7 +380,7 @@ rm -rf /var/lib/apt/lists/*
 echo "Done! Everything got installed successfully"
 
 DOCKERCOMMANDS
-# In-place Docker container commands END
+# END in-place Docker container commands.
 
 
 
@@ -363,12 +410,12 @@ To start a new dev container:
         kurento-dev:$CFG_DISTRIB_RELEASE \\
         bash --login
 
-    # NOTES:
-    # * Mounts /opt/ to access extra software manually built (eg. Valgrind)
-    # * --cap-add=SYS_PTRACE --security-opt seccomp=unconfined:
-    #   Allows running GDB or AddressSanitizer inside the Docker container.
-    # * --ulimit core=-1:
-    #   Allows generation of core dumps by the kernel. -1 means "unlimited".
+Notes:
+* Mounts /opt/ to access extra software manually built (eg. Valgrind)
+* --cap-add=SYS_PTRACE --security-opt seccomp=unconfined:
+  Allows running GDB or AddressSanitizer inside the Docker container.
+* --ulimit core=-1:
+  Allows generation of core dumps by the kernel. -1 means "unlimited".
 
 To run 'kurento-buildpackage' inside the container:
 

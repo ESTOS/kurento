@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.5)
 
 project("kurento-module-gstreamer-example")
 message(STATUS "CMake project: ${PROJECT_NAME}")
@@ -61,7 +61,7 @@ pkg_check_modules(GSTREAMER_CHECK REQUIRED gstreamer-check-1.0>=${GST_REQUIRED})
 set(CMAKE_INSTALL_GST_PLUGINS_DIR ${CMAKE_INSTALL_LIBDIR}/gstreamer-1.0)
 
 include(GenericFind)
-generic_find(LIBNAME KMSCORE VERSION ^7.0.1 REQUIRED)
+generic_find(LIBNAME KMSCORE VERSION ^7.0.0 REQUIRED)
 generic_find(LIBNAME OpenCV VERSION ${OPENCV_REQUIRED} REQUIRED)
 
 # Generate file "config.h"

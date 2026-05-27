@@ -90,6 +90,11 @@ set_property (TARGET kurento-media-server
 )
 endif()
 
+# Export symbols for dlsym to work with dlopen(NULL, ...)
+set_target_properties(kurento-media-server PROPERTIES
+  ENABLE_EXPORTS ON
+)
+
 install(TARGETS kurento-media-server RUNTIME DESTINATION bin)
 
 add_subdirectory(transport)

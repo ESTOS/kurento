@@ -156,7 +156,7 @@ Local Installation
 
 With this method, you will install Kurento Media Server from the native Ubuntu packages built by us.
 
-Officially supported platforms: **Ubuntu 20.04 (Focal)** (64-bits).
+Officially supported platforms: **Ubuntu 24.04 (noble)** (64-bits).
 
 Open a terminal and run these commands:
 
@@ -177,14 +177,16 @@ Open a terminal and run these commands:
       source /etc/upstream-release/lsb-release 2>/dev/null || source /etc/lsb-release
 
       # Add Kurento repository key for apt-get.
-      sudo apt-key adv \
-          --keyserver hkp://keyserver.ubuntu.com:80 \
-          --recv-keys 234821A61B67740F89BFD669FC8A16625AFA7A83
+      sudo gpg -k
+      sudo gpg --no-default-keyring \
+               --keyring /etc/apt/keyrings/kurento.gpg \
+               --keyserver hkp://keyserver.ubuntu.com:80 \
+               --recv-keys 234821A61B67740F89BFD669FC8A16625AFA7A83
 
       # Add Kurento repository line for apt-get.
       sudo tee "/etc/apt/sources.list.d/kurento.list" >/dev/null <<EOF
       # Kurento Media Server - Release packages
-      deb [arch=amd64] http://ubuntu.openvidu.io/|VERSION_KMS| $DISTRIB_CODENAME main
+      deb [signed-by=/etc/apt/keyrings/kurento.gpg] http://ubuntu.openvidu.io/|VERSION_KMS| $DISTRIB_CODENAME main
       EOF
 
 3. Install KMS:

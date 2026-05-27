@@ -13,31 +13,82 @@ Example commands are written for a Linux shell, because that's what Kurento deve
 Firefox
 =======
 
-Security sandboxes
-------------------
+Quickstart commands
+-------------------
 
-Firefox has several sandboxes that can affect the logging output. For troubleshooting and development, it is recommended that you learn which sandbox might be getting in the way of the logs you need, and disable it:
+**Basic command**
 
-For example:
-
-* To get logs from ``MOZ_LOG="signaling:5"``, first set ``security.sandbox.content.level`` to *0*.
-* To inspect audio issues, disable the audio sandbox by setting ``media.cubeb.sandbox`` to *false*.
-
-
-
-Test instance
--------------
-
-To run a new Firefox instance with a clean profile:
+Runs a new Firefox instance with a clean profile:
 
 .. code-block:: shell
 
-   /usr/bin/firefox -no-remote -profile "$(mktemp --directory)"
+   /usr/bin/firefox \
+       --no-remote \
+       --profile "$(mktemp --directory)"
 
-Other options:
+**Extended command for WebRTC testing**
 
-* ``-jsconsole``: Start Firefox with the `Browser Console <https://developer.mozilla.org/en-US/docs/Tools/Browser_Console>`__.
-* ``[-url] <URL>``: Open URL in a new tab or window.
+Requires to first write some useful settings in form of an initial ``user.js`` file:
+
+.. code-block:: shell
+
+   PROFILE_DIR="$(mktemp --directory)"
+
+   tee "$PROFILE_DIR/user.js" >/dev/null <<'EOF'
+   // Disable first-time screens and pop-ups.
+   user_pref("browser.aboutwelcome.enabled", false);
+   user_pref("browser.newtabpage.activity-stream.feeds.topsites", false);
+   user_pref("browser.newtabpage.activity-stream.showSponsoredTopSites", false);
+   user_pref("browser.translations.enable", false);
+   user_pref("datareporting.policy.dataSubmissionEnabled", false);
+   user_pref("datareporting.policy.firstRunURL", "");
+   // Enable fake synthetic audio and video for media capture.
+   user_pref("permissions.default.camera", 1);
+   user_pref("permissions.default.microphone", 1);
+   //
+   // Mozilla prefs for testing. Taken directly from Mozilla source code:
+   // https://searchfox.org/mozilla-central/source/testing/profiles/web-platform/user.js
+   // Don't use the new tab page but about:blank for opened tabs
+   user_pref("browser.newtabpage.enabled", false);
+   // Don't restore the last open set of tabs if the browser has crashed
+   user_pref("browser.sessionstore.resume_from_crash", false);
+   // Disable session restore infobar.
+   user_pref("browser.startup.couldRestoreSession.count", -1);
+   // Don't show the Bookmarks Toolbar on any tab
+   user_pref("browser.toolbars.bookmarks.visibility", "never");
+   // Expose TestUtils interface
+   user_pref("dom.testing.testutils.enabled", true);
+   // Don't open a dialog to show available add-on updates
+   user_pref("extensions.update.notifyUser", false);
+   // Enable fake media streams for getUserMedia
+   user_pref("media.navigator.streams.fake", true);
+   // Disable permission prompt for getUserMedia
+   user_pref("media.navigator.permission.disabled", true);
+   // Enable direct connection
+   user_pref("network.proxy.type", 0);
+   // Suppress automatic safe mode after crashes
+   user_pref("toolkit.startup.max_resumed_crashes", -1);
+   // Run the font loader task eagerly for more predictable behavior
+   user_pref("gfx.font_loader.delay", 0);
+   // Disable antiphishing popup
+   user_pref("network.http.phishy-userpass-length", 255);
+   // Disable safebrowsing components
+   user_pref("browser.safebrowsing.blockedURIs.enabled", false);
+   user_pref("browser.safebrowsing.downloads.enabled", false);
+   user_pref("browser.safebrowsing.malware.enabled", false);
+   user_pref("browser.safebrowsing.phishing.enabled", false);
+   user_pref("browser.safebrowsing.update.enabled", false);
+   // Turn off update
+   user_pref("app.update.disabledForTesting", true);
+   EOF
+
+And then you can just launch a standalone Firefox instance that points to that directory:
+
+.. code-block:: shell
+
+   /usr/bin/firefox \
+       --no-remote \
+       --profile "$PROFILE_DIR"
 
 
 
@@ -46,30 +97,28 @@ Debug logging
 
 Sources:
 
+* https://firefox-source-docs.mozilla.org/xpcom/logging.html
+* https://firefox-source-docs.mozilla.org/networking/http/logging.html
+* https://wiki.mozilla.org/Firefox/CommandLineOptions
 * https://wiki.mozilla.org/Media/WebRTC/Logging
-* https://developer.mozilla.org/en-US/docs/Mozilla/Debugging/HTTP_logging
-* https://developer.mozilla.org/en-US/docs/Mozilla/Command_Line_Options
-* https://developer.mozilla.org/en-US/docs/Mozilla/Developer_guide/Gecko_Logging
 
-Debug logging can be enabled with the parameters *MOZ_LOG* and *MOZ_LOG_FILE*. These are controlled either with environment variables, or command-line flags.
+Debug logging can be enabled with the parameters *MOZ_LOG* and *MOZ_LOG_FILE*. These are controlled either with environment variables, or command-line flags. You can also open the ``about:networking`` page, and selecting the Logging section, change *MOZ_LOG* / *MOZ_LOG_FILE* options to have them applied without restarting the browser.
 
-In Firefox >= 54, you can use ``about:networking``, and select the Logging option, to change *MOZ_LOG* / *MOZ_LOG_FILE* options on the fly (without restarting the browser).
-
-You can also use ``about:config`` and set any log option into the profile preferences, by adding (right-click -> New) a variable named ``logging.<NoduleName>``, and setting it to an integer value of 0-5. For example, setting *logging.foo* to *3* will set the module *foo* to start logging at level 3 ("*Info*").
+You can also open ``about:config`` and set any log option into the profile preferences, by adding (right-click -> New) a variable named ``logging.<NoduleName>``, and setting it to an integer value of 0-5. For example, setting *logging.foo* to *3* will set the module *foo* to start logging at level 3 ("*Info*").
 
 The special pref *logging.config.LOG_FILE* can be set at runtime to change the log file being output to, and the special booleans *logging.config.sync* and *logging.config.add_timestamp* can be used to control the *sync* and *timestamp* properties:
 
-* **sync**: Print each log synchronously, this is useful to check behavior in real time or get logs immediately before crash.
-* **timestamp**: Insert timestamp at start of each log line.
+* **sync**: print each log synchronously, this is useful to check behavior in real time or get logs immediately before crash.
+* **timestamp**: insert timestamp at start of each log line.
 
 Logging Levels:
 
-* **(0) DISABLED**: Indicates logging is disabled. This should not be used directly in code.
-* **(1) ERROR**: An error occurred, generally something you would consider asserting in a debug build.
-* **(2) WARNING**: A warning often indicates an unexpected state.
-* **(3) INFO**: An informational message, often indicates the current program state. and rare enough to be logged at this level.
-* **(4) DEBUG**: A debug message, useful for debugging but too verbose to be turned on normally.
-* **(5) VERBOSE**: A message that will be printed a lot, useful for debugging program flow and will probably impact performance.
+* **(0) DISABLED**: indicates logging is disabled. This should not be used directly in code.
+* **(1) ERROR**: an error occurred, generally something you would consider asserting in a debug build.
+* **(2) WARNING**: a warning often indicates an unexpected state.
+* **(3) INFO**: an informational message, often indicates the current program state. and rare enough to be logged at this level.
+* **(4) DEBUG**: a debug message, useful for debugging but too verbose to be turned on normally.
+* **(5) VERBOSE**: a message that will be printed a lot, useful for debugging program flow and will probably impact performance.
 
 Log categories:
 
@@ -107,43 +156,15 @@ Log categories:
 
 
 
-Examples
-~~~~~~~~
+Debug logging examples
+~~~~~~~~~~~~~~~~~~~~~~
 
-Linux:
-
-.. code-block:: shell
-
-   export MOZ_LOG=timestamp,rotate:200,nsHttp:5,cache2:5,nsSocketTransport:5,nsHostResolver:5
-   export MOZ_LOG_FILE=/tmp/firefox.log
-
-   /usr/bin/firefox
-
-Linux with *MOZ_LOG* passed as command line arguments:
+General logging of various modules:
 
 .. code-block:: shell
 
-   /usr/bin/firefox \
-       -MOZ_LOG=timestamp,rotate:200,nsHttp:5,cache2:5,nsSocketTransport:5,nsHostResolver:5 \
-       -MOZ_LOG_FILE=/tmp/firefox.log
-
-Mac:
-
-.. code-block:: shell
-
-   export MOZ_LOG=timestamp,rotate:200,nsHttp:5,cache2:5,nsSocketTransport:5,nsHostResolver:5
-   export MOZ_LOG_FILE=/tmp/firefox.log
-
-   /Applications/Firefox.app/Contents/MacOS/firefox-bin
-
-Windows:
-
-.. code-block:: shell
-
-   set MOZ_LOG=timestamp,rotate:200,nsHttp:5,cache2:5,nsSocketTransport:5,nsHostResolver:5
-   set MOZ_LOG_FILE=%TEMP%\firefox.log
-
-   "C:\Program Files\Mozilla Firefox\firefox.exe"
+   export MOZ_LOG="timestamp,rotate:200,nsHttp:5,cache2:5,nsSocketTransport:5,nsHostResolver:5"
+   export MOZ_LOG_FILE="/tmp/firefox.log"
 
 :term:`ICE` candidates / :term:`STUN` / :term:`TURN`:
 
@@ -153,32 +174,191 @@ Windows:
    export R_LOG_LEVEL=7
    export R_LOG_VERBOSE=1
 
-   /usr/bin/firefox -no-remote -profile "$(mktemp --directory)" \
-       "https://localhost:8443/"
-
 WebRTC dump example (see https://blog.mozilla.org/webrtc/debugging-encrypted-rtp-is-more-fun-than-it-used-to-be/):
 
 .. code-block:: shell
 
-   export MOZ_LOG=timestamp,signaling:5,jsep:5,RtpLogger:5
-   export MOZ_LOG_FILE="$PWD/firefox"
+   export MOZ_LOG="timestamp,signaling:5,jsep:5,RtpLogger:5"
+   export MOZ_LOG_FILE="/tmp/firefox"
 
-   /usr/bin/firefox -no-remote -profile "$(mktemp --directory)" \
-       "https://localhost:8443/"
-
-   grep -E '(RTP_PACKET|RTCP_PACKET)' firefox.*.moz_log \
-       | cut -d '|' -f 2 \
-       | cut -d ' ' -f 5- \
-       | text2pcap -D -n -l 1 -i 17 -u 1234,1235 -t '%H:%M:%S.' - firefox-rtp.pcap
+   # Later, the resulting logs can be converted into Packet Capture files:
+   grep -E "(RTP_PACKET|RTCP_PACKET)" firefox.*.moz_log \
+       | cut -d "|" -f 2 \
+       | cut -d " " -f 5- \
+       | text2pcap -D -n -l 1 -i 17 -u 1234,1235 -t "%H:%M:%S." - firefox-rtp.pcap
 
 Media decoding (audio sandbox can be enabled or disabled with the user preference ``media.cubeb.sandbox``):
 
 .. code-block:: shell
 
-   export MOZ_LOG=timestamp,sync,MediaPipeline:5,MediaStream:5,MediaStreamTrack:5,webrtc_trace:5
+   export MOZ_LOG="timestamp,sync,MediaPipeline:5,MediaStream:5,MediaStreamTrack:5,webrtc_trace:5"
 
-   /usr/bin/firefox -no-remote -profile "$(mktemp --directory)" \
-       "https://localhost:8443/"
+
+
+Security sandboxes
+------------------
+
+Firefox has several sandboxes that can affect the logging output. For troubleshooting and development, it is recommended that you learn which sandbox might be getting in the way of the logs you need, and disable it:
+
+For example:
+
+* To get logs from ``MOZ_LOG="signaling:5"``, first set ``security.sandbox.content.level`` to *0*.
+* To inspect audio issues, disable the audio sandbox by setting ``media.cubeb.sandbox`` to *false*.
+
+
+
+Chrome
+======
+
+Quickstart commands
+-------------------
+
+**Basic command**
+
+Runs a new Chrome instance with a clean profile:
+
+.. code-block:: shell
+
+   # Depending on your system, you'll want to use either of these:
+   # /usr/bin/chromium
+   # /usr/bin/chromium-browser
+   # /usr/bin/google-chrome
+
+   /usr/bin/chromium \
+       --user-data-dir="$(mktemp --directory)"
+
+**Extended command for WebRTC testing**
+
+.. code-block:: shell
+
+   /usr/bin/chromium \
+       --user-data-dir="$(mktemp --directory)" \
+       --guest \
+       --no-default-browser-check \
+       --auto-accept-camera-and-microphone-capture \
+       --use-fake-device-for-media-stream \
+       --enable-logging=stderr \
+       --log-level=0 \
+       --v=0 \
+       --vmodule="basic_ice_controller=0,connection=0,encoder_bitrate_adjuster=0,goog_cc_network_control=0,pacing_controller=0,video_stream_encoder=0,*/webrtc/*=2,*/media/*=2,tls*=1"
+
+Notes:
+
+* ``--guest``: activate "browse without sign-in" (guest session) mode, disabling extensions, sync, bookmarks, and password manager pop-ups.
+
+* ``--no-default-browser-check``: disable "set as default browser" prompt.
+
+* ``--auto-accept-camera-and-microphone-capture``: automatically accept all requests to access the camera and microphone.
+
+  This flag deprecates the older ``--use-fake-ui-for-media-stream``, which had a negative effect on screen/tab capture.
+
+* ``--use-fake-device-for-media-stream``: use synthetic audio and video media to simulate capture devices (camera, microphone, etc).
+
+  Alternatively, a local file can be provided; it will be played back as if it were a capture device:
+
+  - ``--use-file-for-fake-audio-capture="/path/to/file.wav"``: use a WAV file as the audio source.
+
+  - ``--use-file-for-fake-video-capture="/path/to/file.y4m"``: use a YUV4MPEG2 (Y4M) or MJPEG file as the video source. `More <https://source.chromium.org/chromium/chromium/src/+/refs/tags/120.0.6099.129:media/capture/video/file_video_capture_device.h;l=25-35>`__ `details <https://source.chromium.org/chromium/chromium/src/+/refs/tags/120.0.6099.129:media/capture/video/file_video_capture_device.cc;l=70-75>`__:
+
+    - Y4M and MJPEG videos must have *.y4m* and *.mjpeg* file extensions, respectively.
+    - Only interlaced I420 pixel format is supported.
+    - Example Y4M videos can be found here: https://media.xiph.org/video/derf/
+    - Example MJPEG videos can be found here: https://chromium.googlesource.com/chromium/src/+/refs/tags/120.0.6099.129/media/test/data
+
+* ``--unsafely-treat-insecure-origin-as-secure="URL,..."``: allow insecure origins to use features that would require a `Secure Context <https://www.w3.org/TR/secure-contexts/>`__ (such as ``getUserMedia()``, WebRTC, etc.) when served from localhost or over HTTP.
+
+  A better approach is to serve the origins over HTTPS, but this flag can be useful for one-off testing.
+
+
+
+Debug logging
+-------------
+
+Sources:
+
+* https://www.chromium.org/for-testers/enable-logging/
+* https://www.chromium.org/developers/how-tos/run-chromium-with-flags/
+* https://peter.sh/experiments/chromium-command-line-switches/
+
+Debug logging is enabled with ``--enable-logging=stderr --log-level=0``. With that, the maximum log level for all modules is given by ``--v=N`` (with N = 0, 1, 2, etc, higher is more verbose, default 0), and per-module levels can be set with ``--vmodule="<categories>"``.
+
+Log categories:
+
+* WebRTC:
+
+  - ``*/webrtc/*=2``: everything related to the WebRTC stack.
+
+    It's strongly suggested to disable some modules that would otherwise flood the logs:
+
+    - ``basic_ice_controller=0``
+    - ``connection=0``
+    - ``encoder_bitrate_adjuster=0``
+    - ``goog_cc_network_control=0``
+    - ``pacing_controller=0``
+    - ``video_stream_encoder=0``
+
+  - ``*/media/*=2``: logs from the user media and device capture.
+
+  - ``tls*=1``: establishment of SSL/TLS connections.
+
+  See below for a full example command that can be copy-pasted.
+
+How to find the module names for ``--vmodule``:
+
+* Run with a very verbose general logging level, such as ``--v=9``.
+
+* Start with ``--vmodule="compositor=0,display=0,layer_tree_*=0,segment_*=0,*/metrics/*=0"`` (these are very noisy modules that would otherwise flood the log).
+
+* Search the log for the lines you are interested in. For example:
+
+  .. code-block:: text
+
+     [VERBOSE2:video_capture_metrics.cc(158)] Device supports PIXEL_FORMAT_I420 at 96x96 (0)
+
+* Open the Google Chromium code search page: https://source.chromium.org/chromium/chromium/src
+
+* Search for the desired module name. In the example, this search term would match exactly:
+
+  .. code-block:: text
+
+     file:video_capture_metrics.cc content:"Device supports"
+
+  Take note of the module path: ``media/capture/video/video_capture_metrics.cc``.
+
+* Add either the module name or path with wildcards to the ``--vmodule`` list. In the example, any of these would enable the given log message:
+
+  .. code-block:: shell
+
+     --vmodule="video_capture_metrics=2"
+     --vmodule="video_capture*=2"
+     --vmodule="*/media/*=2"
+
+
+
+Packet Loss
+-----------
+
+A command line for 3% sent packet loss and 5% received packet loss is:
+
+.. code-block:: shell
+
+   --force-fieldtrials="WebRTCFakeNetworkSendLossPercent/3/WebRTCFakeNetworkReceiveLossPercent/5/"
+
+
+
+H.264 codec
+-----------
+
+Chrome uses OpenH264 (same lib as Firefox uses) for encoding, and FFmpeg (which is already used elsewhere in Chrome) for decoding.
+
+* Feature page: https://chromestatus.com/feature/6417796455989248
+* Since Chrome 52.
+* Bug tracker: https://bugs.chromium.org/p/chromium/issues/detail?id=500605
+
+Autoplay:
+
+* https://developer.chrome.com/blog/autoplay/#best_practices_for_web_developers
+* https://www.chromium.org/audio-video/autoplay/
 
 
 
@@ -193,172 +373,26 @@ To enable the Debug menu in Safari, run this command in a terminal:
 
 
 
-Chrome
-======
-
-Test instance
--------------
-
-To run a new Chrome instance with a clean profile:
-
-.. code-block:: shell
-
-   /usr/bin/google-chrome --user-data-dir="$(mktemp --directory)"
-
-
-
-Debug logging
--------------
-
-Sources:
-
-* https://www.chromium.org/for-testers/enable-logging
-* https://www.chromium.org/developers/how-tos/run-chromium-with-flags
-* https://peter.sh/experiments/chromium-command-line-switches/
-* https://webrtc.org/web-apis/chrome/
-
-**Linux**:
-
-.. code-block:: shell
-
-   TEST_BROWSER="/usr/bin/chromium"
-   TEST_BROWSER="/usr/bin/google-chrome"
-   #
-   TEST_PROFILE="/tmp/chrome-profile"
-   #
-   {
-       "$TEST_BROWSER" \
-           --user-data-dir="$TEST_PROFILE" \
-           --use-fake-ui-for-media-stream \
-           --use-fake-device-for-media-stream \
-           --enable-logging=stderr \
-           --log-level=0 \
-           --vmodule='*/webrtc/*=2,*/libjingle/*=2,*=-2' \
-           --v=0 \
-           "https://localhost:8443/" \
-           >chrome_debug.log 2>&1 &
-
-       # Other flags:
-       # --use-file-for-fake-audio-capture="/path/to/audio.wav" \
-       # --use-file-for-fake-video-capture="/path/to/video.y4m" \
-
-       tail -f chrome_debug.log
-   }
-
-**MacOS**:
-
-.. code-block:: shell
-
-   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
-       --enable-logging=stderr \
-       --vmodule=*/webrtc/*=2,*/libjingle/*=2,*=-2
-
-
-
-Packet Loss
------------
-
-A command line for 3% sent packet loss and 5% received packet loss is:
-
-.. code-block:: shell
-
-   --force-fieldtrials=WebRTCFakeNetworkSendLossPercent/3/WebRTCFakeNetworkReceiveLossPercent/5/
-
-
-
-H.264 codec
------------
-
-Chrome uses OpenH264 (same lib as Firefox uses) for encoding, and FFmpeg (which is already used elsewhere in Chrome) for decoding.
-
-* Feature page: https://www.chromestatus.com/feature/6417796455989248
-* Since Chrome 52.
-* Bug tracker: https://bugs.chromium.org/p/chromium/issues/detail?id=500605
-
-Autoplay:
-
-* https://developers.google.com/web/updates/2017/09/autoplay-policy-changes#best-practices
-* https://www.chromium.org/audio-video/autoplay
-
-
-
-Command-line
-============
-
-Chrome
-------
-
-.. code-block:: shell
-
-   export WEB_APP_HOST_PORT="198.51.100.1:8443"
-
-   /usr/bin/google-chrome \
-       --user-data-dir="$(mktemp --directory)" \
-       --enable-logging=stderr \
-       --no-first-run \
-       --allow-insecure-localhost \
-       --allow-running-insecure-content \
-       --disable-web-security \
-       --unsafely-treat-insecure-origin-as-secure="https://${WEB_APP_HOST_PORT}" \
-       "https://${WEB_APP_HOST_PORT}"
-
-
-Firefox
--------
-
-.. code-block:: text
-
-   export SERVER_PUBLIC_IP="198.51.100.1"
-
-   /usr/bin/firefox \
-       -profile "$(mktemp --directory)" \
-       -no-remote \
-       "https://${SERVER_PUBLIC_IP}:4443/" \
-       "http://${SERVER_PUBLIC_IP}:4200/#/test-sessions"
-
-
-
-WebRTC JavaScript API
-=====================
-
-Generate an SDP Offer.
-
-.. code-block:: text
-
-   let pc1 = new RTCPeerConnection();
-   navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-   .then((stream) => {
-       stream.getTracks().forEach((track) => {
-           console.log("Local track available: " + track.kind);
-           pc1.addTrack(track, stream);
-       });
-       pc1.createOffer().then((offer) => {
-           console.log(JSON.stringify(offer).replace(/\\r\\n/g, '\n'));
-       });
-   });
-
-
-
 .. _browser-mtu:
 
 Browser MTU
 ===========
 
-The default **Maximum Transmission Unit (MTU)** in the official `libwebrtc <https://webrtc.org/>`__ implementation is **1200 Bytes** (`source code <https://webrtc.googlesource.com/src/+/d82a02c837d33cdfd75121e40dcccd32515e42d6/media/engine/constants.cc#15>`__). All browsers base their WebRTC implementation on *libwebrtc*, so this means that all use the same MTU:
+The default **Maximum Transmission Unit (MTU)** in the official `libwebrtc <https://webrtc.org/>`__ implementation is **1200 Bytes** (`source <https://webrtc.googlesource.com/src/+/refs/branch-heads/6099/media/base/media_constants.cc#17>`__). All browsers base their WebRTC implementation on *libwebrtc*, so this means that all use the same MTU:
 
-* `Chrome source code <https://codesearch.chromium.org/chromium/src/third_party/webrtc/media/engine/constants.cc?rcl=f092e4d0ff252f52404a0c867f20cf103bbaa663&l=15>`__.
-* `Firefox source code <https://dxr.mozilla.org/mozilla-central/rev/4c982daa151954c59f20a9b9ac805c1768a350c2/media/webrtc/trunk/webrtc/media/engine/constants.cc#16>`__.
-* Safari: No public source code, but Safari uses Webkit, and `Webkit uses libwebrtc <https://www.webrtcinwebkit.org/blog/2017/7/2/webrtc-in-safari-11-and-ios-11>`__, so probably same MTU as the others.
+* `Firefox <https://hg.mozilla.org/releases/mozilla-release/file/FIREFOX_121_0_RELEASE/third_party/libwebrtc/media/base/media_constants.cc#l17>`__.
+* `Chrome <https://source.chromium.org/chromium/chromium/src/+/refs/tags/120.0.6099.129:third_party/webrtc/media/base/media_constants.cc;l=17>`__.
+* Safari: no public source code, but Safari uses Webkit, and `Webkit uses libwebrtc <https://webrtcinwebkit.org/webrtc-in-safari-11-and-ios-11/>`__, so probably same MTU as the others.
 
 
 
 Bandwidth Estimation
 ====================
 
-WebRTC **bandwidth estimation (BWE)** was implemented first with *Google REMB*, and later with *Transport-CC*. Clients need to start "somewhere" with their estimations, and the official `libwebrtc <https://webrtc.org/>`__ implementation chose to do so at 300 kbps (kilobits per second) (`source code <https://webrtc.googlesource.com/src/+/d82a02c837d33cdfd75121e40dcccd32515e42d6/api/transport/bitrate_settings.h#45>`__). All browsers base their WebRTC implementation on *libwebrtc*, so this means that all use the same initial BWE:
+WebRTC **bandwidth estimation (BWE)** was implemented first with *Google REMB*, and later with *Transport-CC*. Clients need to start "somewhere" with their estimations, and the official `libwebrtc <https://webrtc.org/>`__ implementation chose to do so at 300 kbps (kilobits per second) (`source <https://webrtc.googlesource.com/src/+/refs/branch-heads/6099/api/transport/bitrate_settings.h#45>`__). All browsers base their WebRTC implementation on *libwebrtc*, so this means that all use the same initial BWE:
 
-* `Chrome source code <https://codesearch.chromium.org/chromium/src/third_party/webrtc/api/transport/bitrate_settings.h?rcl=f092e4d0ff252f52404a0c867f20cf103bbaa663&l=45>`__.
-* `Firefox source code <https://dxr.mozilla.org/mozilla-central/rev/4c982daa151954c59f20a9b9ac805c1768a350c2/media/webrtc/trunk/webrtc/call/call.h#84>`__.
+* `Firefox <https://hg.mozilla.org/releases/mozilla-release/file/FIREFOX_121_0_RELEASE/third_party/libwebrtc/api/transport/bitrate_settings.h#l45>`__.
+* `Chrome <https://source.chromium.org/chromium/chromium/src/+/refs/tags/120.0.6099.129:third_party/webrtc/api/transport/bitrate_settings.h;l=45>`__.
 
 
 
@@ -380,7 +414,7 @@ The **maximum video bitrate** is calculated for WebRTC by following a simple rul
 * 2500 kbps (2.5 Mbps) for bigger video sizes.
 * Never less than 1200 kbps, if the video is a screen capture.
 
-Source: The ``GetMaxDefaultVideoBitrateKbps()`` function in `libwebrtc source code <https://webrtc.googlesource.com/src/+/d82a02c837d33cdfd75121e40dcccd32515e42d6/media/engine/webrtc_video_engine.cc#231>`__.
+Source: the ``GetMaxDefaultVideoBitrateKbps()`` function in `libwebrtc source code <https://source.chromium.org/chromium/chromium/src/+/refs/tags/120.0.6099.129:third_party/webrtc/video/config/encoder_stream_factory.cc;l=79>`__.
 
 To verify what is exactly being sent by your web browser, check its internal WebRTC stats. For example, to check the outbound stats in Chrome:
 
@@ -411,3 +445,47 @@ By default, Chrome uses this line in the SDP Offer for an H.264 media:
 * `level_idc` = 0x1F = 31
 
 These values translate into the **Constrained Baseline Profile, Level 3.1**.
+
+
+
+Source Code URLs
+================
+
+Here is where you can find URLs to the different web browser source code repositories. Also, for linking to specific lines of code, it's always a good idea to use permalinks such that future visitors find the exact same source code that was linked, and not a newer version of it which might have changed.
+
+**Firefox**:
+
+* Code search: https://searchfox.org/mozilla-central/source/
+* Code repository (development): https://hg.mozilla.org/mozilla-central/
+* Code repository (release): https://hg.mozilla.org/releases/mozilla-release/
+* List of tagged releases: https://hg.mozilla.org/releases/mozilla-release/tags
+
+* Sample permalink to a specific line of code in Firefox v121.0:
+
+  .. code-block:: text
+
+     https://hg.mozilla.org/releases/mozilla-release/file/FIREFOX_121_0_RELEASE/path/to/file#l123
+
+**Chrome**:
+
+* Code search: https://source.chromium.org/chromium/chromium/src
+* Code repository: https://chromium.googlesource.com/chromium/src/
+* List of tagged releases: https://chromium.googlesource.com/chromium/src/+refs
+
+* Sample permalink to a specific line of code in Chrome v120.0.6099.129:
+
+  .. code-block:: text
+
+     https://source.chromium.org/chromium/chromium/src/+/refs/tags/120.0.6099.129:path/to/file;l=123
+
+**WebRTC**:
+
+* Code search: -
+* Code repository: https://webrtc.googlesource.com/src/
+* List of tagged releases: https://chromiumdash.appspot.com/branches
+
+* Sample permalink to a specific line of code in WebRTC M120:
+
+  .. code-block:: text
+
+     https://webrtc.googlesource.com/src/+/refs/branch-heads/6099/path/to/file#123

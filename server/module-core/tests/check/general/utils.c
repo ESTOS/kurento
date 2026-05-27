@@ -21,25 +21,6 @@
 #include <gst/check/gstharness.h>
 #include <glib.h>
 
-GST_START_TEST (check_urls)
-{
-  gchar *uri = "http://192.168.0.111:8080repository_servlet/video-upload";
-
-  fail_if (kms_is_valid_uri (uri));
-
-  uri = "http://192.168.0.111:8080/repository_servlet/video-upload";
-  fail_if (!(kms_is_valid_uri (uri)));
-
-  uri = "http://www.kurento.es/resource";
-  fail_if (!(kms_is_valid_uri (uri)));
-
-  uri = "http://localhost:8080/resource/res";
-  fail_if (!(kms_is_valid_uri (uri)));
-
-}
-
-GST_END_TEST;
-
 /* *INDENT-OFF* */
 static const gchar *sdp_str = "v=0\r\n"
     "o=- 0 0 IN IP4 0.0.0.0\r\n"
@@ -300,6 +281,9 @@ GST_START_TEST (check_kms_utils_drop_until_keyframe_bufferlist)
   GstPad *sinkpad, *srcpad;
   GstPadLinkReturn plr;
   GstBufferList *received_bufflist;
+  GstEvent *start_event;
+  GstEvent *segment_event;
+  GstSegment *segment;
 
   srcpad = gst_pad_new ("src", GST_PAD_SRC);
   fail_if (srcpad == NULL);
@@ -315,6 +299,13 @@ GST_START_TEST (check_kms_utils_drop_until_keyframe_bufferlist)
 
   plr = gst_pad_link (srcpad, sinkpad);
   fail_unless (GST_PAD_LINK_SUCCESSFUL (plr));
+
+  start_event = gst_event_new_stream_start ("default");
+  segment = gst_segment_new ();
+  gst_segment_init (segment, GST_FORMAT_DEFAULT);
+  segment_event = gst_event_new_segment  (segment);
+  gst_pad_push_event (srcpad, start_event);
+  gst_pad_push_event (srcpad, segment_event);
 
   GST_DEBUG ("Drop entire list");
   bufflist = gst_buffer_list_new ();
@@ -376,6 +367,8 @@ GST_START_TEST (check_kms_utils_drop_until_keyframe_bufferlist)
   fail_unless (gst_buffer_list_get (received_bufflist, 2) == buf3);
   gst_buffer_list_unref (received_bufflist);
 
+
+  gst_segment_free (segment);
   gst_pad_unlink (srcpad, sinkpad);
   gst_object_unref (srcpad);
   gst_object_unref (sinkpad);
@@ -391,13 +384,12 @@ utils_suite (void)
   TCase *tc_chain = tcase_create ("element");
 
   suite_add_tcase (s, tc_chain);
-  tcase_add_test (tc_chain, check_urls);
 
   tcase_add_test (tc_chain, check_sdp_utils_media_get_fid_ssrc);
   tcase_add_test (tc_chain, check_kms_utils_set_pad_event_function_full);
 
   tcase_add_test (tc_chain, check_kms_utils_set_pad_query_function_full);
-
+  
   tcase_add_test (tc_chain, check_kms_utils_drop_until_keyframe_buffer);
   tcase_add_test (tc_chain, check_kms_utils_drop_until_keyframe_bufferlist);
 

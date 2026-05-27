@@ -1,0 +1,192 @@
+name: "clients/java all (parent)"
+
+on:
+  # Triggered manually.
+  workflow_dispatch:
+    inputs:
+      jobServerVersion:
+        description: "jobServerVersion: Server version from which to generate client code"
+        required: false
+        type: "string"
+        default: "dev"
+      runnerGroup:
+        description: "runnerGroup: Set of runners where the workflow jobs should be run"
+        required: false
+        type: "string"
+        default: "Linux"
+
+jobs:
+  qa-pom:
+    uses: "./.github/workflows/clients-java.child.yaml"
+    with:
+      directory: "clients/java/qa-pom/"
+      copyArtifacts: false
+      runnerGroup: ${{ inputs.runnerGroup }}
+      artifactName: "qa-pom"
+    secrets: inherit
+
+  module-creator:
+    needs: ["qa-pom"]  # To avoid concurrent execution of maven deployments to central that seems to cause failures due to the new OSSRH policies
+    uses: "./.github/workflows/clients-java.child.yaml"
+    with:
+      directory: "server/module-creator/"
+      copyArtifacts: false
+      runnerGroup: ${{ inputs.runnerGroup }}
+      artifactName: "module-creator"
+    secrets: inherit
+
+  maven-plugin:
+    needs: ["module-creator"]
+    uses: "./.github/workflows/clients-java.child.yaml"
+    with:
+      directory: "clients/java/maven-plugin/"
+      runnerGroup: ${{ inputs.runnerGroup }}
+      artifactName: "maven-plugin"
+    secrets: inherit
+
+  module-core:
+    needs: ["maven-plugin"]
+    uses: "./.github/workflows/clients-java.child.yaml"
+    with:
+      directory: "server/module-core/"
+      genModuleEnable: true
+      genModuleServerVersion: "${{ inputs.jobServerVersion }}"
+      runnerGroup: ${{ inputs.runnerGroup }}
+      artifactName: "module-core"
+    secrets: inherit
+
+  module-elements:
+    needs: ["module-core"]
+    uses: "./.github/workflows/clients-java.child.yaml"
+    with:
+      directory: "server/module-elements/"
+      genModuleEnable: true
+      genModuleServerVersion: "${{ inputs.jobServerVersion }}"
+      runnerGroup: ${{ inputs.runnerGroup }}
+      artifactName: "module-elements"
+    secrets: inherit
+
+  module-filters:
+    needs: ["module-elements"]
+    uses: "./.github/workflows/clients-java.child.yaml"
+    with:
+      directory: "server/module-filters/"
+      genModuleEnable: true
+      genModuleServerVersion: "${{ inputs.jobServerVersion }}"
+      runnerGroup: ${{ inputs.runnerGroup }}
+      artifactName: "module-filters"
+    secrets: inherit
+
+  client:
+    needs: ["qa-pom", "module-filters"]
+    uses: "./.github/workflows/clients-java.child.yaml"
+    with:
+      directory: "clients/java/"
+      runnerGroup: ${{ inputs.runnerGroup }}
+      artifactName: "client"
+      flattenPom: true
+    secrets: inherit
+
+  module-chroma:
+    needs: ["client"]
+    uses: "./.github/workflows/clients-java.child.yaml"
+    with:
+      directory: "server/module-examples/chroma/"
+      genModuleEnable: true
+      genModuleServerVersion: "${{ inputs.jobServerVersion }}"
+      runnerGroup: ${{ inputs.runnerGroup }}
+      artifactName: "module-chroma"
+    secrets: inherit
+
+  # Unavailable since Kurento 7.0.0
+  #module-crowddetector:
+  #  needs: ["client"]
+  #  uses: "./.github/workflows/clients-java.child.yaml"
+  #  with:
+  #    directory: "server/module-examples/crowddetector/"
+  #    genModuleEnable: true
+  #    genModuleServerVersion: "${{ inputs.jobServerVersion }}"
+  #  secrets: inherit
+
+  module-datachannelexample:
+    needs: ["client", "module-chroma"]
+    uses: "./.github/workflows/clients-java.child.yaml"
+    with:
+      directory: "server/module-examples/datachannelexample/"
+      genModuleEnable: true
+      genModuleServerVersion: "${{ inputs.jobServerVersion }}"
+      runnerGroup: ${{ inputs.runnerGroup }}
+      artifactName: "module-datachannelexample"
+    secrets: inherit
+
+  module-videosampler:
+    needs: ["client", "module-datachannelexample"]
+    uses: "./.github/workflows/clients-java.child.yaml"
+    with:
+      directory: "server/module-extras/video-sampler/"
+      genModuleEnable: true
+      genModuleServerVersion: "${{ inputs.jobServerVersion }}"
+      runnerGroup: ${{ inputs.runnerGroup }}
+      artifactName: "module-videosampler"
+    secrets: inherit
+
+  # Unavailable since Kurento 7.0.0
+  #module-markerdetector:
+  #  needs: ["client"]
+  #  uses: "./.github/workflows/clients-java.child.yaml"
+  #  with:
+  #    directory: "server/module-examples/markerdetector/"
+  #    genModuleEnable: true
+  #    genModuleServerVersion: "${{ inputs.jobServerVersion }}"
+  #  secrets: inherit
+
+  # Unavailable since Kurento 7.0.0
+  #module-platedetector:
+  #  needs: ["client"]
+  #  uses: "./.github/workflows/clients-java.child.yaml"
+  #  with:
+  #    directory: "server/module-examples/platedetector/"
+  #    genModuleEnable: true
+  #    genModuleServerVersion: "${{ inputs.jobServerVersion }}"
+  #  secrets: inherit
+
+  # Unavailable since Kurento 7.0.0
+  #module-pointerdetector:
+  #  needs: ["client"]
+  #  uses: "./.github/workflows/clients-java.child.yaml"
+  #  with:
+  #    directory: "server/module-examples/pointerdetector/"
+  #    genModuleEnable: true
+  #    genModuleServerVersion: "${{ inputs.jobServerVersion }}"
+  #  secrets: inherit
+
+  #kurento-utils-js:
+
+  # Not published for Kurento 7.
+  # The Kurento Test Framework is unsupported and unmaintained.
+  #test-integration:
+  #  needs:
+  #    [
+  #      "kurento-utils-js",
+  #      "client",
+  #      "module-chroma",
+  #      "module-crowddetector",
+  #      "module-platedetector",
+  #    ]
+
+  # Not published for Kurento 7.
+  # Doesn't make much sense having them as standalone installable from Maven,
+  # they are supposed to be a learning resource, not a ready-to-use application.
+  #tutorials-java:
+  #  needs:
+  #    [
+  #      "client",
+  #      "module-chroma",
+  #      "module-crowddetector",
+  #      "module-datachannelexample",
+  #      "module-platedetector",
+  #      "module-pointerdetector",
+  #    ]
+
+  #tutorials-test:
+  #  needs: ["tutorials-java"]

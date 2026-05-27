@@ -1,4 +1,4 @@
-name: "Documentation build"
+name: "doc-kurento"
 
 on:
   # Manual trigger.
@@ -9,6 +9,11 @@ on:
         required: false
         type: "boolean"
         default: false
+      runnerGroup:
+        description: "runnerGroup: Set of runners where the workflow jobs should be run"
+        required: false
+        type: "string"
+        default: "Linux"
 
 defaults:
   run:
@@ -16,12 +21,12 @@ defaults:
 
 jobs:
   build:
-    runs-on: ["self-hosted"]
+    runs-on: ["self-hosted", "${{ inputs.runnerGroup }}"]
     timeout-minutes: 30
     steps:
       # Action: https://github.com/actions/checkout
       - name: "Checkout"
-        uses: "actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c" # v3.3.0
+        uses: "actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd" # v6.0.2
 
       - name: "Configure the environment for ci-scripts/"
         working-directory: "ci-scripts/"
@@ -32,13 +37,13 @@ jobs:
 
       - name: "Configure the environment for job script"
         run: |
-          # Env vars used by `kurento_ci_job_deploy_doc.sh`.
+          # Env vars used by `ci_job_deploy_doc.sh`.
           echo "ENV_PATH=$GITHUB_ENV" >>$GITHUB_ENV
 
-          # Commit that triggered this build. Used by `kurento_doc_deploy.sh`.
+          # Commit that triggered this build. Used by `doc_deploy.sh`.
           echo "GIT_HASH_SHORT=${GITHUB_SHA:0:7}" >>$GITHUB_ENV
 
-          # Path to the SSH key. Used by `kurento_doc_deploy.sh`.
+          # Path to the SSH key. Used by `doc_deploy.sh`.
           # Note: No need to clean, $RUNNER_TEMP/ is deleted after each run.
           GIT_SSH_KEY_PATH="$RUNNER_TEMP/id_git_ssh"
           echo "GIT_SSH_KEY_PATH=$GIT_SSH_KEY_PATH" >>$GITHUB_ENV
@@ -55,4 +60,4 @@ jobs:
       - name: "Run job script"
         env:
           JOB_RELEASE: "${{ inputs.jobRelease }}"
-        run: "kurento_ci_job_deploy_doc.sh"
+        run: "ci_job_deploy_doc.sh"
