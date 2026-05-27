@@ -68,7 +68,7 @@ set(SOUP_REQUIRED ^3.0)
 set(OPENCV_REQUIRED <5.0.0)
 
 include(GenericFind)
-generic_find(LIBNAME Boost REQUIRED COMPONENTS filesystem system thread unit_test_framework)
+generic_find(LIBNAME Boost REQUIRED COMPONENTS filesystem thread unit_test_framework)
 generic_find(LIBNAME gstreamer-1.0 VERSION ${GST_REQUIRED} REQUIRED)
 generic_find(LIBNAME gstreamer-base-1.0 VERSION ${GST_REQUIRED} REQUIRED)
 generic_find(LIBNAME gstreamer-video-1.0 VERSION ${GST_REQUIRED} REQUIRED)

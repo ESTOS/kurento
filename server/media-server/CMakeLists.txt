@@ -61,7 +61,7 @@ set(LIB_PREFIX "lib")
 set(CMAKE_THREAD_PREFER_PTHREAD ON)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
-generic_find(LIBNAME Boost COMPONENTS system filesystem program_options unit_test_framework thread log REQUIRED)
+generic_find(LIBNAME Boost COMPONENTS filesystem program_options unit_test_framework thread log REQUIRED)
 
 find_package(OpenSSL REQUIRED)
 
