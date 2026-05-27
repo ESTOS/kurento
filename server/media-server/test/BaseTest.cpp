@@ -105,7 +105,7 @@ F::start_server ()
   GST_DEBUG ("Use TEST_CONF_PATH=%s", conf_path);
 
   // Find an empty port
-  boost::asio::io_service ios;
+  boost::asio::io_context ios;
   boost::asio::ip::tcp::endpoint ep (boost::asio::ip::tcp::v6(), 0);
   boost::asio::ip::tcp::acceptor acceptor (ios, ep);
   acceptor.set_option (boost::asio::socket_base::reuse_address (true) );

@@ -19,6 +19,7 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <chrono>
+#include <random>
 #include <sstream>
 #include <sys/types.h>
 #include <unistd.h>
@@ -30,8 +31,8 @@ namespace kurento
 class RandomGenerator
 {
   std::recursive_mutex uuid_mutex;
-  boost::uuids::basic_random_generator<boost::mt19937> gen;
-  boost::mt19937 ran;
+  boost::uuids::basic_random_generator<std::mt19937> gen;
+  std::mt19937 ran;
   pid_t pid{};
 
 public:

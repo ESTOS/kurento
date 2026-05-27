@@ -50,7 +50,7 @@ const bool WEBSOCKET_IPV6_DEFAULT = true;
 const std::string WEBSOCKET_PATH_DEFAULT = "kurento";
 const int WEBSOCKET_THREADS_DEFAULT = 10;
 const int WEBSOCKET_CONNQUEUE_DEFAULT =
-  boost::asio::socket_base::max_connections;
+  boost::asio::socket_base::max_listen_connections;
 
 WebSocketTransport::WebSocketTransport (
     const boost::property_tree::ptree &config,
@@ -157,7 +157,7 @@ WebSocketTransport::initWebSocket (const boost::property_tree::ptree &config)
 
   if (address_str) {
     boost::asio::ip::address address =
-        boost::asio::ip::address::from_string (*address_str);
+        boost::asio::ip::make_address (*address_str);
     boost::asio::ip::tcp::endpoint endpoint (address, port);
     try {
       server.listen (endpoint);

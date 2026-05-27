@@ -78,11 +78,11 @@ WebSocketRegistrar::stop()
     if (secure) {
       secureClient->close (connection, websocketpp::close::status::going_away,
                            "terminating");
-      secureClient->get_io_service().stop();
+      secureClient->get_io_context().stop();
     } else {
       client->close (connection, websocketpp::close::status::going_away,
                      "terminating");
-      client->get_io_service().stop();
+      client->get_io_context().stop();
     }
   } catch (...) {
 
@@ -107,7 +107,7 @@ WebSocketRegistrar::connectRegistrar ()
   }
 
   while (!finished) {
-    boost::asio::io_service ios;
+    boost::asio::io_context ios;
 
     GST_INFO ("Connecting registrar");
 

@@ -19,7 +19,8 @@
 #define __WORKERPOOL_HPP__
 
 #include <boost/asio/async_result.hpp>
-#include <boost/asio/io_service.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/post.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/thread/thread.hpp>
 
@@ -42,26 +43,21 @@ public:
   BOOST_ASIO_INITFN_RESULT_TYPE (CompletionHandler, void ())
   post (BOOST_ASIO_MOVE_ARG (CompletionHandler) handler)
   {
-    // `io_service::post()` assigns new tasks to the thread pool
-    return io_service.post (handler);
+    // `post()` assigns new tasks to the thread pool
+    return boost::asio::post (io_context, handler);
   }
 
 private:
   // Boost Asio tools for handling a thread pool
-  boost::asio::io_service io_service; // Boost Asio task runner
+  boost::asio::io_context io_context; // Boost Asio task runner
   boost::thread_group io_threadpool;
 
   /*
-   * Keeping an instance of `io_service::work` tells `io_service` to keep
-   * running its internal loop, even after all tasks have been serviced.
-   *
-   * Think of it as a loop condition check:
-   *
-   *     while (!stopped && "work instance exists") {
-   *         process_tasks()
-   *     }
+   * Keeping a work guard tells `io_context` to keep running its internal loop,
+   * even after all tasks have been serviced.
    */
-  boost::asio::io_service::work io_work;
+  boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
+      io_work;
 
   // Thread pool health check
   void checkThreads ();
