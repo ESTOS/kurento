@@ -223,10 +223,16 @@ MediaSet::ref (MediaObjectImpl *mediaObjectPtr)
     throw KurentoException (MEDIA_OBJECT_NOT_FOUND, "Invalid object");
   }
 
-  mediaObject =  std::shared_ptr<MediaObjectImpl> (mediaObjectPtr, [this] (
+  std::weak_ptr<MediaSet> self = shared_from_this();
+
+  mediaObject =  std::shared_ptr<MediaObjectImpl> (mediaObjectPtr, [self] (
   MediaObjectImpl * obj) {
     // this will always exist because destructor is waiting for its threads
-    this->releasePointer (obj);
+    if (auto s = self.lock()) {
+      s->releasePointer(obj);
+    } else {
+      delete obj;
+    }
   });
 
   objectsMap[mediaObject->getId()] = std::weak_ptr<MediaObjectImpl> (mediaObject);
