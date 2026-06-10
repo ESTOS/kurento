@@ -88,7 +88,7 @@ private:
 
   int n_threads;
   std::string path;
-  boost::asio::io_service ios;
+  boost::asio::io_context ios;
   WebSocketServer server;
   SecureWebSocketServer secureServer;
   bool hasInsecureServer = false;

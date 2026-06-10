@@ -18,6 +18,15 @@
 #ifndef __KURENTO_LOGGING_HPP__
 #define __KURENTO_LOGGING_HPP__
 
+#if defined(_WIN32)
+#if !defined(_WIN32_WINNT)
+#define _WIN32_WINNT 0x0A00
+#endif
+#if !defined(BOOST_USE_WINAPI_VERSION)
+#define BOOST_USE_WINAPI_VERSION 0x0A00
+#endif
+#endif
+
 #include <boost/log/sources/global_logger_storage.hpp>
 #include <boost/log/expressions/keyword.hpp>
 #include <boost/log/sources/severity_channel_logger.hpp>

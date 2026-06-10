@@ -67,8 +67,18 @@ set(GST_REQUIRED ^1.0.0)
 set(SOUP_REQUIRED ^3.0)
 set(OPENCV_REQUIRED <5.0.0)
 
+if(CMAKE_SYSTEM_NAME MATCHES "Windows")
+  # OpenCV from build_opencv() installs under the MINGW prefix (x64/mingw/lib).
+  if(NOT OpenCV_DIR)
+    if(EXISTS "${CMAKE_INSTALL_PREFIX}/x64/mingw/lib/OpenCVConfig.cmake")
+      set(OpenCV_DIR "${CMAKE_INSTALL_PREFIX}/x64/mingw/lib"
+          CACHE PATH "OpenCV CMake config directory")
+    endif()
+  endif()
+endif()
+
 include(GenericFind)
-generic_find(LIBNAME Boost REQUIRED COMPONENTS filesystem system thread unit_test_framework)
+generic_find(LIBNAME Boost REQUIRED COMPONENTS filesystem thread unit_test_framework)
 generic_find(LIBNAME gstreamer-1.0 VERSION ${GST_REQUIRED} REQUIRED)
 generic_find(LIBNAME gstreamer-base-1.0 VERSION ${GST_REQUIRED} REQUIRED)
 generic_find(LIBNAME gstreamer-video-1.0 VERSION ${GST_REQUIRED} REQUIRED)
@@ -76,6 +86,19 @@ generic_find(LIBNAME gstreamer-check-1.0 VERSION ${GST_REQUIRED})
 generic_find(LIBNAME KmsJsonRpc VERSION ^7.0.0 REQUIRED)
 generic_find(LIBNAME libsoup-3.0 VERSION ${SOUP_REQUIRED} REQUIRED)
 generic_find(LIBNAME OpenCV VERSION ${OPENCV_REQUIRED} REQUIRED)
+
+if(CMAKE_SYSTEM_NAME MATCHES "Windows")
+  # GenericFind may skip find_package on re-configure; imported targets are not cached.
+  find_package(OpenCV REQUIRED)
+  if(TARGET opencv_core)
+    set(OpenCV_LIBRARIES ${OpenCV_LIBS})
+  else()
+    message(FATAL_ERROR
+      "OpenCV CMake targets were not loaded. Build and install OpenCV first "
+      "(kurentoall/1-buildmain.sh: build_opencv), then re-run CMake with "
+      "OpenCV_DIR=${CMAKE_INSTALL_PREFIX}/x64/mingw/lib")
+  endif()
+endif()
 
 set(CMAKE_INSTALL_GST_PLUGINS_DIR ${CMAKE_INSTALL_LIBDIR}/gstreamer-1.0)
 

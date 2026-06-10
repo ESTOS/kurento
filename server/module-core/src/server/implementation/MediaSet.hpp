@@ -37,7 +37,7 @@ typedef struct _KeepAliveData KeepAliveData;
 
 class ServerManagerImpl;
 
-class MediaSet
+class MediaSet : public std::enable_shared_from_this<MediaSet>
 {
 public:
   ~MediaSet ();

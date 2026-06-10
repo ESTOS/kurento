@@ -23,6 +23,7 @@
 #include <string>
 #include <mutex>
 #include <memory>
+#include <stdexcept>
 
 #include "KmsHttpEPServer.h"
 
@@ -33,7 +34,7 @@ class HttpEndPointServer
 {
 public:
   static std::shared_ptr<HttpEndPointServer> getHttpEndPointServer (
-    const uint port, const std::string &iface, const std::string &addr);
+    const unsigned port, const std::string &iface, const std::string &addr);
   void start ();
   void stop ();
   void registerEndPoint (GstElement *endpoint, guint timeout,
@@ -43,7 +44,7 @@ public:
   gulong connectSignal (std::string name, GCallback c_handler,
                         gpointer user_data);
   void disconnectSignal (gulong id);
-  uint getPort ();
+  unsigned getPort ();
   std::string getInterface();
   std::string getAnnouncedAddress();
 
@@ -54,7 +55,7 @@ public:
 private:
   static std::shared_ptr<HttpEndPointServer> instance;
   static std::recursive_mutex mutex;
-  static uint port;
+  static unsigned port;
   static std::string interface;
   static std::string announcedAddr;
 

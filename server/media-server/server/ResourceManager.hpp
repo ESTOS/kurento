@@ -18,17 +18,24 @@
 #ifndef __RESOURCE_MANAGER_H__
 #define __RESOURCE_MANAGER_H__
 
+#ifdef __linux
 // rlim_t: Unsigned integer type used for limit values
 // (see `man sys_resource.h`)
 #include <sys/resource.h>
+#endif
 
 namespace kurento
 {
 
 static const float DEFAULT_RESOURCE_LIMIT_PERCENT = 0.80f;
 
+#ifdef __linux
 rlim_t getMaxThreads ();
 rlim_t getMaxOpenFiles ();
+#else
+int getMaxThreads ();
+int getMaxOpenFiles ();
+#endif
 
 void checkResources (float limit_percent);
 

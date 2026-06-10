@@ -1024,16 +1024,3 @@ kms_webrtc_endpoint_init (KmsWebrtcEndpoint * self)
   g_object_get (self->priv->loop, "context", &self->priv->context, NULL);
 }
 
-gboolean
-kms_webrtc_endpoint_plugin_init (GstPlugin * plugin)
-{
-  return gst_element_register (plugin, PLUGIN_NAME, GST_RANK_NONE,
-      KMS_TYPE_WEBRTC_ENDPOINT);
-}
-
-GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
-    GST_VERSION_MINOR,
-    kmswebrtcendpoint,
-    "Kurento webrtc endpoint",
-    kms_webrtc_endpoint_plugin_init, VERSION, GST_LICENSE_UNKNOWN,
-    "Kurento Elements", "https://kurento.openvidu.io/")

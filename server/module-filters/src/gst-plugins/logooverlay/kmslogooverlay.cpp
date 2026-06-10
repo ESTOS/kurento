@@ -213,7 +213,7 @@ load_from_url (gchar *file_name, gchar *url)
     goto end;
   }
 
-  GST_DEBUG ("Write %ld bytes to temp file: %s", g_bytes_get_size (bytes),
+  GST_DEBUG ("Write %" G_GUINT64_FORMAT " bytes to temp file: %s", g_bytes_get_size (bytes),
       file_name);
   fwrite (g_bytes_get_data(bytes,NULL), 1, g_bytes_get_size(bytes), dst);
 

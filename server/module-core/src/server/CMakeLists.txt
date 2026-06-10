@@ -1,3 +1,7 @@
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWIN32_LEAN_AND_MEAN=1")
+endif ()
+
 set(KMS_CORE_INTERFACE_SOURCES
 )
 
@@ -5,6 +9,33 @@ set(KMS_CORE_INTERFACE_HEADERS
   interface/KurentoException.hpp
 )
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+set(KMS_CORE_IMPL_SOURCES
+  implementation/EventHandler.cpp
+  implementation/Factory.cpp
+  implementation/MediaSet.cpp
+  implementation/ModuleManager.cpp
+  implementation/WorkerPool.cpp
+  implementation/UUIDGenerator.cpp
+  implementation/RegisterParent.cpp
+  implementation/DotGraph.cpp
+  implementation/process-tools/windows-process.cpp
+)
+
+set(KMS_CORE_IMPL_HEADERS
+  implementation/EventHandler.hpp
+  implementation/Factory.hpp
+  implementation/MediaSet.hpp
+  implementation/FactoryRegistrar.hpp
+  implementation/ModuleManager.hpp
+  implementation/WorkerPool.hpp
+  implementation/UUIDGenerator.hpp
+  implementation/RegisterParent.hpp
+  implementation/DotGraph.hpp
+  implementation/SignalHandler.hpp
+  implementation/process-tools/windows-process.hpp
+)
+else ()
 set(KMS_CORE_IMPL_SOURCES
   implementation/EventHandler.cpp
   implementation/Factory.cpp
@@ -30,6 +61,7 @@ set(KMS_CORE_IMPL_HEADERS
   implementation/SignalHandler.hpp
   implementation/process-tools/linux-process.hpp
 )
+endif ()
 
 include(CodeGenerator)
 generate_code(

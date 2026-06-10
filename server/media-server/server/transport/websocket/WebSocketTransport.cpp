@@ -50,7 +50,7 @@ const bool WEBSOCKET_IPV6_DEFAULT = true;
 const std::string WEBSOCKET_PATH_DEFAULT = "kurento";
 const int WEBSOCKET_THREADS_DEFAULT = 10;
 const int WEBSOCKET_CONNQUEUE_DEFAULT =
-  boost::asio::socket_base::max_connections;
+  boost::asio::socket_base::max_listen_connections;
 
 WebSocketTransport::WebSocketTransport (
     const boost::property_tree::ptree &config,
@@ -61,7 +61,7 @@ WebSocketTransport::WebSocketTransport (
       "mediaServer.net.websocket.path", WEBSOCKET_PATH_DEFAULT);
 
   try {
-    n_threads = config.get<uint> ("mediaServer.net.websocket.threads");
+    n_threads = config.get<unsigned> ("mediaServer.net.websocket.threads");
 
     if (n_threads < 1) {
       throw boost::property_tree::ptree_bad_data (
@@ -128,7 +128,7 @@ WebSocketTransport::initWebSocket (const boost::property_tree::ptree &config)
       config.get_optional<std::string> ("mediaServer.net.websocket.address");
   const uint16_t port =
       config.get<uint16_t> ("mediaServer.net.websocket.port", 0);
-  const uint connqueue = config.get<uint> (
+  const unsigned int connqueue = config.get<unsigned int> (
       "mediaServer.net.websocket.connqueue", WEBSOCKET_CONNQUEUE_DEFAULT);
 
   if (port == 0) {
@@ -157,7 +157,7 @@ WebSocketTransport::initWebSocket (const boost::property_tree::ptree &config)
 
   if (address_str) {
     boost::asio::ip::address address =
-        boost::asio::ip::address::from_string (*address_str);
+        boost::asio::ip::make_address (*address_str);
     boost::asio::ip::tcp::endpoint endpoint (address, port);
     try {
       server.listen (endpoint);
@@ -214,7 +214,7 @@ WebSocketTransport::initSecureWebSocket (
       "mediaServer.net.websocket.ipv6", WEBSOCKET_IPV6_DEFAULT);
   const uint16_t securePort =
       config.get<uint16_t> ("mediaServer.net.websocket.secure.port", 0);
-  const uint connqueue = config.get<uint> (
+  const unsigned int connqueue = config.get<unsigned int> (
       "mediaServer.net.websocket.connqueue", WEBSOCKET_CONNQUEUE_DEFAULT);
 
   if (securePort == 0) {

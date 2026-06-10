@@ -9,6 +9,7 @@ set(KMS_ELEMENTS_IMPL_HEADERS
 )
 
 include(CodeGenerator)
+
 generate_code(
   MODELS ${CMAKE_CURRENT_SOURCE_DIR}/interface
   INTERFACE_LIB_EXTRA_INCLUDE_DIRS

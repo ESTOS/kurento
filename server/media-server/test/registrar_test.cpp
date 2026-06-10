@@ -55,7 +55,7 @@ typedef websocketpp::lib::shared_ptr<boost::asio::ssl::context> context_ptr;
 BOOST_AUTO_TEST_CASE ( ws_registrar )
 {
   WebSocketServer server;
-  boost::asio::io_service ios;
+  boost::asio::io_context ios;
 
   kurento::WebSocketRegistrar registrar ("ws://localhost:" + std::to_string (
       PORT), LOCAL_ADDRESS, LOCAL_PORT, 0, WS_PATH);
@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE ( ws_registrar )
 BOOST_AUTO_TEST_CASE ( wss_registrar )
 {
   SecureWebSocketServer server;
-  boost::asio::io_service ios;
+  boost::asio::io_context ios;
 
   gst_init(nullptr, nullptr);
 

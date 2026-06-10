@@ -14,6 +14,11 @@ include(GNUInstallDirs) # CMAKE_INSTALL_*
 
 include (GenericFind)
 generic_find(LIBNAME KurentoModuleCreator VERSION ^7.0.0 REQUIRED)
+if(CMAKE_GENERATOR MATCHES "MSYS Makefiles")
+  message("CodeGenerator.cmake old KurentoModuleCreator_EXECUTABLE: ${KurentoModuleCreator_EXECUTABLE}")
+  set  (KurentoModuleCreator_EXECUTABLE "${CMAKE_BINARY_DIR}/module-creator/kurento-module-creator.cmd")
+  message("CodeGenerator.cmake new KurentoModuleCreator_EXECUTABLE: ${KurentoModuleCreator_EXECUTABLE}")
+endif()
 
 set (GENERATE_JAVA_CLIENT_PROJECT FALSE CACHE BOOL "Generate java maven client library")
 set (GENERATE_JS_CLIENT_PROJECT FALSE CACHE BOOL "Generate js npm client library")
@@ -462,7 +467,7 @@ function (generate_kurento_libraries)
   )
 
   #Generate source for internal interface files
-  add_library (${VALUE_CODE_IMPLEMENTATION_LIB}interface
+  add_library (${VALUE_CODE_IMPLEMENTATION_LIB}interface STATIC
     ${PARAM_INTERFACE_LIB_EXTRA_SOURCES}
     ${PARAM_INTERFACE_LIB_EXTRA_HEADERS}
     ${INTERFACE_INTERNAL_GENERATED_SOURCES}
@@ -497,6 +502,12 @@ function (generate_kurento_libraries)
     VERSION ${PROJECT_VERSION}
     SOVERSION ${PROJECT_VERSION_MAJOR}
   )
+
+  if (NOT (${CMAKE_SYSTEM_NAME} MATCHES "Windows"))
+    set_target_properties(${VALUE_CODE_IMPLEMENTATION_LIB}interface PROPERTIES
+      COMPILE_FLAGS "-fPIC"
+    )
+  endif ()
 
   install(TARGETS ${VALUE_CODE_IMPLEMENTATION_LIB}interface
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -586,6 +597,10 @@ function (generate_kurento_libraries)
   add_dependencies(${VALUE_CODE_IMPLEMENTATION_LIB}impl
     ${VALUE_CODE_IMPLEMENTATION_LIB}interface
   )
+
+  if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    set (${VALUE_CODE_IMPLEMENTATION_LIB_UPPER}_DEPENDENCIES_LIBRARIES libws2_32.a kmscoreinterface ${${VALUE_CODE_IMPLEMENTATION_LIB_UPPER}_DEPENDENCIES_LIBRARIES})
+  endif ()
 
   target_link_libraries (${VALUE_CODE_IMPLEMENTATION_LIB}impl
     ${${VALUE_CODE_IMPLEMENTATION_LIB_UPPER}_DEPENDENCIES_LIBRARIES}
@@ -710,8 +725,8 @@ function (generate_kurento_libraries)
   )
 
   target_link_libraries (${VALUE_CODE_IMPLEMENTATION_LIB}module
-    ${VALUE_CODE_IMPLEMENTATION_LIB}impl
     ${VALUE_CODE_IMPLEMENTATION_LIB}interface
+    ${VALUE_CODE_IMPLEMENTATION_LIB}impl
     ${PARAM_MODULE_EXTRA_LIBRARIES}
   )
 

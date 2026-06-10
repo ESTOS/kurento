@@ -343,6 +343,10 @@ kms_ice_candidate_new (const gchar * candidate,
       candidate, "sdp-mid", sdp_mid, "sdp-m-line-index", sdp_m_line_index,
       NULL);
 
+  if (!cand) {
+    return NULL;
+  }
+
   if (!cand->priv->is_valid) {
     g_object_unref (cand);
     return NULL;

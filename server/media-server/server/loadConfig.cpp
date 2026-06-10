@@ -83,9 +83,11 @@ mergePropertyTrees (boost::property_tree::ptree &ptMerged,
   } else {
     auto it = ptSecond.begin();
 
+    static const boost::property_tree::ptree empty_ptree;
+
     for (; it != ptSecond.end(); ++it) {
-      boost::property_tree::ptree child = ptMerged.get_child (it->first.data(),
-                                          boost::property_tree::ptree() );
+      boost::property_tree::ptree child =
+          ptMerged.get_child (it->first.data(), empty_ptree);
       mergePropertyTrees (child, it->second, level + 1);
 
       ptMerged.erase (it->first.data() );
@@ -230,8 +232,11 @@ loadModulesConfig (boost::property_tree::ptree &config,
 
     modulesConfigPath = modulesConfigDir.string();
   }
-
+#ifndef G_OS_WIN32
   locations = split (modulesConfigPath, ':');
+#else
+  locations = split (modulesConfigPath, G_SEARCHPATH_SEPARATOR);
+#endif
 
   for (std::string location : locations) {
     boost::filesystem::path dir (location);

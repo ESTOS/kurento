@@ -50,7 +50,8 @@ namespace kurento
 {
 
 WorkerPool::WorkerPool (size_t threads_count)
-    : io_work{io_service}, check_timer{io_service},
+    : io_work{boost::asio::make_work_guard (io_context)},
+      check_timer{io_context},
       check_time_last{std::chrono::steady_clock::now ()}
 {
   // Add threads to the thread pool
@@ -68,7 +69,7 @@ WorkerPool::WorkerPool (size_t threads_count)
 
   for (size_t thread_num = 0; thread_num < threads_count; ++thread_num) {
     boost::thread *pool_thread = io_threadpool.create_thread (
-        boost::bind (&boost::asio::io_service::run, &io_service));
+        boost::bind (&boost::asio::io_context::run, &io_context));
 
     // Try to give a name to the thread
 #ifdef HAVE_PTHREAD_SETNAME_NP_WITH_TID
@@ -80,7 +81,7 @@ WorkerPool::WorkerPool (size_t threads_count)
   }
 
   // Thread pool health checker
-  check_timer.expires_from_now (THREAD_CHECK_INTERVAL_S);
+  check_timer.expires_after (THREAD_CHECK_INTERVAL_S);
   check_timer.async_wait (
       boost::bind (&kurento::WorkerPool::checkThreads, this));
 }
@@ -88,11 +89,11 @@ WorkerPool::WorkerPool (size_t threads_count)
 WorkerPool::~WorkerPool ()
 {
   /*
-   * Calling `io_service::stop()` causes the `io_service::run()` method to
+   * Calling `io_context::stop()` causes the `io_context::run()` method to
    * return from its internal loop, also preventing any new tasks from being
    * assigned to the thread pool.
    */
-  io_service.stop ();
+  io_context.stop ();
 
   /*
    * Wait until all the threads in the thread pool are finished with their
@@ -126,7 +127,7 @@ WorkerPool::checkThreads ()
   check_time_last = std::chrono::steady_clock::now ();
 
   // Reset the timer to run again
-  check_timer.expires_from_now (THREAD_CHECK_INTERVAL_S);
+  check_timer.expires_after (THREAD_CHECK_INTERVAL_S);
   check_timer.async_wait (
       boost::bind (&kurento::WorkerPool::checkThreads, this));
 }

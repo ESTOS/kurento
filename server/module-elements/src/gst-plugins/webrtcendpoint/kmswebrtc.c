@@ -18,6 +18,15 @@
 #include "kmswebrtcendpoint.h"
 #include "config.h"
 
+#define PLUGIN_NAME "webrtcendpoint"
+
+gboolean
+kms_webrtc_endpoint_plugin_init (GstPlugin * plugin)
+{
+  return gst_element_register (plugin, PLUGIN_NAME, GST_RANK_NONE,
+      KMS_TYPE_WEBRTC_ENDPOINT);
+}
+
 GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
     GST_VERSION_MINOR,
     webrtcendpoint,

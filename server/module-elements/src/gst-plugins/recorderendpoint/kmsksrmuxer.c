@@ -139,17 +139,20 @@ static void
 kms_ksr_muxer_remove_appsrc (KmsKSRMuxer * self, GstElement * appsrc)
 {
   GError *err = NULL;
+  gpointer task_id;
 
   if (appsrc == NULL) {
     return;
   }
 
-  gst_task_pool_push (self->priv->pool,
+  task_id = gst_task_pool_push (self->priv->pool,
       (GstTaskPoolFunction) remove_appsrc_func, appsrc, &err);
 
   if (err != NULL) {
     GST_ERROR_OBJECT (self, "%s", err->message);
     g_error_free (err);
+  } else if (task_id != NULL) {
+    gst_task_pool_dispose_handle (self->priv->pool, task_id);
   }
 }
 
