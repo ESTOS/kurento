@@ -16,9 +16,11 @@
  */
 #include <config.h>
 
-#include "death_handler.h"
-
 #include <glibmm.h>
+
+#ifdef G_OS_UNIX
+#include "death_handler.h"
+#endif
 #include <fstream>
 #include <iostream>
 #include "version.hpp"
@@ -178,16 +180,20 @@ main (int argc, char **argv)
   std::string modulesPath, logsPath, modulesConfigPath;
   int fileSize, fileNumber;
 
+#ifdef G_OS_UNIX
   Debug::DeathHandler dh;
   dh.set_thread_safe (true);
+#endif
 
   kms_init_dependencies (&argc, &argv);
 
+#ifdef G_OS_UNIX
   if (gst_debug_get_color_mode() == GST_DEBUG_COLOR_MODE_OFF) {
     dh.set_color_output (false);
   } else {
     dh.set_color_output (true);
   }
+#endif
 
   try {
     boost::program_options::options_description desc ("kurento-media-server usage");

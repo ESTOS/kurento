@@ -4,7 +4,6 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_WIN32_WINNT=0x0A00 -DBOOST_USE_WINAPI_VERSION=0x0A00")
 endif ()
 
-if(NOT CMAKE_GENERATOR MATCHES "MSYS Makefiles")
 SET(KMSC_SOURCE
   main.cpp
   version.cpp
@@ -23,30 +22,13 @@ SET(KMSC_SOURCE
   modules.hpp
   loadConfig.cpp
   loadConfig.hpp
+)
+
+# DeathHandler uses execinfo.h, fork(), etc. — Unix only, not available on MinGW.
+if(NOT CMAKE_GENERATOR MATCHES "MSYS Makefiles")
+  list(APPEND KMSC_SOURCE
   ${PROJECT_SOURCE_DIR}/3rdparty/DeathHandler/death_handler.cc
   ${PROJECT_SOURCE_DIR}/3rdparty/DeathHandler/death_handler.h
-)
-else()
-SET(KMSC_SOURCE
-  main.cpp
-  version.cpp
-  version.hpp
-  ServerMethods.cpp
-  ServerMethods.hpp
-  ResourceManager.cpp
-  ResourceManager.hpp
-  RequestCache.cpp
-  RequestCache.hpp
-  CacheEntry.cpp
-  CacheEntry.hpp
-  logging.cpp
-  logging.hpp
-  modules.cpp
-  modules.hpp
-  loadConfig.cpp
-  loadConfig.hpp
-  death_handler.cc
-  death_handler.h
 )
 endif()
 
@@ -59,36 +41,31 @@ endif()
 
 add_dependencies(kurento-media-server transport)
 
+set(KMSC_INCLUDE_DIRS
+  ${CMAKE_CURRENT_BINARY_DIR}/..
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/transport
+  ${KmsJsonRpc_INCLUDE_DIRS}
+  ${KMSCORE_INCLUDE_DIRS}
+)
+if(NOT CMAKE_GENERATOR MATCHES "MSYS Makefiles")
+  list(APPEND KMSC_INCLUDE_DIRS
+    ${PROJECT_SOURCE_DIR}/3rdparty/DeathHandler
+  )
+endif()
+target_include_directories(kurento-media-server PRIVATE ${KMSC_INCLUDE_DIRS})
+
 if(NOT CMAKE_GENERATOR MATCHES "MSYS Makefiles")
 target_link_libraries (kurento-media-server
   ${Boost_LIBRARIES}
   transport
   dl
 )
-
-set_property (TARGET kurento-media-server
-  PROPERTY INCLUDE_DIRECTORIES
-    ${CMAKE_CURRENT_BINARY_DIR}/..
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/transport
-    ${KmsJsonRpc_INCLUDE_DIRS}
-    ${KMSCORE_INCLUDE_DIRS}
-    ${PROJECT_SOURCE_DIR}/3rdparty/DeathHandler
-)
 else()
 target_link_libraries (kurento-media-server
   kmscoreinterface
   ${Boost_LIBRARIES}
   transport
-)
-
-set_property (TARGET kurento-media-server
-  PROPERTY INCLUDE_DIRECTORIES
-    ${CMAKE_CURRENT_BINARY_DIR}/..
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/transport
-    ${KmsJsonRpc_INCLUDE_DIRS}
-    ${KMSCORE_INCLUDE_DIRS}
 )
 endif()
 
