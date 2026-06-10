@@ -16,19 +16,31 @@ cmake_minimum_required(VERSION 3.5)
 find_package(Git)
 
 function(get_git_dir git_dir_output_variable)
-  if(EXISTS ${GIT_EXECUTABLE})
-    execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --absolute-git-dir
-        OUTPUT_VARIABLE git_dir
-        ERROR_VARIABLE ignored
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    )
-    if(DEFINED git_dir AND NOT ${git_dir} EQUAL "")
-      if(EXISTS ${git_dir})
-        set(${git_dir_output_variable} ${git_dir} PARENT_SCOPE)
-      endif()
-    endif()
+  if(NOT GIT_EXECUTABLE)
+    return()
   endif()
+
+  execute_process(
+    COMMAND ${GIT_EXECUTABLE} rev-parse --absolute-git-dir
+    OUTPUT_VARIABLE git_dir
+    ERROR_VARIABLE git_stderr
+    RESULT_VARIABLE git_result
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  )
+
+  if(NOT git_result EQUAL 0 OR NOT git_dir)
+    return()
+  endif()
+
+  # MSYS/Git Bash return POSIX paths (/x/foo). Native Windows CMake
+  # EXISTS() and file operations expect X:/foo.
+  if(WIN32 AND git_dir MATCHES "^/[a-zA-Z]/")
+    string(SUBSTRING "${git_dir}" 1 1 drive_letter)
+    string(REGEX REPLACE "^/[a-zA-Z]/" "${drive_letter}:/" git_dir "${git_dir}")
+  endif()
+
+  set(${git_dir_output_variable} "${git_dir}" PARENT_SCOPE)
 endfunction()
 
 function(install_git_hook hook_type hook_location)
@@ -47,7 +59,7 @@ set (CALCULATE_VERSION_WITH_GIT TRUE CACHE BOOL "Use git (if available) to get p
 function(get_git_version version_output_variable default_version)
   get_git_dir(GIT_DIR)
 
-  if(EXISTS "${GIT_DIR}" AND ${CALCULATE_VERSION_WITH_GIT})
+  if(GIT_DIR AND ${CALCULATE_VERSION_WITH_GIT})
     execute_process(COMMAND ${GIT_EXECUTABLE} describe --abbrev=0 --tags
       OUTPUT_VARIABLE LAST_TAG
       ERROR_VARIABLE DISCARD_ERROR
@@ -80,6 +92,15 @@ function(get_git_version version_output_variable default_version)
       "-dev" "~${N_COMMITS}.g${LAST_HASH}"
       PROJECT_VERSION ${default_version}
     )
+
+# Prepare for special version string
+#    if(WIN32)
+#      string(REPLACE "-dev" "~estosw.g${LAST_HASH}" PROJECT_VERSION ${default_version})
+#    elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+#      string(REPLACE "-dev" "~estosu.g${LAST_HASH}" PROJECT_VERSION ${default_version})
+#    else()
+#.     string(REPLACE "-dev" "~${N_COMMITS}.g${LAST_HASH}" PROJECT_VERSION ${default_version})
+#.   endif()
 
     message(STATUS "Version info from git: ${PROJECT_VERSION}")
   else()

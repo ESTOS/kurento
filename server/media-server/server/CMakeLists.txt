@@ -39,6 +39,15 @@ if(SANITIZERS_ENABLED)
   add_sanitizers(kurento-media-server)
 endif()
 
+# Boost.Log triggers false-positive -Warray-bounds on MinGW (main.cpp).
+if(CMAKE_SYSTEM_NAME MATCHES "Windows")
+  include(CheckCXXCompilerFlag)
+  check_cxx_compiler_flag("-Wno-array-bounds" COMPILER_SUPPORTS_WNO_ARRAY_BOUNDS)
+  if(COMPILER_SUPPORTS_WNO_ARRAY_BOUNDS)
+    set_source_files_properties(main.cpp PROPERTIES COMPILE_FLAGS "-Wno-array-bounds")
+  endif()
+endif()
+
 add_dependencies(kurento-media-server transport)
 
 set(KMSC_INCLUDE_DIRS
