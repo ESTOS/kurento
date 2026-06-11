@@ -202,6 +202,7 @@ gst_debug_level_to_severity_level (GstDebugLevel level)
   case GST_LEVEL_DEBUG:   return debug;
   case GST_LEVEL_LOG:     return log;
   case GST_LEVEL_TRACE:   return trace;
+  case GST_LEVEL_MEMDUMP: return memdump;
   default:                return undefined;
   }
 }
@@ -263,6 +264,7 @@ inline std::basic_ostream< CharT, TraitsT > &operator<< (
     "  debug",
     "    log",
     "  trace",
+    "memdump",
     "unknown"
   };
 

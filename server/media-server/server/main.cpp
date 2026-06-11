@@ -280,7 +280,17 @@ main (int argc, char **argv)
     }
 
     if (vm.count ("help") ) {
+#if defined(g_slice_print_non_freed_entries)
+      const std::string memcheck =
+        "  MemChecker:\n"
+        "  - if you want to use the MemChecker:\n"
+        "  - set G_SLICE=always-malloc,debug-blocks\n"
+        "  - it will write to ..\\log\\memleak.txt\n";
+
+      std::cout << desc << "\n" << memcheck;
+#else
       std::cout << desc << "\n";
+#endif
       exit (0);
     }
 
@@ -348,6 +358,11 @@ main (int argc, char **argv)
   transport->stop();
   MediaSet::deleteMediaSet();
 
+  gst_deinit();
+
+#if defined(g_slice_print_non_freed_entries)
+  g_slice_print_non_freed_entries ();
+#endif
   GST_INFO ("Kurento Media Server stopped");
 
   return 0;
