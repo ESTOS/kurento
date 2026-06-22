@@ -68,7 +68,7 @@ G_DEFINE_TYPE_WITH_CODE (KmsAVMuxer, kms_av_muxer,
         0, "debug category for muxing pipeline object"));
 
 GstStateChangeReturn
-kms_av_muxer_set_state (KmsBaseMediaMuxer * obj, GstState state)
+kms_av_muxer_set_state (KmsBaseMediaMuxer *obj, GstState state)
 {
   KmsAVMuxer *self = KMS_AV_MUXER (obj);
 
@@ -81,8 +81,8 @@ kms_av_muxer_set_state (KmsBaseMediaMuxer * obj, GstState state)
 }
 
 static GstElement *
-kms_av_muxer_add_src (KmsBaseMediaMuxer * obj, KmsMediaType type,
-    const gchar * id)
+kms_av_muxer_add_src (KmsBaseMediaMuxer *obj, KmsMediaType type,
+    const gchar *id)
 {
   KmsAVMuxer *self = KMS_AV_MUXER (obj);
   GstElement *sink = NULL, *appsrc = NULL;
@@ -117,14 +117,14 @@ kms_av_muxer_add_src (KmsBaseMediaMuxer * obj, KmsMediaType type,
 }
 
 static gboolean
-kms_av_muxer_remove_src (KmsBaseMediaMuxer * obj, const gchar * id)
+kms_av_muxer_remove_src (KmsBaseMediaMuxer *obj, const gchar *id)
 {
   /* Nothing to remove */
   return FALSE;
 }
 
 static void
-kms_av_muxer_class_init (KmsAVMuxerClass * klass)
+kms_av_muxer_class_init (KmsAVMuxerClass *klass)
 {
   KmsBaseMediaMuxerClass *basemediamuxerclass;
 
@@ -137,7 +137,7 @@ kms_av_muxer_class_init (KmsAVMuxerClass * klass)
 }
 
 static void
-kms_av_muxer_init (KmsAVMuxer * self)
+kms_av_muxer_init (KmsAVMuxer *self)
 {
   self->priv = KMS_AV_MUXER_GET_PRIVATE (self);
 
@@ -146,7 +146,7 @@ kms_av_muxer_init (KmsAVMuxer * self)
 }
 
 static GstElement *
-kms_av_muxer_create_muxer (KmsAVMuxer * self)
+kms_av_muxer_create_muxer (KmsAVMuxer *self)
 {
   switch (KMS_BASE_MEDIA_MUXER_GET_PROFILE (self)) {
     case KMS_RECORDING_PROFILE_WEBM:
@@ -175,10 +175,11 @@ kms_av_muxer_create_muxer (KmsAVMuxer * self)
       g_object_unref (file_sink_factory);
       return mux;
     }
-    case KMS_RECORDING_PROFILE_FLV: {
-        GstElement *mux = kms_utils_element_factory_make ("flvmux", OBJECT_NAME);
-        g_object_set(mux, "streamable", TRUE, NULL);
-        return mux;
+    case KMS_RECORDING_PROFILE_FLV:{
+      GstElement *mux = kms_utils_element_factory_make ("flvmux", OBJECT_NAME);
+
+      g_object_set (mux, "streamable", TRUE, NULL);
+      return mux;
     }
     case KMS_RECORDING_PROFILE_JPEG_VIDEO_ONLY:
       return kms_utils_element_factory_make ("jifmux", OBJECT_NAME);
@@ -212,7 +213,7 @@ kms_av_muxer_get_sink_pad_name (KmsRecordingProfile profile,
 }
 
 static void
-kms_av_muxer_prepare_pipeline (KmsAVMuxer * self)
+kms_av_muxer_prepare_pipeline (KmsAVMuxer *self)
 {
   self->priv->videosrc = gst_element_factory_make ("appsrc", "avMuxerVideoSrc");
   self->priv->audiosrc = gst_element_factory_make ("appsrc", "avMuxerAudioSrc");
@@ -222,9 +223,9 @@ kms_av_muxer_prepare_pipeline (KmsAVMuxer * self)
       (self), KMS_BASE_MEDIA_MUXER_GET_URI (self));
 
   g_object_set (self->priv->videosrc, "block", TRUE, "format", GST_FORMAT_TIME,
-      "max-bytes", 0, NULL);
+      "max-bytes", (guint64) 0, NULL);
   g_object_set (self->priv->audiosrc, "block", TRUE, "format", GST_FORMAT_TIME,
-      "max-bytes", 0, NULL);
+      "max-bytes", (guint64) 0, NULL);
 
   self->priv->mux = kms_av_muxer_create_muxer (self);
 

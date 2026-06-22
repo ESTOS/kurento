@@ -41,15 +41,6 @@ typedef struct _KmsRtpConnectionClass KmsRtpConnectionClass;
 struct _KmsRtpConnection
 {
   KmsRtpBaseConnection parent;
-
-  GSocket *rtp_socket;
-  GSocket *rtcp_socket;
-  GstElement *rtp_udpsink;
-  GstElement *rtp_udpsrc;
-
-  GstElement *rtcp_udpsink;
-  GstElement *rtcp_udpsrc;
-
   KmsRtpConnectionPrivate *priv;
 };
 
@@ -61,7 +52,7 @@ struct _KmsRtpConnectionClass
 GType kms_rtp_connection_get_type (void);
 
 KmsRtpConnection *kms_rtp_connection_new (guint16 min_port, guint16 max_port,
-    gboolean use_ipv6);
+    gboolean use_ipv6, GSocket * rtp_socket_reuse, GSocket * rtcp_socket_reuse);
 
 G_END_DECLS
 #endif /* __KMS_RTP_CONNECTION_H__ */

@@ -21,6 +21,7 @@
 #include "MediaPipeline.hpp"
 #include <EventHandler.hpp>
 #include <gst/gst.h>
+#include <gio/gio.h>
 #include <boost/property_tree/ptree.hpp>
 #include <string>
 
@@ -52,7 +53,7 @@ public:
 
   virtual void dumpGstreamerDot ();
   virtual void dumpGstreamerDot (std::shared_ptr<GstreamerDotDetails>
-                                       details);
+                                 details);
 
   virtual bool getLatencyStats ();
   virtual void setLatencyStats (bool latencyStats);
@@ -68,6 +69,11 @@ public:
   virtual void Serialize (JsonSerializer &serializer);
 
   bool addElement (GstElement *element);
+
+  void getSockets (GSocket **rtp_socket_audio, GSocket **rtcp_socket_audio,
+                   GSocket **rtp_socket_video, GSocket **rtcp_socket_video);
+  void setSockets (GSocket *rtp_socket_audio, GSocket *rtcp_socket_audio,
+                   GSocket *rtp_socket_video, GSocket *rtcp_socket_video);
 
 protected:
   virtual void postConstructor ();
@@ -86,6 +92,10 @@ private:
 
   static StaticConstructor staticConstructor;
 
+  GSocket *rtp_socket_reuse_audio; //ru-bu
+  GSocket *rtcp_socket_reuse_audio;
+  GSocket *rtp_socket_reuse_video;
+  GSocket *rtcp_socket_reuse_video;
 };
 
 } /* kurento */

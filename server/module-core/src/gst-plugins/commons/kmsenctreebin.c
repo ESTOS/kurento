@@ -92,8 +92,8 @@ kms_enc_tree_bin_get_name_from_type (EncoderType enc_type)
 }
 
 static void
-set_encoder_configuration (GstElement * encoder, GstStructure * codec_configs,
-    const gchar * config_name)
+set_encoder_configuration (GstElement *encoder, GstStructure *codec_configs,
+    const gchar *config_name)
 {
   if (!codec_configs || !config_name || !encoder) {
     return;
@@ -142,9 +142,19 @@ set_encoder_configuration (GstElement * encoder, GstStructure * codec_configs,
   }
 }
 
+#define RTCSP1078
+#ifdef RTCSP1078
+typedef enum
+{
+  BITRATE_TYPE_CBR,
+  BITRATE_TYPE_VBR,
+  BITRATE_TYPE_CONSTRAINED_VBR,
+} GstOpusEncBitrateType;
+#endif
+
 static void
-configure_encoder (GstElement * encoder, EncoderType type,
-    GstStructure * codec_configs)
+configure_encoder (GstElement *encoder, EncoderType type,
+    GstStructure *codec_configs)
 {
   GST_DEBUG ("Configure encoder: %" GST_PTR_FORMAT, encoder);
   switch (type) {
@@ -223,8 +233,18 @@ configure_encoder (GstElement * encoder, EncoderType type,
     }
     case OPUS:
     {
+#ifndef RTCSP1078
       g_object_set (G_OBJECT (encoder), "inband-fec", TRUE,
           "perfect-timestamp", TRUE, NULL);
+#else
+//RTCSP-1078 fix opus problems
+#define OPUS_APPLICATION_VOIP                2048
+#define OPUS_APPLICATION_AUDIO               2049
+      g_object_set (G_OBJECT (encoder), "inband-fec", TRUE,
+          "perfect-timestamp", FALSE, "bitrate-type", BITRATE_TYPE_VBR, NULL);
+      g_object_set (G_OBJECT (encoder), "audio-type", OPUS_APPLICATION_VOIP,
+          NULL);
+#endif
       break;
     }
     default:
@@ -237,7 +257,7 @@ configure_encoder (GstElement * encoder, EncoderType type,
 }
 
 static void
-kms_enc_tree_bin_set_encoder_type (KmsEncTreeBin * self)
+kms_enc_tree_bin_set_encoder_type (KmsEncTreeBin *self)
 {
   gchar *name;
 
@@ -265,8 +285,8 @@ kms_enc_tree_bin_set_encoder_type (KmsEncTreeBin * self)
 }
 
 static void
-kms_enc_tree_bin_create_encoder_for_caps (KmsEncTreeBin * self,
-    const GstCaps * caps, GstStructure * codec_configs)
+kms_enc_tree_bin_create_encoder_for_caps (KmsEncTreeBin *self,
+    const GstCaps *caps, GstStructure *codec_configs)
 {
   GList *encoder_list, *filtered_list, *l;
   GstElementFactory *encoder_factory = NULL;
@@ -382,9 +402,10 @@ kms_enc_tree_bin_set_target_bitrate (KmsEncTreeBin *self)
   }
 
   gint old_bitrate;
+
   g_object_get (self->priv->enc, property_name, &old_bitrate, NULL);
 
-  if ((gint)(new_bitrate / 1000) == (gint)(old_bitrate / kbps_div)) {
+  if ((gint) (new_bitrate / 1000) == (gint) (old_bitrate / kbps_div)) {
     // Not enough of a difference to grant changing the encoder bitrate.
     return;
   }
@@ -401,9 +422,7 @@ kms_enc_tree_bin_set_target_bitrate (KmsEncTreeBin *self)
 
 void
 kms_enc_tree_bin_set_bitrate (KmsEncTreeBin *self,
-    gint target_bitrate,
-    gint min_bitrate,
-    gint max_bitrate)
+    gint target_bitrate, gint min_bitrate, gint max_bitrate)
 {
   // TODO: Think about adding a mutex here
   self->priv->current_bitrate = target_bitrate;
@@ -414,7 +433,7 @@ kms_enc_tree_bin_set_bitrate (KmsEncTreeBin *self,
 }
 
 static void
-bitrate_callback (RembEventManager * remb_manager, guint bitrate,
+bitrate_callback (RembEventManager *remb_manager, guint bitrate,
     gpointer user_data)
 {
   KmsEncTreeBin *self = user_data;
@@ -426,7 +445,7 @@ bitrate_callback (RembEventManager * remb_manager, guint bitrate,
 }
 
 static GstPadProbeReturn
-tag_event_probe (GstPad * pad, GstPadProbeInfo * info, gpointer data)
+tag_event_probe (GstPad *pad, GstPadProbeInfo *info, gpointer data)
 {
   GstEvent *event = gst_pad_probe_info_get_event (info);
 
@@ -454,7 +473,7 @@ tag_event_probe (GstPad * pad, GstPadProbeInfo * info, gpointer data)
  * when we detect this situation.
  */
 static GstPadProbeReturn
-check_caps_probe (GstPad * pad, GstPadProbeInfo * info, gpointer data)
+check_caps_probe (GstPad *pad, GstPadProbeInfo *info, gpointer data)
 {
   int width, height;
   GstCaps *filter_caps, *caps;
@@ -503,8 +522,8 @@ check_caps_probe (GstPad * pad, GstPadProbeInfo * info, gpointer data)
 }
 
 static gboolean
-kms_enc_tree_bin_configure (KmsEncTreeBin * self, const GstCaps * caps,
-    GstStructure * codec_configs)
+kms_enc_tree_bin_configure (KmsEncTreeBin *self, const GstCaps *caps,
+    GstStructure *codec_configs)
 {
   KmsTreeBin *tree_bin = KMS_TREE_BIN (self);
   GstElement *rate, *convert, *mediator, *output_tee, *capsfilter = NULL;
@@ -537,7 +556,8 @@ kms_enc_tree_bin_configure (KmsEncTreeBin * self, const GstCaps * caps,
   convert = kms_utils_create_convert_for_caps (caps, GST_DEFAULT_NAME);
   mediator = kms_utils_create_mediator_element (caps, GST_DEFAULT_NAME);
   queue = kms_utils_element_factory_make ("queue", GST_DEFAULT_NAME);
-  g_object_set (queue, "leaky", 2, "max-size-time", LEAKY_TIME, NULL);
+  g_object_set (queue, "leaky", (gint) 2, "max-size-time", (guint64) LEAKY_TIME,
+      NULL);
 
   if (rate) {
     gst_bin_add (GST_BIN (self), rate);
@@ -558,7 +578,8 @@ kms_enc_tree_bin_configure (KmsEncTreeBin * self, const GstCaps * caps,
     GstCaps *filter_caps = gst_caps_from_string ("video/x-raw,format=I420");
     GstPad *sink;
 
-    capsfilter = kms_utils_element_factory_make ("capsfilter", GST_DEFAULT_NAME);
+    capsfilter =
+        kms_utils_element_factory_make ("capsfilter", GST_DEFAULT_NAME);
     sink = gst_element_get_static_pad (capsfilter, "sink");
     gst_pad_add_probe (sink, GST_PAD_PROBE_TYPE_EVENT_DOWNSTREAM,
         check_caps_probe, NULL, NULL);
@@ -592,8 +613,8 @@ kms_enc_tree_bin_configure (KmsEncTreeBin * self, const GstCaps * caps,
 }
 
 KmsEncTreeBin *
-kms_enc_tree_bin_new (const GstCaps * caps, gint target_bitrate,
-    gint min_bitrate, gint max_bitrate, GstStructure * codec_configs)
+kms_enc_tree_bin_new (const GstCaps *caps, gint target_bitrate,
+    gint min_bitrate, gint max_bitrate, GstStructure *codec_configs)
 {
   KmsEncTreeBin *enc;
 
@@ -613,7 +634,7 @@ kms_enc_tree_bin_new (const GstCaps * caps, gint target_bitrate,
 }
 
 static void
-kms_enc_tree_bin_init (KmsEncTreeBin * self)
+kms_enc_tree_bin_init (KmsEncTreeBin *self)
 {
   self->priv = KMS_ENC_TREE_BIN_GET_PRIVATE (self);
 
@@ -628,7 +649,7 @@ kms_enc_tree_bin_init (KmsEncTreeBin * self)
 }
 
 static void
-kms_enc_tree_bin_dispose (GObject * object)
+kms_enc_tree_bin_dispose (GObject *object)
 {
   KmsEncTreeBin *self = KMS_ENC_TREE_BIN (object);
 
@@ -644,7 +665,7 @@ kms_enc_tree_bin_dispose (GObject * object)
 }
 
 static void
-kms_enc_tree_bin_class_init (KmsEncTreeBinClass * klass)
+kms_enc_tree_bin_class_init (KmsEncTreeBinClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   GstElementClass *gstelement_class = GST_ELEMENT_CLASS (klass);

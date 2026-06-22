@@ -110,7 +110,7 @@ struct _KmsSdpRtpMap
 };
 
 static KmsSdpRtpMap *
-kms_sdp_rtp_map_new (guint payload, const gchar * name)
+kms_sdp_rtp_map_new (guint payload, const gchar *name)
 {
   KmsSdpRtpMap *rtpmap;
 
@@ -122,7 +122,7 @@ kms_sdp_rtp_map_new (guint payload, const gchar * name)
 }
 
 static void
-kms_sdp_attribute_destroy (GstSDPAttribute * attr)
+kms_sdp_attribute_destroy (GstSDPAttribute *attr)
 {
   gst_sdp_attribute_clear (attr);
 
@@ -130,7 +130,7 @@ kms_sdp_attribute_destroy (GstSDPAttribute * attr)
 }
 
 static void
-kms_sdp_rtp_map_destroy (KmsSdpRtpMap * rtpmap)
+kms_sdp_rtp_map_destroy (KmsSdpRtpMap *rtpmap)
 {
   g_free (rtpmap->name);
   g_slist_free_full (rtpmap->fmtps, (GDestroyNotify) kms_sdp_attribute_destroy);
@@ -145,7 +145,7 @@ kms_sdp_rtp_map_destroy_pointer (gpointer rtpmap)
 }
 
 static gboolean
-cmp_static_payload (const gchar * enc, const gchar * static_pt)
+cmp_static_payload (const gchar *enc, const gchar *static_pt)
 {
   const gchar *cmp;
   gchar *substr = NULL;
@@ -157,7 +157,7 @@ cmp_static_payload (const gchar * enc, const gchar * static_pt)
 
   /* For audio streams, <encoding parameters> indicates the number */
   /* of audio channels.  This parameter is OPTIONAL and may be     */
-  /* omitted if the number of channels is one, provided that no    */
+  /* #ted if the number of channels is one, provided that no    */
   /* additional parameters are needed. [rfc4566] section 6.        */
 
   if (g_str_has_suffix (enc, "/1")) {
@@ -174,7 +174,7 @@ cmp_static_payload (const gchar * enc, const gchar * static_pt)
 }
 
 static gint
-get_static_payload_for_codec_name (const gchar * name)
+get_static_payload_for_codec_name (const gchar *name)
 {
   guint i;
 
@@ -188,8 +188,8 @@ get_static_payload_for_codec_name (const gchar * name)
 }
 
 static KmsSdpRtpMap *
-kms_sdp_rtp_map_create_for_codec (KmsSdpRtpAvpMediaHandler * self,
-    const gchar * name, GError ** error)
+kms_sdp_rtp_map_create_for_codec (KmsSdpRtpAvpMediaHandler *self,
+    const gchar *name, GError **error)
 {
   KmsSdpRtpMap *rtpmap = NULL;
   gint payload;
@@ -219,7 +219,7 @@ kms_sdp_rtp_map_create_for_codec (KmsSdpRtpAvpMediaHandler * self,
 
 static GObject *
 kms_sdp_rtp_avp_media_handler_constructor (GType gtype, guint n_properties,
-    GObjectConstructParam * properties)
+    GObjectConstructParam *properties)
 {
   GObjectConstructParam *property;
   gchar const *name;
@@ -244,8 +244,8 @@ kms_sdp_rtp_avp_media_handler_constructor (GType gtype, guint n_properties,
 }
 
 static gboolean
-kms_sdp_rtp_avp_media_handler_add_supported_fmts (KmsSdpRtpAvpMediaHandler *
-    self, GstSDPMedia * media, GError ** error)
+kms_sdp_rtp_avp_media_handler_add_supported_fmts (KmsSdpRtpAvpMediaHandler
+    *self, GstSDPMedia *media, GError **error)
 {
   GSList *item = NULL;
   gboolean is_audio;
@@ -317,8 +317,8 @@ kms_sdp_rtp_avp_media_handler_add_supported_fmts (KmsSdpRtpAvpMediaHandler *
 }
 
 static gboolean
-kms_sdp_rtp_avp_media_handler_add_extmaps (KmsSdpRtpAvpMediaHandler *
-    self, GstSDPMedia * media, GError ** error)
+kms_sdp_rtp_avp_media_handler_add_extmaps (KmsSdpRtpAvpMediaHandler *self,
+    GstSDPMedia *media, GError **error)
 {
   GHashTableIter iter;
   gpointer key, value;
@@ -343,8 +343,8 @@ kms_sdp_rtp_avp_media_handler_add_extmaps (KmsSdpRtpAvpMediaHandler *
 }
 
 static gboolean
-kms_sdp_rtp_avp_media_handler_add_fmtp_attrs (KmsSdpRtpAvpMediaHandler * self,
-    const KmsSdpRtpMap * rtpmap, GstSDPMedia * media, GError ** error)
+kms_sdp_rtp_avp_media_handler_add_fmtp_attrs (KmsSdpRtpAvpMediaHandler *self,
+    const KmsSdpRtpMap *rtpmap, GstSDPMedia *media, GError **error)
 {
   GSList *item = NULL;
 
@@ -363,8 +363,8 @@ kms_sdp_rtp_avp_media_handler_add_fmtp_attrs (KmsSdpRtpAvpMediaHandler * self,
 }
 
 static gboolean
-kms_sdp_rtp_avp_media_handler_add_rtpmap_attrs (KmsSdpRtpAvpMediaHandler * self,
-    GstSDPMedia * media, GError ** error)
+kms_sdp_rtp_avp_media_handler_add_rtpmap_attrs (KmsSdpRtpAvpMediaHandler *self,
+    GstSDPMedia *media, GError **error)
 {
   GSList *fmts = NULL;
   gboolean omit;
@@ -386,11 +386,13 @@ kms_sdp_rtp_avp_media_handler_add_rtpmap_attrs (KmsSdpRtpAvpMediaHandler * self,
     guint pt;
 
     payload = g_array_index (media->fmts, gchar *, i);
-    pt = (guint)strtoul(payload, NULL, 10);
+    pt = (guint) strtoul (payload, NULL, 10);
 
     /* [rfc4566] rtpmap attribute can be omitted for static payload type  */
     /* numbers so it is completely defined in the RTP Audio/Video profile */
     omit = pt >= DEFAULT_RTP_AUDIO_BASE_PAYLOAD && pt <= G_N_ELEMENTS (rtpmaps);
+    /* PROCALL-2410 allways set the rtpmaps - also for static payloads */
+    omit = FALSE;
 
     for (item = fmts; item != NULL; item = g_slist_next (item)) {
       KmsSdpRtpMap *rtpmap = item->data;
@@ -427,8 +429,8 @@ kms_sdp_rtp_avp_media_handler_add_rtpmap_attrs (KmsSdpRtpAvpMediaHandler * self,
 }
 
 static GstSDPMedia *
-kms_sdp_rtp_avp_media_handler_create_offer (KmsSdpMediaHandler * handler,
-    const gchar * media, const GstSDPMedia * prev_offer, GError ** error)
+kms_sdp_rtp_avp_media_handler_create_offer (KmsSdpMediaHandler *handler,
+    const gchar *media, const GstSDPMedia *prev_offer, GError **error)
 {
   GstSDPMedia *m;
 
@@ -461,8 +463,8 @@ error:
 }
 
 static gboolean
-kms_sdp_rtp_avp_media_handler_encoding_supported (KmsSdpRtpAvpMediaHandler *
-    self, const GstSDPMedia * media, const gchar * enc, gint pt)
+kms_sdp_rtp_avp_media_handler_encoding_supported (KmsSdpRtpAvpMediaHandler
+    *self, const GstSDPMedia *media, const gchar *enc, gint pt)
 {
   GSList *item = NULL;
 
@@ -502,8 +504,8 @@ kms_sdp_rtp_avp_media_handler_encoding_supported (KmsSdpRtpAvpMediaHandler *
 }
 
 static gboolean
-kms_sdp_rtp_avp_media_handler_format_supported (KmsSdpRtpAvpMediaHandler * self,
-    const GstSDPMedia * media, const gchar * fmt)
+kms_sdp_rtp_avp_media_handler_format_supported (KmsSdpRtpAvpMediaHandler *self,
+    const GstSDPMedia *media, const gchar *fmt)
 {
   const gchar *val;
   gchar **attrs;
@@ -511,7 +513,7 @@ kms_sdp_rtp_avp_media_handler_format_supported (KmsSdpRtpAvpMediaHandler * self,
   gint pt;
 
   val = sdp_utils_get_attr_map_value (media, "rtpmap", fmt);
-  pt = (gint)strtol(fmt, NULL, 10);
+  pt = (gint) strtol (fmt, NULL, 10);
 
   if (val == NULL) {
     /* Check if this is a static payload type so they do not need to be */
@@ -608,7 +610,7 @@ static gboolean
       /* Check if this is a static payload type so they do not need to be */
       /* set in an rtpmap attribute */
 
-      pt = (gint)strtol(fmt, NULL, 10);
+      pt = (gint) strtol (fmt, NULL, 10);
       if (pt >= 0 && pt <= G_N_ELEMENTS (rtpmaps) && rtpmaps[pt] != NULL) {
         if (kms_sdp_rtp_avp_media_handler_encoding_supported (self, offer,
                 rtpmaps[pt], pt)) {
@@ -635,9 +637,9 @@ static gboolean
 }
 
 static gboolean
-kms_sdp_rtp_avp_media_handler_can_insert_attribute (KmsSdpMediaHandler *
-    handler, const GstSDPMedia * offer, const GstSDPAttribute * attr,
-    GstSDPMedia * answer, const GstSDPMessage * msg)
+kms_sdp_rtp_avp_media_handler_can_insert_attribute (KmsSdpMediaHandler *handler,
+    const GstSDPMedia *offer, const GstSDPAttribute *attr, GstSDPMedia *answer,
+    const GstSDPMessage *msg)
 {
   if (g_strcmp0 (attr->key, "rtpmap") == 0 ||
       g_strcmp0 (attr->key, "extmap") == 0) {
@@ -654,8 +656,8 @@ kms_sdp_rtp_avp_media_handler_can_insert_attribute (KmsSdpMediaHandler *
 }
 
 GstSDPMedia *
-kms_sdp_rtp_avp_media_handler_create_answer (KmsSdpMediaHandler * handler,
-    const GstSDPMessage * msg, const GstSDPMedia * offer, GError ** error)
+kms_sdp_rtp_avp_media_handler_create_answer (KmsSdpMediaHandler *handler,
+    const GstSDPMessage *msg, const GstSDPMedia *offer, GError **error)
 {
   GstSDPMedia *m = NULL;
 
@@ -701,7 +703,7 @@ struct intersect_data
 };
 
 static gboolean
-instersect_rtp_avp_media_attr (const GstSDPAttribute * attr, gpointer user_data)
+instersect_rtp_avp_media_attr (const GstSDPAttribute *attr, gpointer user_data)
 {
   struct intersect_data *data = (struct intersect_data *) user_data;
 
@@ -721,9 +723,9 @@ instersect_rtp_avp_media_attr (const GstSDPAttribute * attr, gpointer user_data)
 }
 
 static gboolean
-kms_sdp_rtp_avp_media_handler_intersect_sdp_medias (KmsSdpMediaHandler *
-    handler, const GstSDPMedia * offer, GstSDPMedia * answer,
-    const GstSDPMessage * msg, GError ** error)
+kms_sdp_rtp_avp_media_handler_intersect_sdp_medias (KmsSdpMediaHandler *handler,
+    const GstSDPMedia *offer, GstSDPMedia *answer, const GstSDPMessage *msg,
+    GError **error)
 {
   struct intersect_data data = {
     .handler = handler,
@@ -743,15 +745,15 @@ kms_sdp_rtp_avp_media_handler_intersect_sdp_medias (KmsSdpMediaHandler *
 }
 
 static gboolean
-kms_sdp_rtp_avp_media_handler_is_valid_media (const gchar * media)
+kms_sdp_rtp_avp_media_handler_is_valid_media (const gchar *media)
 {
   return g_strcmp0 (media, SDP_AUDIO_MEDIA) == 0 ||
       g_strcmp0 (media, SDP_VIDEO_MEDIA) == 0;
 }
 
 static gboolean
-kms_sdp_rtp_avp_media_handler_init_new_offer (KmsSdpMediaHandler * handler,
-    const gchar * media, GstSDPMedia * offer, GError ** error)
+kms_sdp_rtp_avp_media_handler_init_new_offer (KmsSdpMediaHandler *handler,
+    const gchar *media, GstSDPMedia *offer, GError **error)
 {
   gchar *proto = NULL;
   gboolean ret = TRUE;
@@ -803,9 +805,9 @@ end:
 }
 
 static gboolean
-kms_sdp_rtp_avp_media_handler_init_renegotiated_offer (KmsSdpMediaHandler *
-    handler, const gchar * media, GstSDPMedia * offer,
-    const GstSDPMedia * prev_offer, GError ** error)
+kms_sdp_rtp_avp_media_handler_init_renegotiated_offer (KmsSdpMediaHandler
+    *handler, const gchar *media, GstSDPMedia *offer,
+    const GstSDPMedia *prev_offer, GError **error)
 {
   const gchar *m = gst_sdp_media_get_media (prev_offer);
   const gchar *proto;
@@ -856,9 +858,9 @@ kms_sdp_rtp_avp_media_handler_init_renegotiated_offer (KmsSdpMediaHandler *
 }
 
 static gboolean
-kms_sdp_rtp_avp_media_handler_init_offer (KmsSdpMediaHandler * handler,
-    const gchar * media, GstSDPMedia * offer, const GstSDPMedia * prev_offer,
-    GError ** error)
+kms_sdp_rtp_avp_media_handler_init_offer (KmsSdpMediaHandler *handler,
+    const gchar *media, GstSDPMedia *offer, const GstSDPMedia *prev_offer,
+    GError **error)
 {
   if (prev_offer == NULL) {
     return kms_sdp_rtp_avp_media_handler_init_new_offer (handler, media, offer,
@@ -871,7 +873,7 @@ kms_sdp_rtp_avp_media_handler_init_offer (KmsSdpMediaHandler * handler,
 
 static gboolean
 kms_sdp_rtp_avp_media_handler_add_new_offer_attributes (KmsSdpRtpAvpMediaHandler
-    * self, GstSDPMedia * offer, GError ** error)
+    *self, GstSDPMedia *offer, GError **error)
 {
   if (!kms_sdp_rtp_avp_media_handler_add_supported_fmts (self, offer, error)) {
     return FALSE;
@@ -889,8 +891,8 @@ kms_sdp_rtp_avp_media_handler_add_new_offer_attributes (KmsSdpRtpAvpMediaHandler
 }
 
 static gboolean
-kms_sdp_rtp_avp_media_handler_set_supported_fmts (KmsSdpRtpAvpMediaHandler *
-    self, const GstSDPMedia * origin, GstSDPMedia * target, GError ** error)
+kms_sdp_rtp_avp_media_handler_set_supported_fmts (KmsSdpRtpAvpMediaHandler
+    *self, const GstSDPMedia *origin, GstSDPMedia *target, GError **error)
 {
   guint i, len;
 
@@ -917,8 +919,8 @@ kms_sdp_rtp_avp_media_handler_set_supported_fmts (KmsSdpRtpAvpMediaHandler *
 }
 
 static gboolean
-kms_sdp_rtp_avp_media_handler_add_supported_fmtp (KmsSdpRtpAvpMediaHandler *
-    self, const GstSDPMedia * prev_offer, GstSDPMedia * offer, GError ** error)
+kms_sdp_rtp_avp_media_handler_add_supported_fmtp (KmsSdpRtpAvpMediaHandler
+    *self, const GstSDPMedia *prev_offer, GstSDPMedia *offer, GError **error)
 {
   guint i, len;
 
@@ -996,9 +998,8 @@ static gboolean
 }
 
 static gboolean
-kms_sdp_rtp_avp_media_handler_add_offer_attributes (KmsSdpMediaHandler *
-    handler, GstSDPMedia * offer, const GstSDPMedia * prev_offer,
-    GError ** error)
+kms_sdp_rtp_avp_media_handler_add_offer_attributes (KmsSdpMediaHandler *handler,
+    GstSDPMedia *offer, const GstSDPMedia *prev_offer, GError **error)
 {
   KmsSdpRtpAvpMediaHandler *self = KMS_SDP_RTP_AVP_MEDIA_HANDLER (handler);
 
@@ -1021,8 +1022,8 @@ kms_sdp_rtp_avp_media_handler_add_offer_attributes (KmsSdpMediaHandler *
 }
 
 static gboolean
-kms_sdp_rtp_avp_media_handler_init_answer (KmsSdpMediaHandler * handler,
-    const GstSDPMedia * offer, GstSDPMedia * answer, GError ** error)
+kms_sdp_rtp_avp_media_handler_init_answer (KmsSdpMediaHandler *handler,
+    const GstSDPMedia *offer, GstSDPMedia *answer, GError **error)
 {
   const gchar *proto;
 
@@ -1058,8 +1059,8 @@ kms_sdp_rtp_avp_media_handler_init_answer (KmsSdpMediaHandler * handler,
 }
 
 static gboolean
-kms_sdp_rtp_avp_media_handler_add_answer_attributes_impl (KmsSdpMediaHandler *
-    handler, const GstSDPMedia * offer, GstSDPMedia * answer, GError ** error)
+kms_sdp_rtp_avp_media_handler_add_answer_attributes_impl (KmsSdpMediaHandler
+    *handler, const GstSDPMedia *offer, GstSDPMedia *answer, GError **error)
 {
   KmsSdpRtpAvpMediaHandler *self = KMS_SDP_RTP_AVP_MEDIA_HANDLER (handler);
   guint i, len, port;
@@ -1098,6 +1099,7 @@ kms_sdp_rtp_avp_media_handler_add_answer_attributes_impl (KmsSdpMediaHandler *
     // > the answer MUST be set to zero. At least one MUST be present, as specified
     // > by SDP.
     const gchar *fmt = gst_sdp_media_get_format (offer, 0);
+
     if (fmt != NULL) {
       // Add the first format, if the SDP Offer had one to start with.
       if (gst_sdp_media_add_format (answer, fmt) != GST_SDP_OK) {
@@ -1129,7 +1131,7 @@ kms_sdp_rtp_avp_media_handler_add_answer_attributes_impl (KmsSdpMediaHandler *
 }
 
 static void
-kms_sdp_rtp_avp_media_handler_finalize (GObject * object)
+kms_sdp_rtp_avp_media_handler_finalize (GObject *object)
 {
   KmsSdpRtpAvpMediaHandler *self = KMS_SDP_RTP_AVP_MEDIA_HANDLER (object);
 
@@ -1146,7 +1148,7 @@ kms_sdp_rtp_avp_media_handler_finalize (GObject * object)
 }
 
 static void
-kms_sdp_rtp_avp_media_handler_class_init (KmsSdpRtpAvpMediaHandlerClass * klass)
+kms_sdp_rtp_avp_media_handler_class_init (KmsSdpRtpAvpMediaHandlerClass *klass)
 {
   GObjectClass *gobject_class;
   KmsSdpMediaHandlerClass *handler_class;
@@ -1176,7 +1178,7 @@ kms_sdp_rtp_avp_media_handler_class_init (KmsSdpRtpAvpMediaHandlerClass * klass)
 }
 
 static void
-kms_sdp_rtp_avp_media_handler_init (KmsSdpRtpAvpMediaHandler * self)
+kms_sdp_rtp_avp_media_handler_init (KmsSdpRtpAvpMediaHandler *self)
 {
   self->priv = KMS_SDP_RTP_AVP_MEDIA_HANDLER_GET_PRIVATE (self);
 
@@ -1197,8 +1199,8 @@ kms_sdp_rtp_avp_media_handler_new ()
 }
 
 gboolean
-kms_sdp_rtp_avp_media_handler_add_extmap (KmsSdpRtpAvpMediaHandler * self,
-    guint8 id, const gchar * uri, GError ** error)
+kms_sdp_rtp_avp_media_handler_add_extmap (KmsSdpRtpAvpMediaHandler *self,
+    guint8 id, const gchar *uri, GError **error)
 {
 
   if (g_hash_table_contains (self->priv->extmaps, GUINT_TO_POINTER (id))) {
@@ -1214,8 +1216,8 @@ kms_sdp_rtp_avp_media_handler_add_extmap (KmsSdpRtpAvpMediaHandler * self,
 }
 
 gboolean
-kms_sdp_rtp_avp_media_handler_use_payload_manager (KmsSdpRtpAvpMediaHandler *
-    self, KmsISdpPayloadManager * manager, GError ** error)
+kms_sdp_rtp_avp_media_handler_use_payload_manager (KmsSdpRtpAvpMediaHandler
+    *self, KmsISdpPayloadManager *manager, GError **error)
 {
   if (!KMS_IS_I_SDP_PAYLOAD_MANAGER (manager)) {
     g_set_error_literal (error, KMS_SDP_AGENT_ERROR, SDP_AGENT_UNEXPECTED_ERROR,
@@ -1232,7 +1234,7 @@ kms_sdp_rtp_avp_media_handler_use_payload_manager (KmsSdpRtpAvpMediaHandler *
 }
 
 static gboolean
-is_codec_used (GSList * rtpmaps, const gchar * name)
+is_codec_used (GSList *rtpmaps, const gchar *name)
 {
   GSList *l;
 
@@ -1248,8 +1250,8 @@ is_codec_used (GSList * rtpmaps, const gchar * name)
 }
 
 static gint
-kms_sdp_rtp_avp_media_handler_add_codec (KmsSdpRtpAvpMediaHandler * self,
-    const gchar * media, const gchar * name, GError ** error)
+kms_sdp_rtp_avp_media_handler_add_codec (KmsSdpRtpAvpMediaHandler *self,
+    const gchar *media, const gchar *name, GError **error)
 {
   KmsSdpRtpMap *rtpmap;
   GSList **fmts;
@@ -1291,28 +1293,26 @@ kms_sdp_rtp_avp_media_handler_add_codec (KmsSdpRtpAvpMediaHandler * self,
         NULL);
   } else if (strstr (name, "AV1") != NULL) {
     kms_sdp_rtp_avp_media_handler_add_fmtp (self, rtpmap->payload,
-        "level-idx=5;profile=0;tier=0",
-        NULL);
+        "level-idx=5;profile=0;tier=0", NULL);
   } else if (strstr (name, "VP9") != NULL) {
     kms_sdp_rtp_avp_media_handler_add_fmtp (self, rtpmap->payload,
-        "profile-id=0",
-        NULL);
+        "profile-id=0", NULL);
   }
 
   return rtpmap->payload;
 }
 
 gint
-kms_sdp_rtp_avp_media_handler_add_audio_codec (KmsSdpRtpAvpMediaHandler * self,
-    const gchar * name, GError ** error)
+kms_sdp_rtp_avp_media_handler_add_audio_codec (KmsSdpRtpAvpMediaHandler *self,
+    const gchar *name, GError **error)
 {
   return kms_sdp_rtp_avp_media_handler_add_codec (self, SDP_AUDIO_MEDIA, name,
       error);
 }
 
 gint
-kms_sdp_rtp_avp_media_handler_add_video_codec (KmsSdpRtpAvpMediaHandler * self,
-    const gchar * name, GError ** error)
+kms_sdp_rtp_avp_media_handler_add_video_codec (KmsSdpRtpAvpMediaHandler *self,
+    const gchar *name, GError **error)
 {
   return kms_sdp_rtp_avp_media_handler_add_codec (self, SDP_VIDEO_MEDIA, name,
       error);
@@ -1333,14 +1333,14 @@ gint kms_sdp_rtp_avp_media_handler_add_generic_video_payload
 }
 
 static gint
-find_rtpmap_payload (KmsSdpRtpMap * rtpmap, guint * payload)
+find_rtpmap_payload (KmsSdpRtpMap *rtpmap, guint *payload)
 {
   return rtpmap->payload - *payload;
 }
 
 gboolean
-kms_sdp_rtp_avp_media_handler_add_fmtp (KmsSdpRtpAvpMediaHandler * self,
-    guint payload, const gchar * value, GError ** error)
+kms_sdp_rtp_avp_media_handler_add_fmtp (KmsSdpRtpAvpMediaHandler *self,
+    guint payload, const gchar *value, GError **error)
 {
   GstSDPAttribute *fmtp;
   KmsSdpRtpMap *rtpmap;

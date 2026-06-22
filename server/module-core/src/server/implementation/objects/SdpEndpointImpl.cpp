@@ -23,6 +23,7 @@
 #include <fstream>
 #include <CodecConfiguration.hpp>
 #include <gst/sdp/gstsdpmessage.h>
+#include <MediaPipelineImpl.hpp>
 
 #define GST_CAT_DEFAULT kurento_sdp_endpoint_impl
 GST_DEBUG_CATEGORY_STATIC (GST_CAT_DEFAULT);
@@ -33,6 +34,11 @@ GST_DEBUG_CATEGORY_STATIC (GST_CAT_DEFAULT);
 #define PARAM_CODEC_NAME "name"
 #define PARAM_AUDIO_CODECS "audioCodecs"
 #define PARAM_VIDEO_CODECS "videoCodecs"
+#define PARAM_LOCAL_ADDRESS "localAddress"
+#define PARAM_SOCKET_REUSE "socketreuse"
+#define PARAM_RTPEP_AVPF "rtpepavpfuse"
+#define PARAM_JBUFMODE_RTP "jbufmodertp"
+#define PARAM_JBUFMODE_WEBRTC "jbufmodewebrtc"
 
 namespace kurento
 {
@@ -58,7 +64,7 @@ str_to_sdp (const std::string &sdpStr)
     throw KurentoException (SDP_PARSE_ERROR, "Error parsing SDP");
   }
 
-  if (gst_sdp_message_get_version(sdp) == nullptr) {
+  if (gst_sdp_message_get_version (sdp) == nullptr) {
     gst_sdp_message_free (sdp);
     throw KurentoException (SDP_PARSE_ERROR, "Invalid SDP");
   }
@@ -86,10 +92,11 @@ append_codec_to_array (GArray *array, const char *codec)
   g_value_init (&v, GST_TYPE_STRUCTURE);
 
   s = gst_structure_new_empty (codec);
+
   if (s == NULL) {
     std::string message =
-        std::string () + "Invalid codec name in config: '" + codec + "'";
-    GST_ERROR ("%s", message.c_str ());
+      std::string () + "Invalid codec name in config: '" + codec + "'";
+    GST_ERROR ("%s", message.c_str () );
     throw KurentoException (SDP_PARSE_ERROR, message);
   }
 
@@ -112,6 +119,36 @@ void SdpEndpointImpl::postConstructor ()
 
   sessId = std::string (sess_id);
   g_free (sess_id);
+
+  if (dosocketreuse) { //ru-bu get rtp_socket_reuse from pipeline
+    std::shared_ptr<MediaPipelineImpl> pipe;
+    pipe = std::dynamic_pointer_cast<MediaPipelineImpl> (getMediaPipeline() );
+    GSocket *rtp_socket_reuse_audio, *rtcp_socket_reuse_audio,
+            *rtp_socket_reuse_video, *rtcp_socket_reuse_video;
+    pipe->getSockets (&rtp_socket_reuse_audio, &rtcp_socket_reuse_audio,
+                      &rtp_socket_reuse_video, &rtcp_socket_reuse_video);
+
+    //set it in the new session
+    if (rtp_socket_reuse_audio) {
+      g_signal_emit_by_name (element, "get-set-rtp-socket-audio", sessId.c_str(),
+                             rtp_socket_reuse_audio, &rtp_socket_reuse_audio);
+    }
+
+    if (rtcp_socket_reuse_audio) {
+      g_signal_emit_by_name (element, "get-set-rtcp-socket-audio", sessId.c_str(),
+                             rtcp_socket_reuse_audio, &rtcp_socket_reuse_audio);
+    }
+
+    if (rtp_socket_reuse_video) {
+      g_signal_emit_by_name (element, "get-set-rtp-socket-video", sessId.c_str(),
+                             rtp_socket_reuse_video, &rtp_socket_reuse_video);
+    }
+
+    if (rtcp_socket_reuse_video) {
+      g_signal_emit_by_name (element, "get-set-rtcp-socket-video", sessId.c_str(),
+                             rtcp_socket_reuse_video, &rtcp_socket_reuse_video);
+    }
+  }
 }
 
 SdpEndpointImpl::SdpEndpointImpl (const boost::property_tree::ptree &config,
@@ -120,6 +157,16 @@ SdpEndpointImpl::SdpEndpointImpl (const boost::property_tree::ptree &config,
   SessionEndpointImpl (config, parent, factoryName)
 {
   GArray *audio_codecs, *video_codecs;
+  guint audio_medias, video_medias, socket_reuse, use_rtpep_avpf, jbuf_mode_rtp,
+        jbuf_mode_webrtc;
+  std::string local_address;
+  bool bdosocketreuse, rtpepavpfuse;
+
+  if (factoryName == "rtpendpoint") {
+    isrtpendpoint = TRUE;
+  } else {
+    isrtpendpoint = FALSE;
+  }
 
   audio_codecs = g_array_new (FALSE, TRUE, sizeof (GValue) );
   video_codecs = g_array_new (FALSE, TRUE, sizeof (GValue) );
@@ -128,18 +175,37 @@ SdpEndpointImpl::SdpEndpointImpl (const boost::property_tree::ptree &config,
   //   g_signal_connect (element, "media-start", G_CALLBACK (media_start_cb), this);
   //   g_signal_connect (element, "media-stop", G_CALLBACK (media_stop_cb), this);
 
-  guint audio_medias = 0;
-  getConfigValue <guint, SdpEndpoint> (&audio_medias, PARAM_NUM_AUDIO_MEDIAS, 1);
+  audio_medias = 0;
+  getConfigValue <guint, SdpEndpoint> (&audio_medias, PARAM_NUM_AUDIO_MEDIAS, 0);
+  video_medias = 0;
+  getConfigValue <guint, SdpEndpoint> (&video_medias, PARAM_NUM_VIDEO_MEDIAS, 0);
+  getConfigValue <std::string, SdpEndpoint> (&local_address, PARAM_LOCAL_ADDRESS,
+      "");
+  socket_reuse = 0;
+  getConfigValue <guint, SdpEndpoint> (&socket_reuse, PARAM_SOCKET_REUSE, 1);
+  use_rtpep_avpf = 0;
+  getConfigValue <guint, SdpEndpoint> (&use_rtpep_avpf, PARAM_RTPEP_AVPF, 1);
+  // default value 0 RTP_JITTER_BUFFER_MODE_NONE
+  jbuf_mode_rtp = 0;
+  getConfigValue <guint, SdpEndpoint> (&jbuf_mode_rtp, PARAM_JBUFMODE_RTP, 0);
+  jbuf_mode_webrtc = 0;
+  getConfigValue <guint, SdpEndpoint> (&jbuf_mode_webrtc, PARAM_JBUFMODE_WEBRTC,
+                                       0);
 
-  guint video_medias = 0;
-  getConfigValue <guint, SdpEndpoint> (&video_medias, PARAM_NUM_VIDEO_MEDIAS, 1);
+  if (socket_reuse == 1 && isrtpendpoint == TRUE) {
+    dosocketreuse = TRUE;
+  } else {
+    dosocketreuse = FALSE;
+  }
+
+  rtpepavpfuse = (use_rtpep_avpf == 0) ? FALSE : TRUE;
 
   std::vector<std::shared_ptr<CodecConfiguration>> acodec_list;
   getConfigValue <std::vector<std::shared_ptr<CodecConfiguration>>, SdpEndpoint>
       (&acodec_list, PARAM_AUDIO_CODECS);
 
   for (std::shared_ptr<CodecConfiguration> conf : acodec_list) {
-    if (!conf->getName().empty()) {
+    if (!conf->getName().empty() ) {
       append_codec_to_array (audio_codecs, conf->getName().c_str() );
     }
   }
@@ -149,7 +215,7 @@ SdpEndpointImpl::SdpEndpointImpl (const boost::property_tree::ptree &config,
       (&vcodec_list, PARAM_VIDEO_CODECS);
 
   for (std::shared_ptr<CodecConfiguration> conf : vcodec_list) {
-    if (!conf->getName().empty()) {
+    if (!conf->getName().empty() ) {
       append_codec_to_array (video_codecs, conf->getName().c_str() );
     }
   }
@@ -159,6 +225,25 @@ SdpEndpointImpl::SdpEndpointImpl (const boost::property_tree::ptree &config,
   g_object_set (element, "num-video-medias", video_medias, "video-codecs",
                 video_codecs, NULL);
   g_object_set (element, "use-ipv6", useIpv6, NULL);
+
+  /* set RtpEndpoints Address from config ru-bu */
+  if ( (local_address.empty () == false) && (isrtpendpoint == TRUE) ) {
+    g_object_set (element, "addr", local_address.c_str(), NULL);
+  }
+
+  bdosocketreuse = dosocketreuse;
+  g_object_set (element, "reuse-socket", bdosocketreuse, NULL);
+  g_object_set (element, "use-rtpep-avpf", rtpepavpfuse, NULL);
+
+  //RTCSP-1078 switch back to synched mode
+  //RTCSP-973 we use none mode because the other modes gives problems in case of changing one mediaendpoint
+  //RTCSP-1552 for conference mode "none" is not working so we must switch it on for webrtcendpoints
+  //RTCSP-1701 delayed audio switching -> set both buffers to synced mode after the jitterbuffer mode created in rtpbin is set correctly
+  if (isrtpendpoint == TRUE) {
+    g_object_set (element, "jitterbuffermode", jbuf_mode_rtp, NULL);
+  } else {
+    g_object_set (element, "jitterbuffermode", jbuf_mode_webrtc, NULL);
+  }
 
   offerInProcess = false;
   waitingAnswer = false;
@@ -199,13 +284,14 @@ std::string SdpEndpointImpl::generateOffer ()
 {
   std::shared_ptr<OfferOptions> options = std::make_shared <OfferOptions> ();
 
-  options->setOfferToReceiveAudio(true);
-  options->setOfferToReceiveVideo(true);
+  options->setOfferToReceiveAudio (true);
+  options->setOfferToReceiveVideo (true);
 
-  return generateOffer(options);
+  return generateOffer (options);
 }
 
-std::string SdpEndpointImpl::generateOffer (std::shared_ptr<OfferOptions> options)
+std::string SdpEndpointImpl::generateOffer (std::shared_ptr<OfferOptions>
+    options)
 {
   GstSDPMessage *offer = nullptr;
   std::string offerStr;
@@ -218,12 +304,12 @@ std::string SdpEndpointImpl::generateOffer (std::shared_ptr<OfferOptions> option
   }
 
   if (options->isSetOfferToReceiveAudio ()
-      && !options->getOfferToReceiveAudio ()) {
+      && !options->getOfferToReceiveAudio () ) {
     g_object_set (element, "num-audio-medias", 0, NULL);
   }
 
   if (options->isSetOfferToReceiveVideo ()
-      && !options->getOfferToReceiveVideo ()) {
+      && !options->getOfferToReceiveVideo () ) {
     g_object_set (element, "num-video-medias", 0, NULL);
   }
 
@@ -238,6 +324,25 @@ std::string SdpEndpointImpl::generateOffer (std::shared_ptr<OfferOptions> option
   sdp_to_str (offerStr, offer);
   gst_sdp_message_free (offer);
   waitingAnswer = true;
+
+  if (dosocketreuse) { //ru-bu set rtp_socket_reuse to pipeline
+    std::shared_ptr<MediaPipelineImpl> pipe;
+    pipe = std::dynamic_pointer_cast<MediaPipelineImpl> (getMediaPipeline() );
+    GSocket *rtp_socket_reuse_audio = NULL, *rtcp_socket_reuse_audio = NULL,
+             *rtp_socket_reuse_video = NULL, *rtcp_socket_reuse_video = NULL;
+
+    g_signal_emit_by_name (element, "get-set-rtp-socket-audio", sessId.c_str(),
+                           rtp_socket_reuse_audio, &rtp_socket_reuse_audio);
+    g_signal_emit_by_name (element, "get-set-rtcp-socket-audio", sessId.c_str(),
+                           rtcp_socket_reuse_audio, &rtcp_socket_reuse_audio);
+    g_signal_emit_by_name (element, "get-set-rtp-socket-video", sessId.c_str(),
+                           rtp_socket_reuse_video, &rtp_socket_reuse_video);
+    g_signal_emit_by_name (element, "get-set-rtcp-socket-video", sessId.c_str(),
+                           rtcp_socket_reuse_video, &rtcp_socket_reuse_video);
+
+    pipe->setSockets (rtp_socket_reuse_audio, rtcp_socket_reuse_audio,
+                      rtp_socket_reuse_video, rtcp_socket_reuse_video);
+  }
 
   return offerStr;
 }
@@ -254,6 +359,7 @@ std::string SdpEndpointImpl::processOffer (const std::string &offer)
 
   offerSdp = str_to_sdp (offer);
 
+  //ru-bu todo
   if (!offerInProcess.compare_exchange_strong (expected, true) ) {
     //the endpoint is already negotiated
     throw KurentoException (SDP_END_POINT_ALREADY_NEGOTIATED,
@@ -275,12 +381,31 @@ std::string SdpEndpointImpl::processOffer (const std::string &offer)
 
   try {
     MediaSessionStarted event (shared_from_this (),
-        MediaSessionStarted::getName ());
-    sigcSignalEmit(signalMediaSessionStarted, event);
+                               MediaSessionStarted::getName () );
+    sigcSignalEmit (signalMediaSessionStarted, event);
   } catch (const std::bad_weak_ptr &e) {
     // shared_from_this()
     GST_ERROR ("BUG creating %s: %s", MediaSessionStarted::getName ().c_str (),
-        e.what ());
+               e.what () );
+  }
+
+  if (dosocketreuse) { //ru-bu set rtp_socket_reuse to pipeline
+    std::shared_ptr<MediaPipelineImpl> pipe;
+    pipe = std::dynamic_pointer_cast<MediaPipelineImpl> (getMediaPipeline() );
+    GSocket *rtp_socket_reuse_audio = NULL, *rtcp_socket_reuse_audio = NULL,
+             *rtp_socket_reuse_video = NULL, *rtcp_socket_reuse_video = NULL;
+
+    g_signal_emit_by_name (element, "get-set-rtp-socket-audio", sessId.c_str(),
+                           rtp_socket_reuse_audio, &rtp_socket_reuse_audio);
+    g_signal_emit_by_name (element, "get-set-rtcp-socket-audio", sessId.c_str(),
+                           rtcp_socket_reuse_audio, &rtcp_socket_reuse_audio);
+    g_signal_emit_by_name (element, "get-set-rtp-socket-video", sessId.c_str(),
+                           rtp_socket_reuse_video, &rtp_socket_reuse_video);
+    g_signal_emit_by_name (element, "get-set-rtcp-socket-video", sessId.c_str(),
+                           rtcp_socket_reuse_video, &rtcp_socket_reuse_video);
+
+    pipe->setSockets (rtp_socket_reuse_audio, rtcp_socket_reuse_audio,
+                      rtp_socket_reuse_video, rtcp_socket_reuse_video);
   }
 
   return offerSdpStr;
@@ -323,12 +448,12 @@ std::string SdpEndpointImpl::processAnswer (const std::string &answer)
 
   try {
     MediaSessionStarted event (shared_from_this (),
-        MediaSessionStarted::getName());
-    sigcSignalEmit(signalMediaSessionStarted, event);
+                               MediaSessionStarted::getName() );
+    sigcSignalEmit (signalMediaSessionStarted, event);
   } catch (const std::bad_weak_ptr &e) {
     // shared_from_this()
     GST_ERROR ("BUG creating %s: %s", MediaSessionStarted::getName ().c_str (),
-        e.what ());
+               e.what () );
   }
 
   return getLocalSessionDescriptor ();

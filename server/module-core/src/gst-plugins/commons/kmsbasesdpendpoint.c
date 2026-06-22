@@ -47,6 +47,8 @@ static gboolean kms_base_sdp_endpoint_init_sdp_handlers (KmsBaseSdpEndpoint *
 #define USE_IPV6_DEFAULT FALSE
 #define MAX_VIDEO_RECV_BW_DEFAULT 0
 #define MAX_AUDIO_RECV_BW_DEFAULT 0
+#define REUSE_SOCKETS_DEFAULT FALSE
+#define USE_RTPEP_AVPF_DEFAULT FALSE
 
 #ifndef GST_VALUE_HOLDS_STRUCTURE
 #define GST_VALUE_HOLDS_STRUCTURE(x) (G_VALUE_HOLDS((x), _gst_structure_type))
@@ -62,6 +64,10 @@ enum
   SIGNAL_PROCESS_ANSWER,
   SIGNAL_GET_LOCAL_SDP,
   SIGNAL_GET_REMOTE_SDP,
+  SIGNAL_GET_SET_RTP_SOCKET_AUDIO,
+  SIGNAL_GET_SET_RTCP_SOCKET_AUDIO,
+  SIGNAL_GET_SET_RTP_SOCKET_VIDEO,
+  SIGNAL_GET_SET_RTCP_SOCKET_VIDEO,
   LAST_SIGNAL
 };
 
@@ -88,6 +94,8 @@ enum
   PROP_MAX_VIDEO_RECV_BW,
   PROP_MAX_AUDIO_RECV_BW,
   PROP_USE_DATA_CHANNELS,
+  PROP_REUSE_SOCKET,
+  PROP_USE_RTPEP_AVPF,
   N_PROPERTIES
 };
 
@@ -98,6 +106,7 @@ struct _KmsBaseSdpEndpointPrivate
   gint next_session_id;
   GHashTable *sessions;
   GstSDPMessage *first_neg_sdp;
+  GstSDPMessage *first_local_sdp;
 
   gboolean bundle;
   gboolean use_ipv6;
@@ -115,13 +124,16 @@ struct _KmsBaseSdpEndpointPrivate
   guint audio_handlers;
   guint video_handlers;
   guint data_handlers;
+
+  gboolean reuse_socket;
+  gboolean use_rtpep_avpf;
 };
 
 /* KmsSdpSession begin */
 
 static gboolean
-kms_base_sdp_endpoint_configure_media (KmsSdpAgent * agent,
-    KmsSdpMediaHandler * handler, GstSDPMedia * media, gpointer user_data)
+kms_base_sdp_endpoint_configure_media (KmsSdpAgent *agent,
+    KmsSdpMediaHandler *handler, GstSDPMedia *media, gpointer user_data)
 {
   KmsSdpSession *sess = KMS_SDP_SESSION (user_data);
   KmsBaseSdpEndpointClass *base_sdp_endpoint_class =
@@ -142,7 +154,7 @@ kms_base_sdp_endpoint_create_media_handler (KmsBaseSdpEndpoint * self,
     KmsSdpSession * sess, const gchar * media, KmsSdpMediaHandler ** handler);
 
 static KmsSdpMediaHandler *
-on_handler_required_cb (KmsSdpAgent * agent, const GstSDPMedia * media,
+on_handler_required_cb (KmsSdpAgent *agent, const GstSDPMedia *media,
     gpointer user_data)
 {
   KmsSdpSession *session = KMS_SDP_SESSION (user_data);
@@ -207,8 +219,8 @@ on_handler_required_cb (KmsSdpAgent * agent, const GstSDPMedia * media,
 }
 
 static void
-on_media_answer_cb (KmsSdpAgent * agent, KmsSdpMediaHandler * handler,
-    GstSDPMedia * media, gpointer user_data)
+on_media_answer_cb (KmsSdpAgent *agent, KmsSdpMediaHandler *handler,
+    GstSDPMedia *media, gpointer user_data)
 {
   KmsSdpSession *session = KMS_SDP_SESSION (user_data);
 
@@ -218,8 +230,8 @@ on_media_answer_cb (KmsSdpAgent * agent, KmsSdpMediaHandler * handler,
 }
 
 static void
-on_media_offer_cb (KmsSdpAgent * agent, KmsSdpMediaHandler * handler,
-    GstSDPMedia * media, gpointer user_data)
+on_media_offer_cb (KmsSdpAgent *agent, KmsSdpMediaHandler *handler,
+    GstSDPMedia *media, gpointer user_data)
 {
   KmsSdpSession *session = KMS_SDP_SESSION (user_data);
 
@@ -229,7 +241,7 @@ on_media_offer_cb (KmsSdpAgent * agent, KmsSdpMediaHandler * handler,
 }
 
 static const gchar *
-kms_base_sdp_endpoint_create_session (KmsBaseSdpEndpoint * self)
+kms_base_sdp_endpoint_create_session (KmsBaseSdpEndpoint *self)
 {
   KmsBaseSdpEndpointClass *base_sdp_endpoint_class =
       KMS_BASE_SDP_ENDPOINT_CLASS (G_OBJECT_GET_CLASS (self));
@@ -274,6 +286,12 @@ kms_base_sdp_endpoint_create_session (KmsBaseSdpEndpoint * self)
   self->priv->configured = TRUE;
   ret = g_strdup (sess->id_str);
 
+  sess->reuse_socket = self->priv->reuse_socket;        //ru-bu safe init
+  sess->rtp_socket_reuse_audio = NULL;
+  sess->rtcp_socket_reuse_audio = NULL;
+  sess->rtp_socket_reuse_video = NULL;
+  sess->rtcp_socket_reuse_video = NULL;
+
 end:
   KMS_ELEMENT_UNLOCK (self);
 
@@ -281,8 +299,8 @@ end:
 }
 
 static gboolean
-kms_base_sdp_endpoint_release_session (KmsBaseSdpEndpoint * self,
-    const gchar * sess_id)
+kms_base_sdp_endpoint_release_session (KmsBaseSdpEndpoint *self,
+    const gchar *sess_id)
 {
   KmsSdpSession *sess;
   gboolean ret;
@@ -314,8 +332,8 @@ end:
 /* Media handler management begin */
 
 static void
-kms_base_sdp_endpoint_create_media_handler_impl (KmsBaseSdpEndpoint * self,
-    const gchar * media, KmsSdpMediaHandler ** handler)
+kms_base_sdp_endpoint_create_media_handler_impl (KmsBaseSdpEndpoint *self,
+    const gchar *media, KmsSdpMediaHandler **handler)
 {
   KmsBaseSdpEndpointClass *klass =
       KMS_BASE_SDP_ENDPOINT_CLASS (G_OBJECT_GET_CLASS (self));
@@ -328,8 +346,8 @@ kms_base_sdp_endpoint_create_media_handler_impl (KmsBaseSdpEndpoint * self,
 }
 
 static void
-kms_base_sdp_endpoint_create_media_handler (KmsBaseSdpEndpoint * self,
-    KmsSdpSession * sess, const gchar * media, KmsSdpMediaHandler ** handler)
+kms_base_sdp_endpoint_create_media_handler (KmsBaseSdpEndpoint *self,
+    KmsSdpSession *sess, const gchar *media, KmsSdpMediaHandler **handler)
 {
   KmsBaseSdpEndpointClass *klass =
       KMS_BASE_SDP_ENDPOINT_CLASS (G_OBJECT_GET_CLASS (self));
@@ -386,8 +404,8 @@ kms_base_sdp_endpoint_create_media_handler (KmsBaseSdpEndpoint * self,
 }
 
 static gboolean
-kms_base_sdp_endpoint_add_handler (KmsBaseSdpEndpoint * self,
-    KmsSdpSession * sess, const gchar * media, gint bundle_group_id,
+kms_base_sdp_endpoint_add_handler (KmsBaseSdpEndpoint *self,
+    KmsSdpSession *sess, const gchar *media, gint bundle_group_id,
     guint max_recv_bw)
 {
   KmsSdpMediaHandler *handler = NULL;
@@ -430,8 +448,8 @@ kms_base_sdp_endpoint_add_handler (KmsBaseSdpEndpoint * self,
 }
 
 static gboolean
-kms_base_sdp_endpoint_init_sdp_handlers (KmsBaseSdpEndpoint * self,
-    KmsSdpSession * sess)
+kms_base_sdp_endpoint_init_sdp_handlers (KmsBaseSdpEndpoint *self,
+    KmsSdpSession *sess)
 {
   GError *err = NULL;
   gint gid;
@@ -476,7 +494,7 @@ kms_base_sdp_endpoint_init_sdp_handlers (KmsBaseSdpEndpoint * self,
 /* Media handler management end */
 
 const GstSDPMessage *
-kms_base_sdp_endpoint_get_first_negotiated_sdp (KmsBaseSdpEndpoint * self)
+kms_base_sdp_endpoint_get_first_negotiated_sdp (KmsBaseSdpEndpoint *self)
 {
   const GstSDPMessage *ret;
 
@@ -488,8 +506,8 @@ kms_base_sdp_endpoint_get_first_negotiated_sdp (KmsBaseSdpEndpoint * self)
 }
 
 static void
-kms_base_sdp_endpoint_start_transport_send (KmsBaseSdpEndpoint * self,
-    KmsSdpSession * sess, gboolean offerer)
+kms_base_sdp_endpoint_start_transport_send (KmsBaseSdpEndpoint *self,
+    KmsSdpSession *sess, gboolean offerer)
 {
   KmsBaseSdpEndpointClass *base_sdp_endpoint_class =
       KMS_BASE_SDP_ENDPOINT_CLASS (G_OBJECT_GET_CLASS (self));
@@ -504,8 +522,8 @@ kms_base_sdp_endpoint_start_transport_send (KmsBaseSdpEndpoint * self,
 }
 
 static void
-kms_base_sdp_endpoint_connect_input_elements (KmsBaseSdpEndpoint * self,
-    KmsSdpSession * sess)
+kms_base_sdp_endpoint_connect_input_elements (KmsBaseSdpEndpoint *self,
+    KmsSdpSession *sess)
 {
   KmsBaseSdpEndpointClass *base_sdp_endpoint_class =
       KMS_BASE_SDP_ENDPOINT_CLASS (G_OBJECT_GET_CLASS (self));
@@ -520,8 +538,8 @@ kms_base_sdp_endpoint_connect_input_elements (KmsBaseSdpEndpoint * self,
 }
 
 static void
-kms_base_sdp_endpoint_create_session_internal (KmsBaseSdpEndpoint * self,
-    gint id, KmsSdpSession ** sess)
+kms_base_sdp_endpoint_create_session_internal (KmsBaseSdpEndpoint *self,
+    gint id, KmsSdpSession **sess)
 {
   if (*sess == NULL) {
     GST_WARNING_OBJECT (self,
@@ -531,8 +549,8 @@ kms_base_sdp_endpoint_create_session_internal (KmsBaseSdpEndpoint * self,
 }
 
 static void
-kms_base_sdp_endpoint_start_media (KmsBaseSdpEndpoint * self,
-    KmsSdpSession * sess, gboolean offerer)
+kms_base_sdp_endpoint_start_media (KmsBaseSdpEndpoint *self,
+    KmsSdpSession *sess, gboolean offerer)
 {
   KmsBaseSdpEndpointClass *base_sdp_endpoint_class =
       KMS_BASE_SDP_ENDPOINT_CLASS (G_OBJECT_GET_CLASS (self));
@@ -544,9 +562,8 @@ kms_base_sdp_endpoint_start_media (KmsBaseSdpEndpoint * self,
 }
 
 static gboolean
-kms_base_sdp_endpoint_configure_media_impl (KmsBaseSdpEndpoint *
-    self, KmsSdpSession * sess, KmsSdpMediaHandler * handler,
-    GstSDPMedia * media)
+kms_base_sdp_endpoint_configure_media_impl (KmsBaseSdpEndpoint *self,
+    KmsSdpSession *sess, KmsSdpMediaHandler *handler, GstSDPMedia *media)
 {
   KmsBaseSdpEndpointClass *base_sdp_endpoint_class =
       KMS_BASE_SDP_ENDPOINT_CLASS (G_OBJECT_GET_CLASS (self));
@@ -563,8 +580,8 @@ kms_base_sdp_endpoint_configure_media_impl (KmsBaseSdpEndpoint *
 }
 
 static GstSDPMessage *
-kms_base_sdp_endpoint_generate_offer (KmsBaseSdpEndpoint * self,
-    const gchar * sess_id)
+kms_base_sdp_endpoint_generate_offer (KmsBaseSdpEndpoint *self,
+    const gchar *sess_id)
 {
   KmsSdpSession *sess;
   GstSDPMessage *offer = NULL;
@@ -585,6 +602,10 @@ kms_base_sdp_endpoint_generate_offer (KmsBaseSdpEndpoint * self,
 
   offer = kms_sdp_session_generate_offer (sess);
 
+  if (self->priv->first_local_sdp == NULL && offer) {
+    gst_sdp_message_copy (offer, &self->priv->first_local_sdp);
+  }
+
 end:
   KMS_ELEMENT_UNLOCK (self);
 
@@ -592,8 +613,8 @@ end:
 }
 
 static GstSDPMessage *
-kms_base_sdp_endpoint_process_offer (KmsBaseSdpEndpoint * self,
-    const gchar * sess_id, GstSDPMessage * offer)
+kms_base_sdp_endpoint_process_offer (KmsBaseSdpEndpoint *self,
+    const gchar *sess_id, GstSDPMessage *offer)
 {
   KmsSdpSession *sess;
   GstSDPMessage *answer = NULL;
@@ -630,6 +651,10 @@ kms_base_sdp_endpoint_process_offer (KmsBaseSdpEndpoint * self,
     goto end;
   }
 
+  if (self->priv->first_local_sdp == NULL && answer) {
+    gst_sdp_message_copy (answer, &self->priv->first_local_sdp);
+  }
+
   if (self->priv->first_neg_sdp == NULL && sess->neg_sdp) {
     gst_sdp_message_copy (sess->neg_sdp, &self->priv->first_neg_sdp);
   }
@@ -642,8 +667,8 @@ end:
 }
 
 static gboolean
-kms_base_sdp_endpoint_process_answer (KmsBaseSdpEndpoint * self,
-    const gchar * sess_id, GstSDPMessage * answer)
+kms_base_sdp_endpoint_process_answer (KmsBaseSdpEndpoint *self,
+    const gchar *sess_id, GstSDPMessage *answer)
 {
   KmsSdpSession *sess;
   gboolean ret = FALSE;
@@ -675,9 +700,21 @@ end:
   return ret;
 }
 
+const GstSDPMessage *
+kms_base_sdp_endpoint_get_first_local_sdp (KmsBaseSdpEndpoint *self)
+{
+  const GstSDPMessage *ret;
+
+  KMS_ELEMENT_LOCK (self);
+  ret = self->priv->first_local_sdp;
+  KMS_ELEMENT_UNLOCK (self);
+
+  return ret;
+}
+
 static GstSDPMessage *
-kms_base_sdp_endpoint_get_local_sdp (KmsBaseSdpEndpoint * self,
-    const gchar * sess_id)
+kms_base_sdp_endpoint_get_local_sdp (KmsBaseSdpEndpoint *self,
+    const gchar *sess_id)
 {
   KmsSdpSession *sess;
   GstSDPMessage *sdp = NULL;
@@ -701,8 +738,8 @@ end:
 }
 
 static GstSDPMessage *
-kms_base_sdp_endpoint_get_remote_sdp (KmsBaseSdpEndpoint * self,
-    const gchar * sess_id)
+kms_base_sdp_endpoint_get_remote_sdp (KmsBaseSdpEndpoint *self,
+    const gchar *sess_id)
 {
   KmsSdpSession *sess;
   GstSDPMessage *sdp = NULL;
@@ -725,9 +762,111 @@ end:
   return sdp;
 }
 
+enum
+{
+  RTP_SOCKET_AUDIO,
+  RTCP_SOCKET_AUDIO,
+  RTP_SOCKET_VIDEO,
+  RTCP_SOCKET_VIDEO
+} socket_type;
+
+static GSocket *
+kms_base_sdp_endpoint_get_set_socket (KmsBaseSdpEndpoint *self,
+    const gchar *sess_id, GSocket *gsocket, int socket_type)
+{
+  KmsSdpSession *sess;
+
+  GSocket *gsocketret = NULL;
+
+  KMS_ELEMENT_LOCK (self);
+
+  GST_DEBUG_OBJECT (self,
+      "get_set_rtp_socket for session '%s' socket:%p type:%d", sess_id, gsocket,
+      socket_type);
+
+  sess = g_hash_table_lookup (self->priv->sessions, sess_id);
+  if (sess == NULL) {
+    GST_WARNING_OBJECT (self, "There is not session '%s'", sess_id);
+    goto end;
+  }
+
+  if (gsocket == NULL)          //get
+  {
+    switch (socket_type) {
+      case RTP_SOCKET_AUDIO:
+        gsocketret = sess->rtp_socket_reuse_audio;
+        break;
+      case RTCP_SOCKET_AUDIO:
+        gsocketret = sess->rtcp_socket_reuse_audio;
+        break;
+      case RTP_SOCKET_VIDEO:
+        gsocketret = sess->rtp_socket_reuse_video;
+        break;
+      case RTCP_SOCKET_VIDEO:
+        gsocketret = sess->rtcp_socket_reuse_video;
+        break;
+      default:
+        break;
+    }
+  } else {
+    switch (socket_type) {
+      case RTP_SOCKET_AUDIO:
+        sess->rtp_socket_reuse_audio = gsocket;
+        break;
+      case RTCP_SOCKET_AUDIO:
+        sess->rtcp_socket_reuse_audio = gsocket;
+        break;
+      case RTP_SOCKET_VIDEO:
+        sess->rtp_socket_reuse_video = gsocket;
+        break;
+      case RTCP_SOCKET_VIDEO:
+        sess->rtcp_socket_reuse_video = gsocket;
+        break;
+      default:
+        break;
+    }
+    gsocketret = gsocket;
+  }
+end:
+  KMS_ELEMENT_UNLOCK (self);
+  return gsocketret;
+}
+
+static GSocket *
+kms_base_sdp_endpoint_get_set_rtp_socket_audio (KmsBaseSdpEndpoint *self,
+    const gchar *sess_id, GSocket *gsocket)
+{
+  return kms_base_sdp_endpoint_get_set_socket (self, sess_id, gsocket,
+      RTP_SOCKET_AUDIO);
+}
+
+static GSocket *
+kms_base_sdp_endpoint_get_set_rtcp_socket_audio (KmsBaseSdpEndpoint *self,
+    const gchar *sess_id, GSocket *gsocket)
+{
+  return kms_base_sdp_endpoint_get_set_socket (self, sess_id, gsocket,
+      RTCP_SOCKET_AUDIO);
+}
+
+static GSocket *
+kms_base_sdp_endpoint_get_set_rtp_socket_video (KmsBaseSdpEndpoint *self,
+    const gchar *sess_id, GSocket *gsocket)
+{
+  return kms_base_sdp_endpoint_get_set_socket (self, sess_id, gsocket,
+      RTP_SOCKET_VIDEO);
+}
+
+static GSocket *
+kms_base_sdp_endpoint_get_set_rtcp_socket_video (KmsBaseSdpEndpoint *self,
+    const gchar *sess_id, GSocket *gsocket)
+{
+  return kms_base_sdp_endpoint_get_set_socket (self, sess_id, gsocket,
+      RTCP_SOCKET_VIDEO);
+}
+
 static void
-kms_base_sdp_endpoint_set_property (GObject * object, guint prop_id,
-    const GValue * value, GParamSpec * pspec)
+kms_base_sdp_endpoint_set_property (GObject *object, guint prop_id,
+    const GValue *value, GParamSpec *pspec)
 {
   KmsBaseSdpEndpoint *self = KMS_BASE_SDP_ENDPOINT (object);
 
@@ -804,6 +943,12 @@ kms_base_sdp_endpoint_set_property (GObject * object, guint prop_id,
     case PROP_USE_DATA_CHANNELS:
       self->priv->use_data_channels = g_value_get_boolean (value);
       break;
+    case PROP_REUSE_SOCKET:
+      self->priv->reuse_socket = g_value_get_boolean (value);
+      break;
+    case PROP_USE_RTPEP_AVPF:
+      self->priv->use_rtpep_avpf = g_value_get_boolean (value);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -813,8 +958,8 @@ kms_base_sdp_endpoint_set_property (GObject * object, guint prop_id,
 }
 
 static void
-kms_base_sdp_endpoint_get_property (GObject * object, guint prop_id,
-    GValue * value, GParamSpec * pspec)
+kms_base_sdp_endpoint_get_property (GObject *object, guint prop_id,
+    GValue *value, GParamSpec *pspec)
 {
   KmsBaseSdpEndpoint *self = KMS_BASE_SDP_ENDPOINT (object);
 
@@ -855,6 +1000,9 @@ kms_base_sdp_endpoint_get_property (GObject * object, guint prop_id,
     case PROP_USE_DATA_CHANNELS:
       g_value_set_boolean (value, self->priv->use_data_channels);
       break;
+    case PROP_USE_RTPEP_AVPF:
+      g_value_set_boolean (value, self->priv->use_rtpep_avpf);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -864,7 +1012,7 @@ kms_base_sdp_endpoint_get_property (GObject * object, guint prop_id,
 }
 
 static void
-kms_base_sdp_endpoint_finalize (GObject * object)
+kms_base_sdp_endpoint_finalize (GObject *object)
 {
   KmsBaseSdpEndpoint *self = KMS_BASE_SDP_ENDPOINT (object);
 
@@ -874,6 +1022,10 @@ kms_base_sdp_endpoint_finalize (GObject * object)
 
   if (self->priv->first_neg_sdp != NULL) {
     gst_sdp_message_free (self->priv->first_neg_sdp);
+  }
+
+  if (self->priv->first_local_sdp != NULL) {
+    gst_sdp_message_free (self->priv->first_local_sdp);
   }
 
   if (self->priv->audio_codecs != NULL) {
@@ -891,7 +1043,7 @@ kms_base_sdp_endpoint_finalize (GObject * object)
 }
 
 static void
-kms_base_sdp_endpoint_class_init (KmsBaseSdpEndpointClass * klass)
+kms_base_sdp_endpoint_class_init (KmsBaseSdpEndpointClass *klass)
 {
   GstElementClass *gstelement_class;
   GObjectClass *gobject_class;
@@ -930,6 +1082,15 @@ kms_base_sdp_endpoint_class_init (KmsBaseSdpEndpointClass * klass)
   klass->process_answer = kms_base_sdp_endpoint_process_answer;
   klass->get_local_sdp = kms_base_sdp_endpoint_get_local_sdp;
   klass->get_remote_sdp = kms_base_sdp_endpoint_get_remote_sdp;
+
+  klass->get_set_rtp_socket_audio =
+      kms_base_sdp_endpoint_get_set_rtp_socket_audio;
+  klass->get_set_rtcp_socket_audio =
+      kms_base_sdp_endpoint_get_set_rtcp_socket_audio;
+  klass->get_set_rtp_socket_video =
+      kms_base_sdp_endpoint_get_set_rtp_socket_video;
+  klass->get_set_rtcp_socket_video =
+      kms_base_sdp_endpoint_get_set_rtcp_socket_video;
 
   /* Signals initialization */
   kms_base_sdp_endpoint_signals[SIGNAL_CREATE_SESSION] =
@@ -983,6 +1144,38 @@ kms_base_sdp_endpoint_class_init (KmsBaseSdpEndpointClass * klass)
       G_SIGNAL_ACTION | G_SIGNAL_RUN_LAST,
       G_STRUCT_OFFSET (KmsBaseSdpEndpointClass, get_remote_sdp), NULL, NULL,
       __kms_core_marshal_BOXED__STRING, GST_TYPE_SDP_MESSAGE, 1, G_TYPE_STRING);
+
+  kms_base_sdp_endpoint_signals[SIGNAL_GET_SET_RTP_SOCKET_AUDIO] =
+      g_signal_new ("get-set-rtp-socket-audio",
+      G_TYPE_FROM_CLASS (klass),
+      G_SIGNAL_ACTION | G_SIGNAL_RUN_LAST,
+      G_STRUCT_OFFSET (KmsBaseSdpEndpointClass, get_set_rtp_socket_audio), NULL,
+      NULL, __kms_core_marshal_POINTER__STRING_POINTER, G_TYPE_POINTER, 2,
+      G_TYPE_STRING, G_TYPE_POINTER);
+
+  kms_base_sdp_endpoint_signals[SIGNAL_GET_SET_RTCP_SOCKET_AUDIO] =
+      g_signal_new ("get-set-rtcp-socket-audio",
+      G_TYPE_FROM_CLASS (klass),
+      G_SIGNAL_ACTION | G_SIGNAL_RUN_LAST,
+      G_STRUCT_OFFSET (KmsBaseSdpEndpointClass, get_set_rtcp_socket_audio),
+      NULL, NULL, __kms_core_marshal_POINTER__STRING_POINTER, G_TYPE_POINTER, 2,
+      G_TYPE_STRING, G_TYPE_POINTER);
+
+  kms_base_sdp_endpoint_signals[SIGNAL_GET_SET_RTP_SOCKET_VIDEO] =
+      g_signal_new ("get-set-rtp-socket-video",
+      G_TYPE_FROM_CLASS (klass),
+      G_SIGNAL_ACTION | G_SIGNAL_RUN_LAST,
+      G_STRUCT_OFFSET (KmsBaseSdpEndpointClass, get_set_rtp_socket_video), NULL,
+      NULL, __kms_core_marshal_POINTER__STRING_POINTER, G_TYPE_POINTER, 2,
+      G_TYPE_STRING, G_TYPE_POINTER);
+
+  kms_base_sdp_endpoint_signals[SIGNAL_GET_SET_RTCP_SOCKET_VIDEO] =
+      g_signal_new ("get-set-rtcp-socket-video",
+      G_TYPE_FROM_CLASS (klass),
+      G_SIGNAL_ACTION | G_SIGNAL_RUN_LAST,
+      G_STRUCT_OFFSET (KmsBaseSdpEndpointClass, get_set_rtcp_socket_video),
+      NULL, NULL, __kms_core_marshal_POINTER__STRING_POINTER, G_TYPE_POINTER, 2,
+      G_TYPE_STRING, G_TYPE_POINTER);
 
   /* Properties initialization */
   g_object_class_install_property (gobject_class, PROP_MULTISESSION,
@@ -1045,11 +1238,21 @@ kms_base_sdp_endpoint_class_init (KmsBaseSdpEndpointClass * klass)
           DEFAULT_USE_DATA_CHANNELS,
           G_PARAM_READWRITE | G_PARAM_CONSTRUCT | G_PARAM_STATIC_STRINGS));
 
+  g_object_class_install_property (gobject_class, PROP_REUSE_SOCKET,
+      g_param_spec_boolean ("reuse-socket", "reuse-socket",
+          "reuse-socket",
+          REUSE_SOCKETS_DEFAULT, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (gobject_class, PROP_USE_RTPEP_AVPF,
+      g_param_spec_boolean ("use-rtpep-avpf", "On rtpendpoints use avpf",
+          "Use avpf on rtpendpoints if TRUE",
+          USE_RTPEP_AVPF_DEFAULT, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
   g_type_class_add_private (klass, sizeof (KmsBaseSdpEndpointPrivate));
 }
 
 static void
-kms_base_sdp_endpoint_init (KmsBaseSdpEndpoint * self)
+kms_base_sdp_endpoint_init (KmsBaseSdpEndpoint *self)
 {
   self->priv = KMS_BASE_SDP_ENDPOINT_GET_PRIVATE (self);
 
@@ -1063,17 +1266,19 @@ kms_base_sdp_endpoint_init (KmsBaseSdpEndpoint * self)
 
   self->priv->max_video_recv_bw = MAX_VIDEO_RECV_BW_DEFAULT;
   self->priv->max_audio_recv_bw = MAX_AUDIO_RECV_BW_DEFAULT;
+  self->priv->reuse_socket = REUSE_SOCKETS_DEFAULT;
+  self->priv->use_rtpep_avpf = USE_RTPEP_AVPF_DEFAULT;
 }
 
 GHashTable *
-kms_base_sdp_endpoint_get_sessions (KmsBaseSdpEndpoint * self)
+kms_base_sdp_endpoint_get_sessions (KmsBaseSdpEndpoint *self)
 {
   return self->priv->sessions;
 }
 
 KmsSdpSession *
-kms_base_sdp_endpoint_get_session (KmsBaseSdpEndpoint * self,
-    const gchar * sess_id)
+kms_base_sdp_endpoint_get_session (KmsBaseSdpEndpoint *self,
+    const gchar *sess_id)
 {
   return g_hash_table_lookup (self->priv->sessions, sess_id);
 }

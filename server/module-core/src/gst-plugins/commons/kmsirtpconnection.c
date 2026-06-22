@@ -32,7 +32,7 @@ static guint kms_i_rtp_connection_signals[LAST_SIGNAL] = { 0 };
 G_DEFINE_INTERFACE (KmsIRtpConnection, kms_i_rtp_connection, 0);
 
 static void
-kms_i_rtp_connection_default_init (KmsIRtpConnectionInterface * iface)
+kms_i_rtp_connection_default_init (KmsIRtpConnectionInterface *iface)
 {
   kms_i_rtp_connection_signals[SIGNAL_CONNECTED] =
       g_signal_new ("connected",
@@ -60,11 +60,22 @@ kms_i_rtp_connection_default_init (KmsIRtpConnectionInterface * iface)
   g_object_interface_install_property (iface, g_param_spec_uint ("max-port",
           "Max port", "Maximum port connection should use", 0, 65535,
           DEFAULT_MAX_PORT, G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+  g_object_interface_install_property (iface,
+      g_param_spec_boolean ("finalize-socket", "Finalize socket",
+          "Let the sockets of the connection open ", FALSE, G_PARAM_READWRITE));
+
+  g_object_interface_install_property (iface,
+      g_param_spec_pointer ("rtp-socket", "RTP Socket", "get the rtp-socket",
+          G_PARAM_READABLE));
+
+  g_object_interface_install_property (iface,
+      g_param_spec_pointer ("rtcp-socket", "RTCP Socket", "get the rtcp-socket",
+          G_PARAM_READABLE));
 }
 
 void
-kms_i_rtp_connection_add (KmsIRtpConnection * self, GstBin * bin,
-    gboolean active)
+kms_i_rtp_connection_add (KmsIRtpConnection *self, GstBin *bin, gboolean active)
 {
   g_return_if_fail (KMS_IS_I_RTP_CONNECTION (self));
 
@@ -73,7 +84,7 @@ kms_i_rtp_connection_add (KmsIRtpConnection * self, GstBin * bin,
 }
 
 void
-kms_i_rtp_connection_src_sync_state_with_parent (KmsIRtpConnection * self)
+kms_i_rtp_connection_src_sync_state_with_parent (KmsIRtpConnection *self)
 {
   g_return_if_fail (KMS_IS_I_RTP_CONNECTION (self));
 
@@ -81,7 +92,7 @@ kms_i_rtp_connection_src_sync_state_with_parent (KmsIRtpConnection * self)
 }
 
 void
-kms_i_rtp_connection_sink_sync_state_with_parent (KmsIRtpConnection * self)
+kms_i_rtp_connection_sink_sync_state_with_parent (KmsIRtpConnection *self)
 {
   g_return_if_fail (KMS_IS_I_RTP_CONNECTION (self));
 
@@ -89,7 +100,7 @@ kms_i_rtp_connection_sink_sync_state_with_parent (KmsIRtpConnection * self)
 }
 
 GstPad *
-kms_i_rtp_connection_request_rtp_sink (KmsIRtpConnection * self)
+kms_i_rtp_connection_request_rtp_sink (KmsIRtpConnection *self)
 {
   g_return_val_if_fail (KMS_IS_I_RTP_CONNECTION (self), NULL);
 
@@ -97,7 +108,7 @@ kms_i_rtp_connection_request_rtp_sink (KmsIRtpConnection * self)
 }
 
 GstPad *
-kms_i_rtp_connection_request_rtp_src (KmsIRtpConnection * self)
+kms_i_rtp_connection_request_rtp_src (KmsIRtpConnection *self)
 {
   g_return_val_if_fail (KMS_IS_I_RTP_CONNECTION (self), NULL);
 
@@ -105,7 +116,7 @@ kms_i_rtp_connection_request_rtp_src (KmsIRtpConnection * self)
 }
 
 GstPad *
-kms_i_rtp_connection_request_rtcp_sink (KmsIRtpConnection * self)
+kms_i_rtp_connection_request_rtcp_sink (KmsIRtpConnection *self)
 {
   g_return_val_if_fail (KMS_IS_I_RTP_CONNECTION (self), NULL);
 
@@ -113,7 +124,7 @@ kms_i_rtp_connection_request_rtcp_sink (KmsIRtpConnection * self)
 }
 
 GstPad *
-kms_i_rtp_connection_request_rtcp_src (KmsIRtpConnection * self)
+kms_i_rtp_connection_request_rtcp_src (KmsIRtpConnection *self)
 {
   g_return_val_if_fail (KMS_IS_I_RTP_CONNECTION (self), NULL);
 
@@ -121,7 +132,7 @@ kms_i_rtp_connection_request_rtcp_src (KmsIRtpConnection * self)
 }
 
 GstPad *
-kms_i_rtp_connection_request_data_src (KmsIRtpConnection * self)
+kms_i_rtp_connection_request_data_src (KmsIRtpConnection *self)
 {
   g_return_val_if_fail (KMS_IS_I_RTP_CONNECTION (self), NULL);
 
@@ -134,7 +145,7 @@ kms_i_rtp_connection_request_data_src (KmsIRtpConnection * self)
 }
 
 GstPad *
-kms_i_rtp_connection_request_data_sink (KmsIRtpConnection * self)
+kms_i_rtp_connection_request_data_sink (KmsIRtpConnection *self)
 {
   g_return_val_if_fail (KMS_IS_I_RTP_CONNECTION (self), NULL);
 
@@ -147,7 +158,7 @@ kms_i_rtp_connection_request_data_sink (KmsIRtpConnection * self)
 }
 
 void
-kms_i_rtp_connection_connected_signal (KmsIRtpConnection * self)
+kms_i_rtp_connection_connected_signal (KmsIRtpConnection *self)
 {
   g_object_set (G_OBJECT (self), "connected", TRUE, NULL);
   g_signal_emit (G_OBJECT (self),
@@ -155,7 +166,7 @@ kms_i_rtp_connection_connected_signal (KmsIRtpConnection * self)
 }
 
 void
-kms_i_rtp_connection_set_latency_callback (KmsIRtpConnection * self,
+kms_i_rtp_connection_set_latency_callback (KmsIRtpConnection *self,
     BufferLatencyCallback cb, gpointer user_data)
 {
   g_return_if_fail (KMS_IS_I_RTP_CONNECTION (self));
@@ -170,7 +181,7 @@ kms_i_rtp_connection_set_latency_callback (KmsIRtpConnection * self,
 }
 
 void
-kms_i_rtp_connection_collect_latency_stats (KmsIRtpConnection * self,
+kms_i_rtp_connection_collect_latency_stats (KmsIRtpConnection *self,
     gboolean enable)
 {
   g_return_if_fail (KMS_IS_I_RTP_CONNECTION (self));
@@ -191,7 +202,7 @@ G_DEFINE_INTERFACE (KmsIRtcpMuxConnection, kms_i_rtcp_mux_connection,
     KMS_TYPE_I_RTP_CONNECTION);
 
 static void
-kms_i_rtcp_mux_connection_default_init (KmsIRtcpMuxConnectionInterface * iface)
+kms_i_rtcp_mux_connection_default_init (KmsIRtcpMuxConnectionInterface *iface)
 {
   /* Nothing to do */
 }
@@ -203,7 +214,7 @@ G_DEFINE_INTERFACE (KmsIBundleConnection, kms_i_bundle_connection,
     KMS_TYPE_I_RTCP_MUX_CONNECTION);
 
 static void
-kms_i_bundle_connection_default_init (KmsIBundleConnectionInterface * iface)
+kms_i_bundle_connection_default_init (KmsIBundleConnectionInterface *iface)
 {
   /* Nothing to do */
 }

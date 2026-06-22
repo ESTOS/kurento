@@ -15,6 +15,12 @@
  *
  */
 
+/*
+ru-bu SIX-1909 dtmf handler is now in gstpipeline.c until we find out
+why the gst_bus_source_dispatch is not triggered some times after gstrtpdtmfdepay.c calls gst_element_post_message
+*/
+//#define DTMF_HANDLER
+
 #include <gst/gst.h>
 #include "BaseRtpEndpointImpl.hpp"
 #include <jsonrpc/JsonSerializer.hpp>
@@ -24,6 +30,9 @@
 #include <ctime>
 #include <SignalHandler.hpp>
 #include <MediaType.hpp>
+#ifdef DTMF_HANDLER
+#include <MediaPipelineImpl.hpp>
+#endif // DTMF_HANDLER
 
 #include "RembParams.hpp"
 
@@ -50,10 +59,12 @@ GST_DEBUG_CATEGORY_STATIC (GST_CAT_DEFAULT);
 #define PARAM_MIN_PORT "minPort"
 #define PARAM_MAX_PORT "maxPort"
 #define PARAM_MTU "mtu"
+#define PARAM_AUDIOLATENCY "audiolatency"
 
 #define PROP_MIN_PORT "min-port"
 #define PROP_MAX_PORT "max-port"
 #define PROP_MTU "mtu"
+#define PROP_AUDIOLATENCY "audiolatency"
 
 /* Fixed point conversion macros */
 #define FRIC        65536.                  /* 2^16 as a double */
@@ -80,12 +91,53 @@ void BaseRtpEndpointImpl::postConstructor ()
                                     std::placeholders::_2, std::placeholders::_3) ),
                               std::dynamic_pointer_cast<BaseRtpEndpointImpl>
                               (shared_from_this() ) );
+
+#ifdef DTMF_HANDLER
+
+  if (this->bIsThisaRtpendpoint() == TRUE) {
+    GstBus *bus;
+    std::shared_ptr<MediaPipelineImpl> pipe;
+    pipe = std::dynamic_pointer_cast<MediaPipelineImpl> (getMediaPipeline() );
+
+    if (pipe) {
+      mypipeline = pipe->getPipeline();
+
+      if (mypipeline) {
+        bus = gst_pipeline_get_bus (GST_PIPELINE (mypipeline) );
+
+        if (bus) {
+          busHandlerId = register_signal_handler (G_OBJECT (bus),
+                                                  "message",
+                                                  std::function <
+                                                  void (GstElement *,
+                                                      GstMessage *) >
+                                                  (std::bind
+                                                      (&BaseRtpEndpointImpl::
+                                                          mybusMessage, this,
+                                                          std::placeholders::_2) ),
+                                                  std::dynamic_pointer_cast <
+                                                  BaseRtpEndpointImpl >
+                                                  (shared_from_this() ) );
+          gst_object_unref (bus);
+        } else {
+          GST_ERROR (" no bus");
+        }
+      } else {
+        GST_ERROR (" no pipeline");
+      }
+    } else {
+      GST_ERROR (" no pipe");
+    }
+  }
+
+#endif // DTMF_HANDLER
 }
 
 BaseRtpEndpointImpl::BaseRtpEndpointImpl (const boost::property_tree::ptree
     &config,
     std::shared_ptr< MediaObjectImpl > parent,
-    const std::string &factoryName, bool useIpv6) :
+    const std::string &factoryName, guint16 min_port, guint16 max_port,
+    bool useIpv6) :
   SdpEndpointImpl (config, parent, factoryName, useIpv6)
 {
   current_media_state = std::make_shared <MediaState>
@@ -96,22 +148,65 @@ BaseRtpEndpointImpl::BaseRtpEndpointImpl (const boost::property_tree::ptree
                        (ConnectionState::DISCONNECTED);
   connStateChangedHandlerId = 0;
 
+  busHandlerId = 0;
+
+  mypipeline = 0;
+
+  //RTCSP-865 Portrange
+  //RTCSP-1901 portconflict
   guint minPort = 0;
-  if (getConfigValue<guint, BaseRtpEndpoint> (&minPort, PARAM_MIN_PORT)) {
-    g_object_set (getGstreamerElement (), PROP_MIN_PORT, minPort, NULL);
+  guint maxPort = 0;
+
+  if (min_port == 0) {
+    if (getConfigValue<guint, BaseRtpEndpoint> (&minPort, PARAM_MIN_PORT) ) {
+      GST_DEBUG ("config min_port:%d", minPort);
+    }
+  } else {
+    minPort = min_port;
+    GST_DEBUG ("create min_port:%d", minPort);
   }
 
-  guint maxPort = 0;
-  if (getConfigValue <guint, BaseRtpEndpoint> (&maxPort, PARAM_MAX_PORT)) {
+  if (max_port == 0) {
+    if (getConfigValue<guint, BaseRtpEndpoint> (&maxPort, PARAM_MAX_PORT) ) {
+      GST_DEBUG ("config max_port:%d", maxPort);
+    }
+  } else {
+    maxPort = max_port;
+    GST_DEBUG ("create max_port:%d", maxPort);
+  }
+
+  // RTCSP-1901 portconflict - only do the split if we have not the default settings
+  if (minPort != 0 && maxPort != 0) {
+    guint portdiff = maxPort - minPort;
+
+    if (bIsThisaRtpendpoint() == TRUE) { // use the lower half
+      maxPort = minPort + (portdiff / 2) - 2;
+    } else { //use the upper half
+      minPort = minPort + (portdiff / 2);
+    }
+
+    GST_DEBUG ("used min_port:%d", minPort);
+    GST_DEBUG ("used max_port:%d", maxPort);
+    g_object_set (getGstreamerElement (), PROP_MIN_PORT, minPort, NULL);
     g_object_set (getGstreamerElement (), PROP_MAX_PORT, maxPort, NULL);
   }
 
   guint mtu;
-  if (getConfigValue <guint, BaseRtpEndpoint> (&mtu, PARAM_MTU)) {
+
+  if (getConfigValue <guint, BaseRtpEndpoint> (&mtu, PARAM_MTU) ) {
     GST_INFO ("Predefined RTP MTU: %u", mtu);
     g_object_set (G_OBJECT (element), PROP_MTU, mtu, NULL);
   } else {
     GST_DEBUG ("No predefined RTP MTU found in config; using default");
+  }
+
+  guint latency = 0;
+
+  if (getConfigValue <guint, BaseRtpEndpoint> (&latency, PARAM_AUDIOLATENCY) ) {
+    GST_INFO ("Predefined latency: %u", latency);
+    g_object_set (getGstreamerElement(), PROP_AUDIOLATENCY, latency, NULL);
+  } else {
+    GST_DEBUG ("No predefined latency found in config; using default");
   }
 }
 
@@ -124,6 +219,128 @@ BaseRtpEndpointImpl::~BaseRtpEndpointImpl ()
   if (connStateChangedHandlerId > 0) {
     unregister_signal_handler (element, connStateChangedHandlerId);
   }
+
+#ifdef DTMF_HANDLER
+
+  if (this->bIsThisaRtpendpoint() == TRUE) {
+    GstBus *bus;
+
+    if (mypipeline) {
+      bus = gst_pipeline_get_bus (GST_PIPELINE (mypipeline) );
+
+      if (bus) {
+        if (busHandlerId > 0) {
+          unregister_signal_handler (bus, busHandlerId);
+        }
+
+        g_object_unref (bus);
+      } else {
+        GST_ERROR (" no bus");
+      }
+    } else {
+      GST_ERROR (" no mypipeline");
+    }
+  }
+
+#endif // DTMF_HANDLER
+}
+
+void BaseRtpEndpointImpl::mybusMessage (GstMessage *message)
+{
+#ifdef DTMF_HANDLER
+
+  if (message == NULL) {
+    return;
+  }
+
+  switch (message->type) {
+  case GST_MESSAGE_ELEMENT: {
+    const GstStructure *s = gst_message_get_structure (message);
+    const gchar *name = gst_structure_get_name (s);
+
+    if (g_str_equal (name, "dtmf-event") ) {
+      /* first step we only bridge dtmf from webrtc to rtp
+      then we try to get the other side working
+      so we must listen on the rtpendpoint on the bus if there is a dtmf-event und then post it to rtpdtmfsrc
+
+      message->src->name == "rtpdtmfdepay0"
+      message->src->parent->name == "kmswebrtcendpoint1"
+      */
+      if (bIsThisaRtpendpoint() == TRUE) {
+        gchar *name = GST_OBJECT_NAME ( (GST_OBJECT_PARENT (message->src) ) );
+
+        if (g_str_has_prefix (name, "kmswebrtcendpoint") ) {
+          //"dtmf-event from kmswebrtcendpoint -> kmsrtpendpoint"
+          gint event_number;
+          gint event_volume;
+          gint event_type;
+          gint method;
+
+          gst_structure_get_int (s, "number", &event_number);
+          gst_structure_get_int (s, "volume", &event_volume);
+          gst_structure_get_int (s, "type", &event_type);
+          gst_structure_get_int (s, "method", &method);
+
+          GST_DEBUG_OBJECT (this, "Sending DTMF-EVENT Number %d", event_number);
+
+          GstStructure *structure;
+          GstEvent *event;
+          gint maxduration = 800;
+
+          structure = gst_structure_new ("dtmf-event",
+                                         "type", G_TYPE_INT, 1,
+                                         "number", G_TYPE_INT, (gint) event_number,
+                                         "volume", G_TYPE_INT, (gint) event_volume,
+                                         "start", G_TYPE_BOOLEAN, (gboolean) TRUE,
+                                         "maxduration", G_TYPE_INT, (gint) maxduration,
+                                         "parentname", G_TYPE_STRING, name,   //parent of the sender of the dtmf-event
+                                         NULL); //an+duration
+
+          event = gst_event_new_custom (GST_EVENT_CUSTOM_UPSTREAM, structure);
+
+          if (gst_element_send_event (mypipeline, event) ) {
+            /*toll*/
+          } else {
+            /*nich so toll*/
+          }
+        }
+      }
+    }
+
+    break;
+  }
+
+  default:
+    break;
+  }
+
+#endif // DTMF_HANDLER
+  /*
+  Zoiper + Snom duration (Linphone 800):
+  160 (0xa0)
+  320
+  480
+  640
+  800
+  960 end
+  960 end
+  960 end
+
+  PLS NOTE regarding the code above:
+  gstrtpdtmfdepay.c transmits on the bus a structure like:
+  structure = gst_structure_new("dtmf-event",
+  "number", G_TYPE_INT, dtmf_payload.event,
+  "volume", G_TYPE_INT, dtmf_payload.volume,
+  "type", G_TYPE_INT, 1,
+  "method", G_TYPE_INT, 1, NULL);
+
+  BUT gstrtpdtmfsrc.c expects to see the structure like below:
+  structure = gst_structure_new("dtmf-event",
+  "type", G_TYPE_INT, 1,
+  "number", G_TYPE_INT, (gint)1,
+  "volume", G_TYPE_INT, (gint)25,
+  "start", G_TYPE_BOOLEAN, (gboolean)TRUE, NULL);
+  */
 }
 
 void
@@ -135,7 +352,7 @@ BaseRtpEndpointImpl::requestKeyframe ()
 
   if (!ret) {
     throw KurentoException (MEDIA_OBJECT_OPERATION_NOT_SUPPORTED,
-        "Keyframe request failed (must be requested from a subscriber element)");
+                            "Keyframe request failed (must be requested from a subscriber element)");
   }
 }
 
@@ -163,15 +380,16 @@ BaseRtpEndpointImpl::updateMediaState (guint new_state)
 
   if (old_state->getValue() != current_media_state->getValue() ) {
     GST_DEBUG_OBJECT (element, "MediaState changed to '%s'",
-        current_media_state->getString().c_str());
+                      current_media_state->getString().c_str() );
+
     try {
       MediaStateChanged event (shared_from_this (),
-          MediaStateChanged::getName (), old_state, current_media_state);
-      sigcSignalEmit(signalMediaStateChanged, event);
+                               MediaStateChanged::getName (), old_state, current_media_state);
+      sigcSignalEmit (signalMediaStateChanged, event);
     } catch (const std::bad_weak_ptr &e) {
       // shared_from_this()
       GST_ERROR ("BUG creating %s: %s", MediaStateChanged::getName ().c_str (),
-          e.what ());
+                 e.what () );
     }
   }
 }
@@ -200,15 +418,16 @@ BaseRtpEndpointImpl::updateConnectionState (gchar *sessId, guint new_state)
 
   if (old_state->getValue() != current_conn_state->getValue() ) {
     GST_DEBUG_OBJECT (element, "ConnectionState changed to '%s'",
-        current_conn_state->getString().c_str());
+                      current_conn_state->getString().c_str() );
+
     try {
       ConnectionStateChanged event (shared_from_this(),
-          ConnectionStateChanged::getName (), old_state, current_conn_state);
-      sigcSignalEmit(signalConnectionStateChanged, event);
+                                    ConnectionStateChanged::getName (), old_state, current_conn_state);
+      sigcSignalEmit (signalConnectionStateChanged, event);
     } catch (const std::bad_weak_ptr &e) {
       // shared_from_this()
       GST_ERROR ("BUG creating %s: %s",
-          ConnectionStateChanged::getName ().c_str (), e.what ());
+                 ConnectionStateChanged::getName ().c_str (), e.what () );
     }
   }
 }
@@ -411,9 +630,9 @@ BaseRtpEndpointImpl::setMtu (int mtu)
 /******************/
 static std::shared_ptr<RTCInboundRTPStreamStats>
 createRTCInboundRTPStreamStats (const GstStructure *source_stats,
-    gchar *id,
-    gchar *ssrc,
-    guint nackCount)
+                                gchar *id,
+                                gchar *ssrc,
+                                guint nackCount)
 {
   guint64 bytesReceived, packetsReceived;
   guint jitter, fractionLost, pliCount, firCount, remb;
@@ -451,16 +670,16 @@ createRTCInboundRTPStreamStats (const GstStructure *source_stats,
   }
 
   return std::make_shared<RTCInboundRTPStreamStats> (id,
-      std::make_shared<StatsType> (StatsType::inboundrtp), 0, ssrc, "",
-      false, "", "", "", firCount, pliCount, nackCount, 0, remb, packetLost,
-      (float)fractionLost, packetsReceived, bytesReceived, jitterSec);
+         std::make_shared<StatsType> (StatsType::inboundrtp), 0, ssrc, "",
+         false, "", "", "", firCount, pliCount, nackCount, 0, remb, packetLost,
+         (float) fractionLost, packetsReceived, bytesReceived, jitterSec);
 }
 
 static std::shared_ptr<RTCOutboundRTPStreamStats>
 createRTCOutboundRTPStreamStats (const GstStructure *source_stats,
-    gchar *id,
-    gchar *ssrc,
-    guint nackCount)
+                                 gchar *id,
+                                 gchar *ssrc,
+                                 guint nackCount)
 {
   guint64 bytesSent, packetsSent, bitRate;
   guint pliCount, firCount, remb, rtt, fractionLost;
@@ -494,10 +713,10 @@ createRTCOutboundRTPStreamStats (const GstStructure *source_stats,
   }
 
   return std::make_shared<RTCOutboundRTPStreamStats> (id,
-      std::make_shared<StatsType> (StatsType::outboundrtp), 0, ssrc, "",
-      false, "", "", "", firCount, pliCount, nackCount, 0, remb, packetLost,
-      (float)fractionLost, packetsSent, bytesSent, (float)bitRate,
-      roundTripTime);
+         std::make_shared<StatsType> (StatsType::outboundrtp), 0, ssrc, "",
+         false, "", "", "", firCount, pliCount, nackCount, 0, remb, packetLost,
+         (float) fractionLost, packetsSent, bytesSent, (float) bitRate,
+         roundTripTime);
 }
 
 static std::shared_ptr<RTCRTPStreamStats>
@@ -517,11 +736,11 @@ createRTCRTPStreamStats (guint nackSent, guint nackRecv,
   if (internal) {
     /* Local SSRC */
     rtcStats =
-        createRTCOutboundRTPStreamStats (source_stats, id, ssrc_str, nackRecv);
+      createRTCOutboundRTPStreamStats (source_stats, id, ssrc_str, nackRecv);
   } else {
     /* Remote SSRC */
     rtcStats =
-        createRTCInboundRTPStreamStats (source_stats, id, ssrc_str, nackSent);
+      createRTCInboundRTPStreamStats (source_stats, id, ssrc_str, nackSent);
   }
 
   g_free (ssrc_str);

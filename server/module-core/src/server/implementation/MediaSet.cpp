@@ -91,7 +91,8 @@ MediaSet::deleteMediaSet()
       cv.notify_all();
     });
 
-    GST_INFO ("Destroying %zd pipelines that are already alive", pipes.size() );
+    GST_INFO ("Destroying %" G_GSIZE_FORMAT " pipelines that are already alive",
+              pipes.size() );
 
     for (auto it : pipes) {
       mediaSet->release (it);
@@ -161,7 +162,7 @@ MediaSet::~MediaSet ()
   std::unique_lock <std::recursive_mutex> lock (recMutex);
 
   if (objectsMap.size() > 1) {
-    GST_WARNING ("Still %zu object/s alive", objectsMap.size());
+    GST_WARNING ("Still %" G_GSIZE_FORMAT " object/s alive", objectsMap.size() );
   }
 
   terminated = true;
@@ -228,8 +229,8 @@ MediaSet::ref (MediaObjectImpl *mediaObjectPtr)
   mediaObject =  std::shared_ptr<MediaObjectImpl> (mediaObjectPtr, [self] (
   MediaObjectImpl * obj) {
     // this will always exist because destructor is waiting for its threads
-    if (auto s = self.lock()) {
-      s->releasePointer(obj);
+    if (auto s = self.lock() ) {
+      s->releasePointer (obj);
     } else {
       delete obj;
     }

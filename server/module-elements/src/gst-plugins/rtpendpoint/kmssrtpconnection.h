@@ -74,7 +74,8 @@ struct _KmsSrtpConnectionClass
 
 GType kms_srtp_connection_get_type (void);
 
-KmsSrtpConnection *kms_srtp_connection_new (guint16 min_port, guint16 max_port, gboolean use_ipv6);
+KmsSrtpConnection *kms_srtp_connection_new (guint16 min_port, guint16 max_port,
+gboolean use_ipv6, GSocket * rtp_socket_reuse, GSocket * rtcp_socket_reuse);
 void kms_srtp_connection_set_key (KmsSrtpConnection *conn, const gchar *key, guint auth, guint cipher, gboolean local);
 
 G_END_DECLS

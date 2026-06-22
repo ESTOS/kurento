@@ -42,8 +42,9 @@ public:
   WebRtcEndpointImpl (const boost::property_tree::ptree &conf,
                       std::shared_ptr<MediaPipeline> mediaPipeline,
                       bool recvonly, bool sendonly, bool useDataChannels,
-                      std::shared_ptr<CertificateKeyType> certificateKeyType, 
-                      std::shared_ptr<DSCPValue> qosDscp);
+                      std::shared_ptr<CertificateKeyType> certificateKeyType,
+                      std::shared_ptr<DSCPValue> qosDscp,
+                      guint16 min_port, guint16 max_port);
 
   ~WebRtcEndpointImpl () override;
 
@@ -129,7 +130,7 @@ private:
   void onIceComponentStateChanged (gchar *sessId, const gchar *streamId,
                                    guint componentId, guint state);
   void onDtlsConnectionStateChanged (gchar *sessId, const gchar *streamId,
-                                   gchar *componentId, gchar *connectionId, guint state);
+                                     gchar *componentId, gchar *connectionId, guint state);
   void newSelectedPairFull (gchar *sessId, const gchar *streamId,
                             guint componentId, KmsIceCandidate *localCandidate,
                             KmsIceCandidate *remoteCandidate);
@@ -142,9 +143,9 @@ private:
   std::map < std::string, std::shared_ptr<IceCandidatePair >> candidatePairs;
   std::map < std::string, std::shared_ptr<IceConnection>> iceConnectionState;
   std::map < std::string, std::shared_ptr<DtlsConnection>> dtlsConnectionState;
-  
+
   std::shared_ptr<DSCPValue> qosDscp;
-  
+
   std::mutex mut;
 
   class StaticConstructor

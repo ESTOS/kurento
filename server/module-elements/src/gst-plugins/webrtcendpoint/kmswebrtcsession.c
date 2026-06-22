@@ -119,13 +119,13 @@ typedef struct _DataChannel
 } DataChannel;
 
 static void
-data_channel_destroy (DataChannel * chann)
+data_channel_destroy (DataChannel *chann)
 {
   g_slice_free (DataChannel, chann);
 }
 
 static DataChannel *
-data_channel_new (guint stream_id, KmsWebRtcDataChannel * channel)
+data_channel_new (guint stream_id, KmsWebRtcDataChannel *channel)
 {
   DataChannel *chann;
   gchar *name;
@@ -155,7 +155,7 @@ data_channel_new (guint stream_id, KmsWebRtcDataChannel * channel)
 }
 
 static void
-connect_sctp_data_destroy (ConnectSCTPData * data, GClosure * closure)
+connect_sctp_data_destroy (ConnectSCTPData *data, GClosure *closure)
 {
   gst_sdp_media_free (data->media);
 
@@ -163,8 +163,8 @@ connect_sctp_data_destroy (ConnectSCTPData * data, GClosure * closure)
 }
 
 static ConnectSCTPData *
-connect_sctp_data_new (KmsWebrtcSession * self, GstSDPMedia * media,
-    KmsIRtpConnection * conn)
+connect_sctp_data_new (KmsWebrtcSession *self, GstSDPMedia *media,
+    KmsIRtpConnection *conn)
 {
   ConnectSCTPData *data;
 
@@ -183,8 +183,8 @@ connect_sctp_data_new (KmsWebrtcSession * self, GstSDPMedia * media,
 /* ConnectSCTPData end */
 
 KmsWebrtcSession *
-kms_webrtc_session_new (KmsBaseSdpEndpoint * ep, guint id,
-    KmsIRtpSessionManager * manager, GMainContext * context, gint qos_dscp)
+kms_webrtc_session_new (KmsBaseSdpEndpoint *ep, guint id,
+    KmsIRtpSessionManager *manager, GMainContext *context, gint qos_dscp)
 {
   GObject *obj;
   KmsWebrtcSession *self;
@@ -201,8 +201,8 @@ kms_webrtc_session_new (KmsBaseSdpEndpoint * ep, guint id,
 /* Connection management begin */
 
 KmsWebRtcBaseConnection *
-kms_webrtc_session_get_connection (KmsWebrtcSession * self,
-    KmsSdpMediaHandler * handler)
+kms_webrtc_session_get_connection (KmsWebrtcSession *self,
+    KmsSdpMediaHandler *handler)
 {
   KmsBaseRtpSession *base_rtp_sess = KMS_BASE_RTP_SESSION (self);
   KmsIRtpConnection *conn;
@@ -216,18 +216,20 @@ kms_webrtc_session_get_connection (KmsWebrtcSession * self,
 }
 
 static void
-on_dtls_connection_state_change (GObject * object, gchar *stream_id, gchar *dtls_component, gchar *connection_id, guint state,
+on_dtls_connection_state_change (GObject *object, gchar *stream_id,
+    gchar *dtls_component, gchar *connection_id, guint state,
     gpointer user_data)
 {
   KmsWebrtcSession *self = KMS_WEBRTC_SESSION (user_data);
 
-  g_signal_emit (self, kms_webrtc_session_signals[SIGNAL_ON_DTLS_CONNECTION_STATE_CHANGED], 0, stream_id, dtls_component, connection_id, state);
+  g_signal_emit (self,
+      kms_webrtc_session_signals[SIGNAL_ON_DTLS_CONNECTION_STATE_CHANGED], 0,
+      stream_id, dtls_component, connection_id, state);
 }
 
-
 static KmsIRtpConnection *
-kms_webrtc_session_create_connection (KmsBaseRtpSession * base_rtp_sess,
-    const GstSDPMedia * media, const gchar * name, guint16 min_port,
+kms_webrtc_session_create_connection (KmsBaseRtpSession *base_rtp_sess,
+    const GstSDPMedia *media, const gchar *name, guint16 min_port,
     guint16 max_port)
 {
   KmsWebrtcSession *self = KMS_WEBRTC_SESSION (base_rtp_sess);
@@ -237,31 +239,33 @@ kms_webrtc_session_create_connection (KmsBaseRtpSession * base_rtp_sess,
   self->max_port = max_port;
 
   // Check if the protocol is '(UDP/)?DTLS/SCTP'
-  if (kms_sdp_sctp_media_handler_manage_protocol (gst_sdp_media_get_proto (media))) {
+  if (kms_sdp_sctp_media_handler_manage_protocol (gst_sdp_media_get_proto
+          (media))) {
     GST_DEBUG_OBJECT (self, "Create SCTP connection");
     conn =
         KMS_WEBRTC_BASE_CONNECTION (kms_webrtc_sctp_connection_new
         (self->agent, self->context, name, min_port, max_port,
             self->pem_certificate));
     g_signal_connect (conn, "on-dtls-connection-state-changed",
-        G_CALLBACK(on_dtls_connection_state_change), self);    
+        G_CALLBACK (on_dtls_connection_state_change), self);
   } else {
     GST_DEBUG_OBJECT (self, "Create RTP connection");
-    KmsWebRtcConnection * conn_ = kms_webrtc_connection_new
+    KmsWebRtcConnection *conn_ = kms_webrtc_connection_new
         (self->agent, self->context, name, min_port, max_port,
-            self->pem_certificate);
+        self->pem_certificate);
+
     conn = KMS_WEBRTC_BASE_CONNECTION (conn_);
 
     g_signal_connect (conn, "on-dtls-connection-state-changed",
-        G_CALLBACK(on_dtls_connection_state_change), self);    
+        G_CALLBACK (on_dtls_connection_state_change), self);
   }
 
   return KMS_I_RTP_CONNECTION (conn);
 }
 
 static KmsIRtcpMuxConnection *
-kms_webrtc_session_create_rtcp_mux_connection (KmsBaseRtpSession *
-    base_rtp_sess, const gchar * name, guint16 min_port, guint16 max_port)
+kms_webrtc_session_create_rtcp_mux_connection (KmsBaseRtpSession *base_rtp_sess,
+    const gchar *name, guint16 min_port, guint16 max_port)
 {
   KmsWebrtcSession *self = KMS_WEBRTC_SESSION (base_rtp_sess);
   KmsWebRtcRtcpMuxConnection *conn;
@@ -271,14 +275,14 @@ kms_webrtc_session_create_rtcp_mux_connection (KmsBaseRtpSession *
       min_port, max_port, self->pem_certificate);
 
   g_signal_connect (conn, "on-dtls-connection-state-changed",
-        G_CALLBACK(on_dtls_connection_state_change), self);    
-        
+      G_CALLBACK (on_dtls_connection_state_change), self);
+
   return KMS_I_RTCP_MUX_CONNECTION (conn);
 }
 
 static KmsIBundleConnection *
-kms_webrtc_session_create_bundle_connection (KmsBaseRtpSession *
-    base_rtp_sess, const gchar * name, guint16 min_port, guint16 max_port)
+kms_webrtc_session_create_bundle_connection (KmsBaseRtpSession *base_rtp_sess,
+    const gchar *name, guint16 min_port, guint16 max_port)
 {
   KmsWebrtcSession *self = KMS_WEBRTC_SESSION (base_rtp_sess);
   KmsWebRtcBundleConnection *conn;
@@ -288,16 +292,16 @@ kms_webrtc_session_create_bundle_connection (KmsBaseRtpSession *
       min_port, max_port, self->pem_certificate);
 
   g_signal_connect (conn, "on-dtls-connection-state-changed",
-        G_CALLBACK(on_dtls_connection_state_change), self);    
-      
+      G_CALLBACK (on_dtls_connection_state_change), self);
+
   return KMS_I_BUNDLE_CONNECTION (conn);
 }
 
 /* Connection management end */
 
 gchar *
-kms_webrtc_session_get_stream_id (KmsWebrtcSession * self,
-    KmsSdpMediaHandler * handler)
+kms_webrtc_session_get_stream_id (KmsWebrtcSession *self,
+    KmsSdpMediaHandler *handler)
 {
   KmsWebRtcBaseConnection *conn;
 
@@ -310,8 +314,8 @@ kms_webrtc_session_get_stream_id (KmsWebrtcSession * self,
 }
 
 static void
-sdp_media_add_ice_candidate (GstSDPMedia * media, KmsIceBaseAgent * agent,
-    KmsIceCandidate * cand)
+sdp_media_add_ice_candidate (GstSDPMedia *media, KmsIceBaseAgent *agent,
+    KmsIceCandidate *cand)
 {
   gchar *str;
 
@@ -324,8 +328,8 @@ sdp_media_add_ice_candidate (GstSDPMedia * media, KmsIceBaseAgent * agent,
 }
 
 static void
-kms_webrtc_session_remote_sdp_add_ice_candidate (KmsWebrtcSession *
-    self, KmsIceCandidate * candidate, gboolean allow_error)
+kms_webrtc_session_remote_sdp_add_ice_candidate (KmsWebrtcSession *self,
+    KmsIceCandidate *candidate, gboolean allow_error)
 {
   KmsSdpSession *sdp_sess = KMS_SDP_SESSION (self);
   guint8 index;
@@ -336,15 +340,11 @@ kms_webrtc_session_remote_sdp_add_ice_candidate (KmsWebrtcSession *
 
   if (sdp_sess->remote_sdp == NULL) {
     GST_CAT_LEVEL_LOG (GST_CAT_DEFAULT, dbg, self,
-        "Adding remote candidate to remote SDP:"
-        " Remote SDP still unset");
+        "Adding remote candidate to remote SDP:" " Remote SDP still unset");
     if (allow_error) {
-      GST_CAT_LEVEL_LOG (GST_CAT_DEFAULT, dbg, self,
-          "... (Will add later)");
-    }
-    else {
-      GST_CAT_LEVEL_LOG (GST_CAT_DEFAULT, dbg, self,
-          "... (Error)");
+      GST_CAT_LEVEL_LOG (GST_CAT_DEFAULT, dbg, self, "... (Will add later)");
+    } else {
+      GST_CAT_LEVEL_LOG (GST_CAT_DEFAULT, dbg, self, "... (Error)");
     }
     return;
   }
@@ -367,7 +367,7 @@ kms_webrtc_session_remote_sdp_add_ice_candidate (KmsWebrtcSession *
   } else {
     /* TODO: Candidates should be added using extensions */
     sdp_media_add_ice_candidate ((GstSDPMedia *) media, self->agent, candidate);
-    GST_LOG_OBJECT (self, "Added candidate to remote SDP, remote: '%s'",
+    GST_DEBUG_OBJECT (self, "Added candidate to remote SDP, remote: '%s'",
         candidate_str);
   }
 }
@@ -388,8 +388,8 @@ kms_webrtc_session_remote_sdp_add_stored_ice_candidates (KmsWebrtcSession *self)
 }
 
 static gboolean
-kms_webrtc_session_agent_add_ice_candidate (KmsWebrtcSession * self,
-    KmsIceCandidate * candidate, gboolean allow_error)
+kms_webrtc_session_agent_add_ice_candidate (KmsWebrtcSession *self,
+    KmsIceCandidate *candidate, gboolean allow_error)
 {
   KmsSdpSession *sdp_sess = KMS_SDP_SESSION (self);
   guint8 index;
@@ -405,8 +405,7 @@ kms_webrtc_session_agent_add_ice_candidate (KmsWebrtcSession * self,
     GST_CAT_LEVEL_LOG (GST_CAT_DEFAULT, dbg, self,
         "[AddIceCandidate] ICE Gathering not started yet");
     if (allow_error) {
-      GST_CAT_LEVEL_LOG (GST_CAT_DEFAULT, dbg, self,
-          "... (Will add later)");
+      GST_CAT_LEVEL_LOG (GST_CAT_DEFAULT, dbg, self, "... (Will add later)");
     }
     return allow_error;
   }
@@ -415,8 +414,7 @@ kms_webrtc_session_agent_add_ice_candidate (KmsWebrtcSession * self,
     GST_CAT_LEVEL_LOG (GST_CAT_DEFAULT, dbg, self,
         "[AddIceCandidate] Local SDP not generated yet");
     if (allow_error) {
-      GST_CAT_LEVEL_LOG (GST_CAT_DEFAULT, dbg, self,
-          "... (Will add later)");
+      GST_CAT_LEVEL_LOG (GST_CAT_DEFAULT, dbg, self, "... (Will add later)");
     }
     return allow_error;
   }
@@ -466,15 +464,14 @@ kms_webrtc_session_agent_add_ice_candidate (KmsWebrtcSession * self,
     return FALSE;
   }
 
-  if (!kms_ice_base_agent_add_ice_candidate (self->agent, candidate,
-      stream_id)) {
+  if (!kms_ice_base_agent_add_ice_candidate (self->agent, candidate, stream_id)) {
     GST_ERROR_OBJECT (self,
         "[AddIceCandidate] Parsing failed, stream_id: '%s', remote: '%s'",
         stream_id, candidate_str);
     return FALSE;
   }
 
-  GST_LOG_OBJECT (self,
+  GST_DEBUG_OBJECT (self,
       "[AddIceCandidate] Added successfully, stream_id: '%s', remote: '%s'",
       stream_id, candidate_str);
 
@@ -482,7 +479,7 @@ kms_webrtc_session_agent_add_ice_candidate (KmsWebrtcSession * self,
 }
 
 static void
-kms_webrtc_session_agent_add_stored_ice_candidates (KmsWebrtcSession * self)
+kms_webrtc_session_agent_add_stored_ice_candidates (KmsWebrtcSession *self)
 {
   guint i;
   guint len = g_slist_length (self->remote_candidates);
@@ -499,9 +496,9 @@ kms_webrtc_session_agent_add_stored_ice_candidates (KmsWebrtcSession * self)
 }
 
 static const gchar *
-kms_webrtc_session_sdp_media_add_ice_candidate (KmsWebrtcSession * self,
-    KmsSdpMediaHandler * handler, const GstSDPMedia * media,
-    KmsIceCandidate * cand)
+kms_webrtc_session_sdp_media_add_ice_candidate (KmsWebrtcSession *self,
+    KmsSdpMediaHandler *handler, const GstSDPMedia *media,
+    KmsIceCandidate *cand)
 {
   char *media_stream_id;
   const gchar *mid;
@@ -527,8 +524,8 @@ kms_webrtc_session_sdp_media_add_ice_candidate (KmsWebrtcSession * self,
 }
 
 static void
-kms_webrtc_session_sdp_msg_add_ice_candidate (KmsWebrtcSession * self,
-    KmsIceCandidate * cand)
+kms_webrtc_session_sdp_msg_add_ice_candidate (KmsWebrtcSession *self,
+    KmsIceCandidate *cand)
 {
   KmsSdpSession *sdp_sess = KMS_SDP_SESSION (self);
   GList *list = NULL, *iterator = NULL;
@@ -567,7 +564,7 @@ kms_webrtc_session_sdp_msg_add_ice_candidate (KmsWebrtcSession * self,
         cand);
     g_object_unref (handler);
 
-    GST_LOG_OBJECT (self,
+    GST_DEBUG_OBJECT (self,
         "[IceCandidateFound] Added local candidate to local SDP media: %s, index: %u",
         gst_sdp_media_get_media (media), index);
 
@@ -594,10 +591,10 @@ kms_webrtc_session_sdp_msg_add_ice_candidate (KmsWebrtcSession * self,
 }
 
 static void
-kms_webrtc_session_new_candidate (KmsIceBaseAgent * agent,
-    KmsIceCandidate * candidate, KmsWebrtcSession * self)
+kms_webrtc_session_new_candidate (KmsIceBaseAgent *agent,
+    KmsIceCandidate *candidate, KmsWebrtcSession *self)
 {
-  GST_LOG_OBJECT (self,
+  GST_DEBUG_OBJECT (self,
       "[IceCandidateFound] local: '%s', stream_id: %s, component_id: %d",
       kms_ice_candidate_get_candidate (candidate),
       kms_ice_candidate_get_stream_id (candidate),
@@ -625,8 +622,8 @@ kms_webrtc_session_new_candidate (KmsIceBaseAgent * agent,
 }
 
 static gboolean
-kms_webrtc_session_sdp_media_add_default_info (KmsWebrtcSession * self,
-    KmsSdpMediaHandler * handler, GstSDPMedia * media, gboolean use_ipv6)
+kms_webrtc_session_sdp_media_add_default_info (KmsWebrtcSession *self,
+    KmsSdpMediaHandler *handler, GstSDPMedia *media, gboolean use_ipv6)
 {
   KmsIceBaseAgent *agent = self->agent;
   char *stream_id;
@@ -717,7 +714,7 @@ kms_webrtc_session_sdp_media_add_default_info (KmsWebrtcSession * self,
 }
 
 static gboolean
-kms_webrtc_session_local_sdp_add_default_info (KmsWebrtcSession * self)
+kms_webrtc_session_local_sdp_add_default_info (KmsWebrtcSession *self)
 {
   KmsSdpSession *sdp_sess = KMS_SDP_SESSION (self);
   gboolean use_ipv6;
@@ -759,15 +756,15 @@ kms_webrtc_session_local_sdp_add_default_info (KmsWebrtcSession * self)
 }
 
 static void
-kms_webrtc_session_gathering_done (KmsIceBaseAgent * agent, gchar * stream_id,
-    KmsWebrtcSession * self)
+kms_webrtc_session_gathering_done (KmsIceBaseAgent *agent, gchar *stream_id,
+    KmsWebrtcSession *self)
 {
   KmsBaseRtpSession *base_rtp_sess = KMS_BASE_RTP_SESSION (self);
   GHashTableIter iter;
   gpointer key, v;
   gboolean done = TRUE;
 
-  GST_LOG_OBJECT (self, "[IceGatheringDone] stream_id: %s", stream_id);
+  GST_DEBUG_OBJECT (self, "[IceGatheringDone] stream_id: %s", stream_id);
 
   KMS_SDP_SESSION_LOCK (self);
 
@@ -797,11 +794,10 @@ kms_webrtc_session_gathering_done (KmsIceBaseAgent * agent, gchar * stream_id,
 }
 
 static void
-kms_webrtc_session_component_state_change (KmsIceBaseAgent * agent,
-    char *stream_id, guint component_id, IceState state,
-    KmsWebrtcSession * self)
+kms_webrtc_session_component_state_change (KmsIceBaseAgent *agent,
+    char *stream_id, guint component_id, IceState state, KmsWebrtcSession *self)
 {
-  GST_LOG_OBJECT (self,
+  GST_DEBUG_OBJECT (self,
       "[IceComponentStateChanged] state: %s, stream_id: %s, component_id: %u",
       kms_ice_base_agent_state_to_string (state), stream_id, component_id);
 
@@ -811,8 +807,8 @@ kms_webrtc_session_component_state_change (KmsIceBaseAgent * agent,
 }
 
 static void
-kms_webrtc_session_set_network_ifs_info (KmsWebrtcSession * self,
-    KmsWebRtcBaseConnection * conn)
+kms_webrtc_session_set_network_ifs_info (KmsWebrtcSession *self,
+    KmsWebRtcBaseConnection *conn)
 {
   if (self->network_interfaces == NULL) {
     return;
@@ -833,8 +829,8 @@ kms_webrtc_session_set_ice_tcp (KmsWebrtcSession *self,
 }
 
 static void
-kms_webrtc_session_set_stun_server_info (KmsWebrtcSession * self,
-    KmsWebRtcBaseConnection * conn)
+kms_webrtc_session_set_stun_server_info (KmsWebrtcSession *self,
+    KmsWebRtcBaseConnection *conn)
 {
   if (self->stun_server_ip == NULL) {
     if (self->turn_address == NULL) {
@@ -853,8 +849,8 @@ kms_webrtc_session_set_stun_server_info (KmsWebrtcSession * self,
 }
 
 static void
-kms_webrtc_session_set_relay_info (KmsWebrtcSession * self,
-    KmsWebRtcBaseConnection * conn)
+kms_webrtc_session_set_relay_info (KmsWebrtcSession *self,
+    KmsWebRtcBaseConnection *conn)
 {
   if (self->turn_address == NULL) {
     if (self->stun_server_ip == NULL) {
@@ -874,7 +870,7 @@ kms_webrtc_session_set_relay_info (KmsWebrtcSession * self,
 }
 
 static gboolean
-kms_webrtc_session_gather_candidates (KmsWebrtcSession * self)
+kms_webrtc_session_gather_candidates (KmsWebrtcSession *self)
 {
   KmsBaseRtpSession *base_rtp_sess = KMS_BASE_RTP_SESSION (self);
   GHashTableIter iter;
@@ -903,7 +899,8 @@ kms_webrtc_session_gather_candidates (KmsWebrtcSession * self)
   if (ret) {
     self->gather_started = TRUE;
 
-    GST_DEBUG_OBJECT (self, "[IceGatheringStarted] Add stored remote candidates");
+    GST_DEBUG_OBJECT (self,
+        "[IceGatheringStarted] Add stored remote candidates");
     kms_webrtc_session_agent_add_stored_ice_candidates (self);
   }
 
@@ -913,12 +910,12 @@ kms_webrtc_session_gather_candidates (KmsWebrtcSession * self)
 }
 
 static gboolean
-kms_webrtc_session_add_ice_candidate (KmsWebrtcSession * self,
-    KmsIceCandidate * candidate)
+kms_webrtc_session_add_ice_candidate (KmsWebrtcSession *self,
+    KmsIceCandidate *candidate)
 {
   gboolean ret;
 
-  GST_LOG_OBJECT (self,
+  GST_DEBUG_OBJECT (self,
       "[AddIceCandidate] remote: '%s', stream_id: %s, component_id: %d",
       kms_ice_candidate_get_candidate (candidate),
       kms_ice_candidate_get_stream_id (candidate),
@@ -941,8 +938,8 @@ kms_webrtc_session_add_ice_candidate (KmsWebrtcSession * self,
 }
 
 gboolean
-kms_webrtc_session_set_ice_credentials (KmsWebrtcSession * self,
-    KmsSdpMediaHandler * handler, GstSDPMedia * media)
+kms_webrtc_session_set_ice_credentials (KmsWebrtcSession *self,
+    KmsSdpMediaHandler *handler, GstSDPMedia *media)
 {
   KmsWebRtcBaseConnection *conn;
   gchar *ufrag, *pwd;
@@ -963,8 +960,8 @@ kms_webrtc_session_set_ice_credentials (KmsWebrtcSession * self,
 }
 
 gboolean
-kms_webrtc_session_set_ice_candidates (KmsWebrtcSession * self,
-    KmsSdpMediaHandler * handler, GstSDPMedia * media)
+kms_webrtc_session_set_ice_candidates (KmsWebrtcSession *self,
+    KmsSdpMediaHandler *handler, GstSDPMedia *media)
 {
   char *stream_id;
   GSList *candidates;
@@ -995,8 +992,8 @@ kms_webrtc_session_set_ice_candidates (KmsWebrtcSession * self,
 }
 
 static gchar *
-kms_webrtc_session_generate_fingerprint_sdp_attr (KmsWebrtcSession * self,
-    KmsSdpMediaHandler * handler)
+kms_webrtc_session_generate_fingerprint_sdp_attr (KmsWebrtcSession *self,
+    KmsSdpMediaHandler *handler)
 {
   gchar *fp, *ret;
 
@@ -1021,8 +1018,8 @@ kms_webrtc_session_generate_fingerprint_sdp_attr (KmsWebrtcSession * self,
 }
 
 gboolean
-kms_webrtc_session_set_crypto_info (KmsWebrtcSession * self,
-    KmsSdpMediaHandler * handler, GstSDPMedia * media)
+kms_webrtc_session_set_crypto_info (KmsWebrtcSession *self,
+    KmsSdpMediaHandler *handler, GstSDPMedia *media)
 {
   gchar *fingerprint;
 
@@ -1043,9 +1040,9 @@ kms_webrtc_session_set_crypto_info (KmsWebrtcSession * self,
 /* Start Transport begin */
 
 static void
-gst_media_add_remote_candidates (KmsWebrtcSession * self,
-    guint index, const GstSDPMedia * media, KmsWebRtcBaseConnection * conn,
-    const gchar * msg_ufrag, const gchar * msg_pwd)
+gst_media_add_remote_candidates (KmsWebrtcSession *self,
+    guint index, const GstSDPMedia *media, KmsWebRtcBaseConnection *conn,
+    const gchar *msg_ufrag, const gchar *msg_pwd)
 {
   KmsIceBaseAgent *agent = conn->agent;
   gchar *stream_id = conn->stream_id;
@@ -1097,7 +1094,7 @@ gst_media_add_remote_candidates (KmsWebrtcSession * self,
 }
 
 static gboolean
-get_port_from_string (const gchar * str, gint * _ret)
+get_port_from_string (const gchar *str, gint *_ret)
 {
   gchar *endptr;
   gint64 val;
@@ -1127,10 +1124,10 @@ get_port_from_string (const gchar * str, gint * _ret)
 }
 
 static void
-kms_webrtc_session_data_session_established_cb (KmsWebRtcDataSessionBin *
-    session, gboolean connected, KmsWebrtcSession * self)
+kms_webrtc_session_data_session_established_cb (KmsWebRtcDataSessionBin
+    *session, gboolean connected, KmsWebrtcSession *self)
 {
-  GST_LOG_OBJECT (self, "Data session %" GST_PTR_FORMAT " %s",
+  GST_DEBUG_OBJECT (self, "Data session %" GST_PTR_FORMAT " %s",
       session, (connected) ? "established" : "finished");
 
   g_signal_emit (self,
@@ -1139,13 +1136,13 @@ kms_webrtc_session_data_session_established_cb (KmsWebRtcDataSessionBin *
 }
 
 static gboolean
-new_event_callback (GstAppSink * appsink, DataChannel * channel) 
+new_event_callback (GstAppSink *appsink, DataChannel *channel)
 {
   return FALSE;
 }
 
 static GstFlowReturn
-new_sample_callback (GstAppSink * appsink, DataChannel * channel)
+new_sample_callback (GstAppSink *appsink, DataChannel *channel)
 {
   GstFlowReturn ret;
   GstSample *sample;
@@ -1173,8 +1170,8 @@ new_sample_callback (GstAppSink * appsink, DataChannel * channel)
 }
 
 static GstFlowReturn
-data_channel_buffer_received_cb (GObject * obj, GstBuffer * buffer,
-    DataChannel * channel)
+data_channel_buffer_received_cb (GObject *obj, GstBuffer *buffer,
+    DataChannel *channel)
 {
   /* buffer is tranfser full */
   return gst_app_src_push_buffer (GST_APP_SRC (channel->appsrc),
@@ -1182,8 +1179,8 @@ data_channel_buffer_received_cb (GObject * obj, GstBuffer * buffer,
 }
 
 static void
-kms_webrtc_session_data_channel_opened_cb (KmsWebRtcDataSessionBin * session,
-    guint stream_id, KmsWebrtcSession * self)
+kms_webrtc_session_data_channel_opened_cb (KmsWebRtcDataSessionBin *session,
+    guint stream_id, KmsWebrtcSession *self)
 {
   GstAppSinkCallbacks callbacks;
   KmsWebRtcDataChannel *chann;
@@ -1223,8 +1220,7 @@ kms_webrtc_session_data_channel_opened_cb (KmsWebRtcDataSessionBin * session,
       (GstFlowReturn (*)(GstAppSink *, gpointer)) new_sample_callback;
   callbacks.new_event =
       (gboolean (*)(GstAppSink *, gpointer)) new_event_callback;
-  callbacks.propose_allocation = NULL; // FIXME: propose a funcion appsink_propose_allocation_cb to process this callback
-
+  callbacks.propose_allocation = NULL;  // FIXME: propose a funcion appsink_propose_allocation_cb to process this callback
 
   gst_app_sink_set_callbacks (GST_APP_SINK (channel->appsink), &callbacks,
       kms_ref_struct_ref (KMS_REF_STRUCT_CAST (channel)),
@@ -1265,8 +1261,8 @@ kms_webrtc_session_data_channel_opened_cb (KmsWebRtcDataSessionBin * session,
 }
 
 static void
-kms_webrtc_session_remove_data_channel (KmsWebrtcSession * self,
-    DataChannel * channel, guint stream_id)
+kms_webrtc_session_remove_data_channel (KmsWebrtcSession *self,
+    DataChannel *channel, guint stream_id)
 {
   g_object_ref (channel->appsrc);
   g_object_ref (channel->appsink);
@@ -1281,8 +1277,8 @@ kms_webrtc_session_remove_data_channel (KmsWebrtcSession * self,
 }
 
 static void
-kms_webrtc_session_data_channel_closed_cb (KmsWebRtcDataSessionBin * session,
-    guint stream_id, KmsWebrtcSession * self)
+kms_webrtc_session_data_channel_closed_cb (KmsWebRtcDataSessionBin *session,
+    guint stream_id, KmsWebrtcSession *self)
 {
   DataChannel *channel;
   GstPad *pad;
@@ -1321,7 +1317,7 @@ kms_webrtc_session_data_channel_closed_cb (KmsWebRtcDataSessionBin * session,
 }
 
 static gboolean
-configure_data_session (KmsWebrtcSession * self, const GstSDPMedia * media)
+configure_data_session (KmsWebrtcSession *self, const GstSDPMedia *media)
 {
   gint port = -1;
   guint i, len;
@@ -1391,7 +1387,7 @@ configure_data_session (KmsWebrtcSession * self, const GstSDPMedia * media)
 }
 
 static void
-kms_webrtc_session_link_pads (GstPad * src, GstPad * sink)
+kms_webrtc_session_link_pads (GstPad *src, GstPad *sink)
 {
   if (gst_pad_link_full (src, sink, GST_PAD_LINK_CHECK_CAPS) != GST_PAD_LINK_OK) {
     GST_ERROR ("Error linking pads (src: %" GST_PTR_FORMAT ", sink: %"
@@ -1400,8 +1396,8 @@ kms_webrtc_session_link_pads (GstPad * src, GstPad * sink)
 }
 
 static void
-kms_webrtc_session_connect_data_session (KmsWebrtcSession * self,
-    const GstSDPMedia * media, KmsIRtpConnection * conn)
+kms_webrtc_session_connect_data_session (KmsWebrtcSession *self,
+    const GstSDPMedia *media, KmsIRtpConnection *conn)
 {
   GstPad *srcpad = NULL, *sinkpad = NULL, *tmppad;
 
@@ -1439,8 +1435,8 @@ error:
 }
 
 static void
-kms_webrtc_session_add_data_session (KmsWebrtcSession * self,
-    const GstSDPMedia * media, KmsIRtpConnection * conn)
+kms_webrtc_session_add_data_session (KmsWebrtcSession *self,
+    const GstSDPMedia *media, KmsIRtpConnection *conn)
 {
   KMS_SDP_SESSION_LOCK (self);
 
@@ -1459,8 +1455,8 @@ kms_webrtc_session_add_data_session (KmsWebrtcSession * self,
 }
 
 static void
-kms_webrtc_session_add_data_session_cb (KmsIRtpConnection * conn,
-    ConnectSCTPData * data)
+kms_webrtc_session_add_data_session_cb (KmsIRtpConnection *conn,
+    ConnectSCTPData *data)
 {
   if (g_atomic_int_compare_and_exchange (&data->connected, FALSE, TRUE)) {
     kms_webrtc_session_add_data_session (data->self, data->media, data->conn);
@@ -1475,8 +1471,8 @@ kms_webrtc_session_add_data_session_cb (KmsIRtpConnection * conn,
 }
 
 static void
-kms_webrtc_session_support_sctp_stream (KmsWebrtcSession * self,
-    const GstSDPMedia * neg_media, KmsIRtpConnection * conn)
+kms_webrtc_session_support_sctp_stream (KmsWebrtcSession *self,
+    const GstSDPMedia *neg_media, KmsIRtpConnection *conn)
 {
   gboolean connected = FALSE;
   ConnectSCTPData *data;
@@ -1507,16 +1503,16 @@ kms_webrtc_session_support_sctp_stream (KmsWebrtcSession * self,
     }
     kms_webrtc_session_add_data_session (self, neg_media, conn);
   } else {
-    GST_LOG_OBJECT (self, "SCTP: waiting for DTLS layer to be established");
+    GST_DEBUG_OBJECT (self, "SCTP: waiting for DTLS layer to be established");
   }
 
   kms_ref_struct_unref (KMS_REF_STRUCT_CAST (data));
 }
 
 static gboolean
-kms_webrtc_session_add_connection (KmsWebrtcSession * self,
-    KmsSdpSession * sess, KmsIRtpConnection * conn,
-    const GstSDPMedia * neg_media, gboolean offerer)
+kms_webrtc_session_add_connection (KmsWebrtcSession *self,
+    KmsSdpSession *sess, KmsIRtpConnection *conn,
+    const GstSDPMedia *neg_media, gboolean offerer)
 {
   gboolean connected;
 
@@ -1527,7 +1523,7 @@ kms_webrtc_session_add_connection (KmsWebrtcSession * self,
 
   g_object_get (conn, "added", &connected, NULL);
   if (connected) {
-    GST_LOG_OBJECT (self, "Conn already added");
+    GST_DEBUG_OBJECT (self, "Conn already added");
   } else {
     gboolean active;
 
@@ -1544,9 +1540,9 @@ kms_webrtc_session_add_connection (KmsWebrtcSession * self,
 }
 
 static gboolean
-kms_webrtc_session_configure_connection (KmsWebrtcSession * self,
-    KmsSdpSession * sess, KmsIRtpConnection * conn,
-    const GstSDPMedia * neg_media, const GstSDPMedia * remote_media,
+kms_webrtc_session_configure_connection (KmsWebrtcSession *self,
+    KmsSdpSession *sess, KmsIRtpConnection *conn,
+    const GstSDPMedia *neg_media, const GstSDPMedia *remote_media,
     gboolean offerer)
 {
   const gchar *neg_proto_str = gst_sdp_media_get_proto (neg_media);
@@ -1570,7 +1566,7 @@ kms_webrtc_session_configure_connection (KmsWebrtcSession * self,
 }
 
 void
-kms_webrtc_session_start_transport_send (KmsWebrtcSession * self,
+kms_webrtc_session_start_transport_send (KmsWebrtcSession *self,
     gboolean offerer)
 {
   KmsSdpSession *sdp_sess = KMS_SDP_SESSION (self);
@@ -1655,8 +1651,7 @@ kms_webrtc_session_start_transport_send (KmsWebrtcSession * self,
   if (self->gather_started) {
     GST_DEBUG_OBJECT (self, "Start transport: Add stored remote candidates");
     kms_webrtc_session_agent_add_stored_ice_candidates (self);
-  }
-  else {
+  } else {
     GST_DEBUG_OBJECT (self, "Start transport:"
         " Not adding stored remote candidates (ICE Gathering not started)");
   }
@@ -1665,8 +1660,8 @@ kms_webrtc_session_start_transport_send (KmsWebrtcSession * self,
 /* Start Transport end */
 
 void
-kms_webrtc_session_add_data_channels_stats (KmsWebrtcSession * self,
-    GstStructure * stats, const gchar * selector)
+kms_webrtc_session_add_data_channels_stats (KmsWebrtcSession *self,
+    GstStructure *stats, const gchar *selector)
 {
   GstStructure *data_stats;
   const gchar *id;
@@ -1691,7 +1686,7 @@ kms_webrtc_session_add_data_channels_stats (KmsWebrtcSession * self,
 }
 
 static void
-kms_webrtc_session_parse_turn_url (KmsWebrtcSession * self)
+kms_webrtc_session_parse_turn_url (KmsWebrtcSession *self)
 {
   GRegex *regex;
   GMatchInfo *match_info = NULL;
@@ -1728,6 +1723,7 @@ kms_webrtc_session_parse_turn_url (KmsWebrtcSession * self)
 
     // Build a safe string that can be printed out in the log
     GString *safe_log = g_string_new ("<user:password>");
+
     if (self->turn_address) {
       g_string_append_c (safe_log, '@');
       g_string_append (safe_log, self->turn_address);
@@ -1744,7 +1740,7 @@ kms_webrtc_session_parse_turn_url (KmsWebrtcSession * self)
     self->turn_port = g_ascii_strtoll (port_str, NULL, 10);
     g_free (port_str);
 
-    self->turn_transport = TURN_PROTOCOL_UDP;  /* default */
+    self->turn_transport = TURN_PROTOCOL_UDP;   /* default */
     if (turn_transport != NULL) {
       if (g_strcmp0 ("tcp", turn_transport) == 0) {
         self->turn_transport = TURN_PROTOCOL_TCP;
@@ -1757,19 +1753,21 @@ kms_webrtc_session_parse_turn_url (KmsWebrtcSession * self)
     GST_DEBUG_OBJECT (self, "TURN server info set: %s", safe_log->str);
     g_string_free (safe_log, TRUE);
   } else {
+/* RTCSP-935 this is not a big problem if we dont have a turn server so dont print a big error
     GST_ELEMENT_ERROR (self, RESOURCE, SETTINGS,
         ("URL '%s' not allowed. It must have this format: 'user:password@address:port(?transport=[udp|tcp|tls])'",
             self->turn_url),
         ("URL '%s' not allowed. It must have this format: 'user:password@address:port(?transport=[udp|tcp|tls])'",
             self->turn_url));
+*/
   }
 
   g_match_info_free (match_info);
 }
 
 static void
-kms_webrtc_session_set_property (GObject * object, guint prop_id,
-    const GValue * value, GParamSpec * pspec)
+kms_webrtc_session_set_property (GObject *object, guint prop_id,
+    const GValue *value, GParamSpec *pspec)
 {
   KmsWebrtcSession *self = KMS_WEBRTC_SESSION (object);
 
@@ -1816,8 +1814,8 @@ kms_webrtc_session_set_property (GObject * object, guint prop_id,
 }
 
 static void
-kms_webrtc_session_get_property (GObject * object, guint prop_id,
-    GValue * value, GParamSpec * pspec)
+kms_webrtc_session_get_property (GObject *object, guint prop_id,
+    GValue *value, GParamSpec *pspec)
 {
   KmsWebrtcSession *self = KMS_WEBRTC_SESSION (object);
 
@@ -1860,11 +1858,11 @@ kms_webrtc_session_get_property (GObject * object, guint prop_id,
 }
 
 static void
-kms_webrtc_session_finalize (GObject * object)
+kms_webrtc_session_finalize (GObject *object)
 {
   KmsWebrtcSession *self = KMS_WEBRTC_SESSION (object);
 
-  GST_LOG_OBJECT (self, "finalize");
+  GST_DEBUG_OBJECT (self, "finalize");
 
   g_clear_object (&self->agent);
   g_main_context_unref (self->context);
@@ -1892,9 +1890,9 @@ kms_webrtc_session_finalize (GObject * object)
 }
 
 static void
-kms_webrtc_session_post_constructor (KmsWebrtcSession * self,
-    KmsBaseSdpEndpoint * ep, guint id, KmsIRtpSessionManager * manager,
-    GMainContext * context)
+kms_webrtc_session_post_constructor (KmsWebrtcSession *self,
+    KmsBaseSdpEndpoint *ep, guint id, KmsIRtpSessionManager *manager,
+    GMainContext *context)
 {
   KmsBaseRtpSession *base_rtp_session = KMS_BASE_RTP_SESSION (self);
 
@@ -1906,18 +1904,17 @@ kms_webrtc_session_post_constructor (KmsWebrtcSession * self,
 }
 
 static void
-kms_webrtc_session_new_selected_pair_full (KmsIceBaseAgent * agent,
-    gchar * stream_id,
+kms_webrtc_session_new_selected_pair_full (KmsIceBaseAgent *agent,
+    gchar *stream_id,
     guint component_id,
-    KmsIceCandidate * lcandidate,
-    KmsIceCandidate * rcandidate, KmsWebrtcSession * self)
+    KmsIceCandidate *lcandidate,
+    KmsIceCandidate *rcandidate, KmsWebrtcSession *self)
 {
-  GST_LOG_OBJECT (self,
+  GST_DEBUG_OBJECT (self,
       "[NewCandidatePairSelected] local: '%s', remote: '%s'"
       ", stream_id: %s, component_id: %u",
       kms_ice_candidate_get_candidate (lcandidate),
-      kms_ice_candidate_get_candidate (rcandidate),
-      stream_id, component_id);
+      kms_ice_candidate_get_candidate (rcandidate), stream_id, component_id);
 
   g_signal_emit (G_OBJECT (self),
       kms_webrtc_session_signals[SIGNAL_NEW_SELECTED_PAIR_FULL], 0, stream_id,
@@ -1925,9 +1922,11 @@ kms_webrtc_session_new_selected_pair_full (KmsIceBaseAgent * agent,
 }
 
 static void
-kms_webrtc_session_init_ice_agent (KmsWebrtcSession * self)
+kms_webrtc_session_init_ice_agent (KmsWebrtcSession *self)
 {
-  self->agent = KMS_ICE_BASE_AGENT (kms_ice_nice_agent_new (self->context, self->qos_dscp));
+  self->agent =
+      KMS_ICE_BASE_AGENT (kms_ice_nice_agent_new (self->context,
+          self->qos_dscp));
 
   kms_ice_base_agent_run_agent (self->agent);
 
@@ -1942,9 +1941,9 @@ kms_webrtc_session_init_ice_agent (KmsWebrtcSession * self)
 }
 
 static gint
-kms_webrtc_session_create_data_channel (KmsWebrtcSession * self,
+kms_webrtc_session_create_data_channel (KmsWebrtcSession *self,
     gboolean ordered, gint max_packet_life_time, gint max_retransmits,
-    const gchar * label, const gchar * protocol)
+    const gchar *label, const gchar *protocol)
 {
   gint stream_id = -1;
 
@@ -1964,8 +1963,7 @@ kms_webrtc_session_create_data_channel (KmsWebrtcSession * self,
 }
 
 static void
-kms_webrtc_session_destroy_data_channel (KmsWebrtcSession * self,
-    gint stream_id)
+kms_webrtc_session_destroy_data_channel (KmsWebrtcSession *self, gint stream_id)
 {
   KMS_SDP_SESSION_LOCK (self);
 
@@ -1980,14 +1978,14 @@ kms_webrtc_session_destroy_data_channel (KmsWebrtcSession * self,
 }
 
 static void
-kms_webrtc_session_init (KmsWebrtcSession * self)
+kms_webrtc_session_init (KmsWebrtcSession *self)
 {
   self->stun_server_ip = DEFAULT_STUN_SERVER_IP;
   self->stun_server_port = DEFAULT_STUN_SERVER_PORT;
   self->turn_url = DEFAULT_STUN_TURN_URL;
   self->pem_certificate = DEFAULT_PEM_CERTIFICATE;
   self->network_interfaces = DEFAULT_NETWORK_INTERFACES;
-  self->external_ipv4= DEFAULT_EXTERNAL_IPV4;
+  self->external_ipv4 = DEFAULT_EXTERNAL_IPV4;
   self->external_ipv6 = DEFAULT_EXTERNAL_IPV6;
   self->ice_tcp = DEFAULT_ICE_TCP;
   self->gather_started = FALSE;
@@ -1997,8 +1995,8 @@ kms_webrtc_session_init (KmsWebrtcSession * self)
 }
 
 void
-kms_webrtc_session_set_callbacks (KmsWebrtcSession * self,
-    KmsWebrtcSessionCallbacks * cb, gpointer user_data, GDestroyNotify notify)
+kms_webrtc_session_set_callbacks (KmsWebrtcSession *self,
+    KmsWebrtcSessionCallbacks *cb, gpointer user_data, GDestroyNotify notify)
 {
   GDestroyNotify destroy;
   gpointer data;
@@ -2021,7 +2019,7 @@ kms_webrtc_session_set_callbacks (KmsWebrtcSession * self,
 }
 
 static void
-kms_webrtc_session_class_init (KmsWebrtcSessionClass * klass)
+kms_webrtc_session_class_init (KmsWebrtcSessionClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   GstElementClass *gstelement_class = GST_ELEMENT_CLASS (klass);
@@ -2087,7 +2085,8 @@ kms_webrtc_session_class_init (KmsWebrtcSessionClass * klass)
       g_param_spec_string ("network-interfaces",
           "networkInterfaces",
           "Local network interfaces used for ICE gathering",
-          DEFAULT_NETWORK_INTERFACES, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          DEFAULT_NETWORK_INTERFACES,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (gobject_class, PROP_EXTERNAL_IPV4,
       g_param_spec_string ("external-ipv4",
@@ -2170,7 +2169,6 @@ kms_webrtc_session_class_init (KmsWebrtcSessionClass * klass)
       G_OBJECT_CLASS_TYPE (klass), G_SIGNAL_RUN_LAST, 0, NULL, NULL, NULL,
       G_TYPE_NONE, 4, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT,
       G_TYPE_INVALID);
-
 
   kms_webrtc_session_signals[SIGNAL_GATHER_CANDIDATES] =
       g_signal_new ("gather-candidates",

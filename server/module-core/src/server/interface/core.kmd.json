@@ -17,7 +17,7 @@
       "js": {
         "nodeName": "kurento-client-core",
         "npmDescription": "JavaScript Client API for Kurento Media Server",
-        "npmGit": "https://github.com/Kurento/kurento-client-core-js.git"
+        "npmGit": "https://github.com/ESTOS/kurento-client-core-js.git"
       }
     },
     "implementation": {
@@ -1673,6 +1673,13 @@ Pipeline, towards the associated producer. Only valid for video consumers.
         "OPUS",
         "PCMU",
         "PCMA",
+        "G722",
+        "G726_16",
+        "G726_24",
+        "G726_32",
+        "G726_40",
+        "G729",
+        "TELEPHONE_EVENT",
         "RAW"
       ],
       "name": "AudioCodec",

@@ -19,6 +19,7 @@
 #include <gst/gst.h>
 #include <glib.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "constants.h"
 
@@ -72,8 +73,8 @@ static gchar *rtpmaps[] = {
 };
 
 gboolean
-sdp_utils_attribute_is_direction (const GstSDPAttribute * attr,
-    GstSDPDirection * direction)
+sdp_utils_attribute_is_direction (const GstSDPAttribute *attr,
+    GstSDPDirection *direction)
 {
   gint i;
 
@@ -90,7 +91,7 @@ sdp_utils_attribute_is_direction (const GstSDPAttribute * attr,
 }
 
 static gchar *
-sdp_media_get_ssrc_str (const GstSDPMedia * media)
+sdp_media_get_ssrc_str (const GstSDPMedia *media)
 {
   gchar *ssrc = NULL;
   const gchar *val;
@@ -115,7 +116,7 @@ sdp_media_get_ssrc_str (const GstSDPMedia * media)
 }
 
 static guint
-ssrc_str_to_uint (const gchar * ssrc_str)
+ssrc_str_to_uint (const gchar *ssrc_str)
 {
   gint64 val;
   guint ssrc = 0;
@@ -131,7 +132,7 @@ ssrc_str_to_uint (const gchar * ssrc_str)
 }
 
 guint
-sdp_utils_media_get_ssrc (const GstSDPMedia * media)
+sdp_utils_media_get_ssrc (const GstSDPMedia *media)
 {
   gchar *ssrc_str;
   guint ssrc = 0;
@@ -148,7 +149,7 @@ sdp_utils_media_get_ssrc (const GstSDPMedia * media)
 }
 
 static gchar **
-sdp_media_get_fid_ssrcs_str (const GstSDPMedia * media)
+sdp_media_get_fid_ssrcs_str (const GstSDPMedia *media)
 {
   gchar **ssrcs = NULL;
   gchar *ssrcs_str;
@@ -176,7 +177,7 @@ sdp_media_get_fid_ssrcs_str (const GstSDPMedia * media)
 }
 
 guint
-sdp_utils_media_get_fid_ssrc (const GstSDPMedia * media, guint pos)
+sdp_utils_media_get_fid_ssrc (const GstSDPMedia *media, guint pos)
 {
   gchar **ssrcs;
   guint ssrc = SSRC_INVALID;
@@ -200,7 +201,7 @@ sdp_utils_media_get_fid_ssrc (const GstSDPMedia * media, guint pos)
 }
 
 GstSDPDirection
-sdp_utils_media_config_get_direction (const GstSDPMedia * media)
+sdp_utils_media_config_get_direction (const GstSDPMedia *media)
 {
   GstSDPDirection dir = GST_SDP_DIRECTION_SENDRECV;
 
@@ -222,7 +223,7 @@ sdp_utils_media_config_get_direction (const GstSDPMedia * media)
 }
 
 gboolean
-sdp_utils_media_config_set_direction (GstSDPMedia * media,
+sdp_utils_media_config_set_direction (GstSDPMedia *media,
     GstSDPDirection direction)
 {
   const gchar *dir_str;
@@ -267,7 +268,7 @@ sdp_utils_media_config_set_direction (GstSDPMedia * media,
  * Returns : a string or NULL if any.
  */
 const gchar *
-sdp_utils_sdp_media_get_rtpmap (const GstSDPMedia * media, const gchar * format)
+sdp_utils_sdp_media_get_rtpmap (const GstSDPMedia *media, const gchar *format)
 {
   guint i, attrs_len;
   gchar *rtpmap = NULL;
@@ -279,7 +280,22 @@ sdp_utils_sdp_media_get_rtpmap (const GstSDPMedia * media, const gchar * format)
 
     if (g_ascii_strcasecmp (RTPMAP, attr->key) == 0) {
       if (g_str_has_prefix (attr->value, format)) {
+        int rtpmaplenfull = strlen (attr->value);
+        int rtpmaplenpart = 0;
+        int ptlen = strlen (format);
+
         rtpmap = g_strstr_len (attr->value, -1, " ");
+        rtpmaplenpart = strlen (rtpmap);
+        /* PROCALL-2090 fix
+           - if the payloadtype is the same then the prefix then we get a wrong match because 9 == 9(6)
+           - so we check if the length of the prefix is same then the payloadlength
+           m=audio 2030 RTP/AVP 9 96
+           a=rtpmap:96 telephone-event/8000
+           "96"+" telephone-event/8000" is not "9"+" telephone-event/8000"
+         */
+        if ((rtpmaplenpart + ptlen) != rtpmaplenfull)
+          rtpmap = NULL;
+
         if (rtpmap != NULL)
           rtpmap = rtpmap + 1;
       }
@@ -294,7 +310,7 @@ sdp_utils_sdp_media_get_rtpmap (const GstSDPMedia * media, const gchar * format)
         return NULL;
     }
 
-    pt = (gint)strtol(format, NULL, 10);
+    pt = (gint) strtol (format, NULL, 10);
     if (pt > 34)
       return NULL;
 
@@ -308,7 +324,7 @@ sdp_utils_sdp_media_get_rtpmap (const GstSDPMedia * media, const gchar * format)
  * format: A Payload Type number, from the media PT list
  */
 const gchar *
-sdp_utils_sdp_media_get_fmtp (const GstSDPMedia * media, const gchar * format)
+sdp_utils_sdp_media_get_fmtp (const GstSDPMedia *media, const gchar *format)
 {
   guint i;
 
@@ -353,8 +369,8 @@ sdp_utils_sdp_media_get_fmtp (const GstSDPMedia * media, const gchar * format)
 }
 
 static gboolean
-sdp_utils_add_setup_attribute (const GstSDPAttribute * attr,
-    GstSDPAttribute * new_attr)
+sdp_utils_add_setup_attribute (const GstSDPAttribute *attr,
+    GstSDPAttribute *new_attr)
 {
   const gchar *setup;
 
@@ -374,8 +390,8 @@ sdp_utils_add_setup_attribute (const GstSDPAttribute * attr,
 }
 
 static gboolean
-sdp_utils_add_comedia_attribute (const GstSDPAttribute * attr,
-    GstSDPAttribute * new_attr)
+sdp_utils_add_comedia_attribute (const GstSDPAttribute *attr,
+    GstSDPAttribute *new_attr)
 {
   const gchar *comedia;
 
@@ -389,8 +405,8 @@ sdp_utils_add_comedia_attribute (const GstSDPAttribute * attr,
 }
 
 static gboolean
-sdp_utils_set_direction_answer (const GstSDPAttribute * attr,
-    GstSDPAttribute * new_attr)
+sdp_utils_set_direction_answer (const GstSDPAttribute *attr,
+    GstSDPAttribute *new_attr)
 {
   const gchar *direction;
 
@@ -412,7 +428,7 @@ sdp_utils_set_direction_answer (const GstSDPAttribute * attr,
 }
 
 static gboolean
-intersect_attribute (const GstSDPAttribute * attr,
+intersect_attribute (const GstSDPAttribute *attr,
     GstSDPIntersectMediaFunc func, gpointer user_data)
 {
   const GstSDPAttribute *a;
@@ -425,16 +441,14 @@ intersect_attribute (const GstSDPAttribute * attr,
       return FALSE;
     }
     a = &new_attr;
-  }
-  else if (g_strcmp0 (attr->key, "direction") == 0) {
+  } else if (g_strcmp0 (attr->key, "direction") == 0) {
     // COMEDIA-based discovery of remote IP+port
     if (!sdp_utils_add_comedia_attribute (attr, &new_attr)) {
       GST_WARNING ("Cannot set attribute a=%s:%s", attr->key, attr->value);
       return FALSE;
     }
     a = &new_attr;
-  }
-  else if (g_strcmp0 (attr->key, "connection") == 0) {
+  } else if (g_strcmp0 (attr->key, "connection") == 0) {
     /* TODO: Implment a mechanism that allows us to know if a */
     /* new connection is gonna be required or an existing one */
     /* can be used. By default we always create a new one. */
@@ -443,8 +457,7 @@ intersect_attribute (const GstSDPAttribute * attr,
       return FALSE;
     }
     a = &new_attr;
-  }
-  else if (sdp_utils_attribute_is_direction (attr, NULL)) {
+  } else if (sdp_utils_attribute_is_direction (attr, NULL)) {
     if (!sdp_utils_set_direction_answer (attr, &new_attr)) {
       GST_WARNING ("Cannot set 'direction' attribute");
       return FALSE;
@@ -468,7 +481,7 @@ intersect_attribute (const GstSDPAttribute * attr,
 }
 
 gboolean
-sdp_utils_intersect_session_attributes (const GstSDPMessage * msg,
+sdp_utils_intersect_session_attributes (const GstSDPMessage *msg,
     GstSDPIntersectMediaFunc func, gpointer user_data)
 {
   guint i, len;
@@ -488,7 +501,7 @@ sdp_utils_intersect_session_attributes (const GstSDPMessage * msg,
 }
 
 gboolean
-sdp_utils_intersect_media_attributes (const GstSDPMedia * offer,
+sdp_utils_intersect_media_attributes (const GstSDPMedia *offer,
     GstSDPIntersectMediaFunc func, gpointer user_data)
 {
   guint i, len;
@@ -509,8 +522,8 @@ sdp_utils_intersect_media_attributes (const GstSDPMedia * offer,
 }
 
 const gchar *
-sdp_utils_get_attr_map_value (const GstSDPMedia * media, const gchar * name,
-    const gchar * fmt)
+sdp_utils_get_attr_map_value (const GstSDPMedia *media, const gchar *name,
+    const gchar *fmt)
 {
   const gchar *val = NULL;
   guint i;
@@ -538,7 +551,7 @@ sdp_utils_get_attr_map_value (const GstSDPMedia * media, const gchar * name,
 }
 
 gboolean
-sdp_utils_for_each_media (const GstSDPMessage * msg, GstSDPMediaFunc func,
+sdp_utils_for_each_media (const GstSDPMessage *msg, GstSDPMediaFunc func,
     gpointer user_data)
 {
   guint i, len;
@@ -557,8 +570,8 @@ sdp_utils_for_each_media (const GstSDPMessage * msg, GstSDPMediaFunc func,
 }
 
 gboolean
-sdp_utils_is_attribute_in_media (const GstSDPMedia * media,
-    const GstSDPAttribute * attr)
+sdp_utils_is_attribute_in_media (const GstSDPMedia *media,
+    const GstSDPAttribute *attr)
 {
   guint i, len;
 
@@ -579,7 +592,7 @@ sdp_utils_is_attribute_in_media (const GstSDPMedia * media,
 }
 
 gboolean
-sdp_utils_media_is_active (const GstSDPMedia * media, gboolean offerer)
+sdp_utils_media_is_active (const GstSDPMedia *media, gboolean offerer)
 {
   const gchar *attr;
 
@@ -614,8 +627,8 @@ _default:
 }
 
 gboolean
-sdp_utils_rtcp_fb_attr_check_type (const gchar * attr,
-    const gchar * pt, const gchar * type)
+sdp_utils_rtcp_fb_attr_check_type (const gchar *attr,
+    const gchar *pt, const gchar *type)
 {
   gchar *aux;
   gboolean ret;
@@ -628,7 +641,7 @@ sdp_utils_rtcp_fb_attr_check_type (const gchar * attr,
 }
 
 gboolean
-sdp_utils_media_has_remb (const GstSDPMedia * media)
+sdp_utils_media_has_remb (const GstSDPMedia *media)
 {
   const gchar *payload = gst_sdp_media_get_format (media, 0);
   guint a;
@@ -646,7 +659,7 @@ sdp_utils_media_has_remb (const GstSDPMedia * media)
     }
 
     if (sdp_utils_rtcp_fb_attr_check_type (attr, payload,
-        SDP_MEDIA_RTCP_FB_GOOG_REMB)) {
+            SDP_MEDIA_RTCP_FB_GOOG_REMB)) {
       return TRUE;
     }
   }
@@ -655,7 +668,7 @@ sdp_utils_media_has_remb (const GstSDPMedia * media)
 }
 
 gboolean
-sdp_utils_media_has_rtcp_nack (const GstSDPMedia * media)
+sdp_utils_media_has_rtcp_nack (const GstSDPMedia *media)
 {
   const gchar *payload = gst_sdp_media_get_format (media, 0);
   guint a;
@@ -673,7 +686,7 @@ sdp_utils_media_has_rtcp_nack (const GstSDPMedia * media)
     }
 
     if (sdp_utils_rtcp_fb_attr_check_type (attr, payload,
-        SDP_MEDIA_RTCP_FB_NACK)) {
+            SDP_MEDIA_RTCP_FB_NACK)) {
       return TRUE;
     }
   }
@@ -682,7 +695,7 @@ sdp_utils_media_has_rtcp_nack (const GstSDPMedia * media)
 }
 
 static gboolean
-sdp_media_contains_attr (const GstSDPMedia * m, const GstSDPAttribute * attr)
+sdp_media_contains_attr (const GstSDPMedia *m, const GstSDPAttribute *attr)
 {
   guint i;
 
@@ -706,7 +719,7 @@ sdp_media_contains_attr (const GstSDPMedia * m, const GstSDPAttribute * attr)
 }
 
 static gboolean
-sdp_media_equal_attributes (const GstSDPMedia * m1, const GstSDPMedia * m2)
+sdp_media_equal_attributes (const GstSDPMedia *m1, const GstSDPMedia *m2)
 {
   guint i, len;
 
@@ -729,7 +742,7 @@ sdp_media_equal_attributes (const GstSDPMedia * m1, const GstSDPMedia * m2)
 }
 
 static gboolean
-sdp_media_fmts_equal (const GstSDPMedia * m1, const GstSDPMedia * m2)
+sdp_media_fmts_equal (const GstSDPMedia *m1, const GstSDPMedia *m2)
 {
   guint i, len;
 
@@ -754,7 +767,7 @@ sdp_media_fmts_equal (const GstSDPMedia * m1, const GstSDPMedia * m2)
 }
 
 static gboolean
-sdp_key_equal (const GstSDPKey * k1, const GstSDPKey * k2)
+sdp_key_equal (const GstSDPKey *k1, const GstSDPKey *k2)
 {
   if ((k1 == NULL && k2 != NULL) || (k1 != NULL && k2 == NULL)) {
     return FALSE;
@@ -769,7 +782,7 @@ sdp_key_equal (const GstSDPKey * k1, const GstSDPKey * k2)
 }
 
 gboolean
-sdp_utils_equal_medias (const GstSDPMedia * m1, const GstSDPMedia * m2)
+sdp_utils_equal_medias (const GstSDPMedia *m1, const GstSDPMedia *m2)
 {
   if (g_strcmp0 (gst_sdp_media_get_media (m1),
           gst_sdp_media_get_media (m2)) != 0) {
@@ -808,8 +821,7 @@ sdp_utils_equal_medias (const GstSDPMedia * m1, const GstSDPMedia * m2)
 }
 
 static gboolean
-sdp_message_contains_attr (const GstSDPMessage * m,
-    const GstSDPAttribute * attr)
+sdp_message_contains_attr (const GstSDPMessage *m, const GstSDPAttribute *attr)
 {
   guint i;
 
@@ -833,8 +845,8 @@ sdp_message_contains_attr (const GstSDPMessage * m,
 }
 
 static gboolean
-sdp_message_equal_attributes (const GstSDPMessage * msg1,
-    const GstSDPMessage * msg2)
+sdp_message_equal_attributes (const GstSDPMessage *msg1,
+    const GstSDPMessage *msg2)
 {
   guint i, len;
 
@@ -859,8 +871,7 @@ sdp_message_equal_attributes (const GstSDPMessage * msg1,
 }
 
 gboolean
-sdp_utils_equal_messages (const GstSDPMessage * msg1,
-    const GstSDPMessage * msg2)
+sdp_utils_equal_messages (const GstSDPMessage *msg1, const GstSDPMessage *msg2)
 {
   guint i, len;
 
@@ -887,8 +898,8 @@ sdp_utils_equal_messages (const GstSDPMessage * msg1,
 }
 
 gboolean
-sdp_utils_get_data_from_rtpmap (const gchar * rtpmap, gchar ** codec_name,
-    gint * clock_rate)
+sdp_utils_get_data_from_rtpmap (const gchar *rtpmap, gchar **codec_name,
+    gint *clock_rate)
 {
   gboolean ret = FALSE;
   gchar **tokens;
@@ -904,7 +915,7 @@ sdp_utils_get_data_from_rtpmap (const gchar * rtpmap, gchar ** codec_name,
   }
 
   if (clock_rate) {
-    *clock_rate = (gint)strtol(tokens[1], NULL, 10);
+    *clock_rate = (gint) strtol (tokens[1], NULL, 10);
   }
 
   if (codec_name) {
@@ -919,7 +930,7 @@ end:
 }
 
 gboolean
-sdp_utils_is_pt_in_fmts (const GstSDPMedia * media, gint pt)
+sdp_utils_is_pt_in_fmts (const GstSDPMedia *media, gint pt)
 {
   guint i, len;
 
@@ -928,7 +939,7 @@ sdp_utils_is_pt_in_fmts (const GstSDPMedia * media, gint pt)
   for (i = 0; i < len; i++) {
     gint payload;
 
-    payload = (gint)strtol(gst_sdp_media_get_format (media, i), NULL, 10);
+    payload = (gint) strtol (gst_sdp_media_get_format (media, i), NULL, 10);
 
     if (payload == pt) {
       return TRUE;
@@ -939,8 +950,8 @@ sdp_utils_is_pt_in_fmts (const GstSDPMedia * media, gint pt)
 }
 
 gboolean
-sdp_utils_get_data_from_rtpmap_codec (const GstSDPMedia * media,
-    const gchar * codec, gint * pt, gint * clock_rate)
+sdp_utils_get_data_from_rtpmap_codec (const GstSDPMedia *media,
+    const gchar *codec, gint *pt, gint *clock_rate)
 {
   gboolean found = FALSE;
   guint8 i;
@@ -973,7 +984,7 @@ sdp_utils_get_data_from_rtpmap_codec (const GstSDPMedia * media,
       continue;
     }
 
-    if (!sdp_utils_is_pt_in_fmts (media, (gint)strtol(attrs[0], NULL, 10))) {
+    if (!sdp_utils_is_pt_in_fmts (media, (gint) strtol (attrs[0], NULL, 10))) {
       /* pt is not in the offer */
       g_strfreev (attrs);
       continue;
@@ -985,7 +996,7 @@ sdp_utils_get_data_from_rtpmap_codec (const GstSDPMedia * media,
     }
 
     if (pt != NULL) {
-      *pt = (gint)strtol(attrs[0], NULL, 10);
+      *pt = (gint) strtol (attrs[0], NULL, 10);
     }
 
     found = TRUE;
@@ -999,8 +1010,8 @@ sdp_utils_get_data_from_rtpmap_codec (const GstSDPMedia * media,
 }
 
 gint
-sdp_utils_get_pt_for_codec_name (const GstSDPMedia * media,
-    const gchar * codec_name)
+sdp_utils_get_pt_for_codec_name (const GstSDPMedia *media,
+    const gchar *codec_name)
 {
   const gchar *rtpmap;
   guint j, f_len;
@@ -1018,7 +1029,7 @@ sdp_utils_get_pt_for_codec_name (const GstSDPMedia * media,
     }
 
     if (g_strcmp0 (found_codec_name, codec_name) == 0) {
-      gint parsed_pt = (gint)strtol(payload, NULL, 10);
+      gint parsed_pt = (gint) strtol (payload, NULL, 10);
 
       GST_ERROR ("Found codec name pt is: %d", parsed_pt);
       pt = parsed_pt;
@@ -1035,7 +1046,7 @@ sdp_utils_get_pt_for_codec_name (const GstSDPMedia * media,
 }
 
 gint
-sdp_utils_get_abs_send_time_id (const GstSDPMedia * media)
+sdp_utils_get_abs_send_time_id (const GstSDPMedia *media)
 {
   guint a;
 
@@ -1050,7 +1061,7 @@ sdp_utils_get_abs_send_time_id (const GstSDPMedia * media)
 
     tokens = g_strsplit (attr, " ", 0);
     if (g_strcmp0 (RTP_HDR_EXT_ABS_SEND_TIME_URI, tokens[1]) == 0) {
-      gint ret = (gint)strtol(tokens[0], NULL, 10);
+      gint ret = (gint) strtol (tokens[0], NULL, 10);
 
       g_strfreev (tokens);
       return ret;
@@ -1063,13 +1074,43 @@ sdp_utils_get_abs_send_time_id (const GstSDPMedia * media)
 }
 
 gboolean
-sdp_utils_media_is_inactive (const GstSDPMedia * media)
+sdp_utils_media_is_inactive (const GstSDPMedia *media)
 {
   return gst_sdp_media_get_attribute_val (media, "inactive") != NULL
       || gst_sdp_media_get_port (media) == 0;
 }
 
-static void init_debug (void) __attribute__ ((constructor));
+const GstSDPMedia *
+sdp_utils_get_media_from_pt (const GstSDPMessage *sdp, guint pt,
+    const char *media_type)
+{
+  guint i, len;
+
+  len = gst_sdp_message_medias_len (sdp);
+
+  for (i = 0; i < len; i++) {
+    guint j, f_len;
+    const GstSDPMedia *media = gst_sdp_message_get_media (sdp, i);
+    const gchar *media_str = gst_sdp_media_get_media (media);
+
+    if (g_strcmp0 (media_str, media_type) != 0) {
+      continue;
+    }
+
+    f_len = gst_sdp_media_formats_len (media);
+    for (j = 0; j < f_len; j++) {
+      const gchar *payload = gst_sdp_media_get_format (media, j);
+
+      if (atoi (payload) == pt) {
+        return media;
+      }
+    }
+  }
+
+  return NULL;
+}
+
+static void init_debug (void) __attribute__((constructor));
 
 static void
 init_debug (void)

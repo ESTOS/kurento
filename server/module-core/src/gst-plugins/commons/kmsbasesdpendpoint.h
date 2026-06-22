@@ -71,6 +71,11 @@ struct _KmsBaseSdpEndpointClass
   GstSDPMessage *(*get_local_sdp) (KmsBaseSdpEndpoint * self, const gchar *sess_id);
   GstSDPMessage *(*get_remote_sdp) (KmsBaseSdpEndpoint * self, const gchar *sess_id);
 
+  GSocket *(*get_set_rtp_socket_audio) (KmsBaseSdpEndpoint * self, const gchar *sess_id, GSocket * gsocket);
+  GSocket *(*get_set_rtcp_socket_audio) (KmsBaseSdpEndpoint * self, const gchar *sess_id, GSocket * gsocket);
+  GSocket *(*get_set_rtp_socket_video) (KmsBaseSdpEndpoint * self, const gchar *sess_id, GSocket * gsocket);
+  GSocket *(*get_set_rtcp_socket_video) (KmsBaseSdpEndpoint * self, const gchar *sess_id, GSocket * gsocket);
+
   /* virtual methods */
   void (*create_session_internal) (KmsBaseSdpEndpoint * self, gint id, KmsSdpSession **sess);
   void (*release_session_internal) (KmsBaseSdpEndpoint * self, KmsSdpSession *sess);
@@ -88,6 +93,7 @@ GType kms_base_sdp_endpoint_get_type (void);
 GHashTable * kms_base_sdp_endpoint_get_sessions (KmsBaseSdpEndpoint * self);
 KmsSdpSession * kms_base_sdp_endpoint_get_session (KmsBaseSdpEndpoint * self, const gchar *sess_id);
 const GstSDPMessage * kms_base_sdp_endpoint_get_first_negotiated_sdp (KmsBaseSdpEndpoint * self);
+const GstSDPMessage * kms_base_sdp_endpoint_get_first_local_sdp (KmsBaseSdpEndpoint * self);
 
 G_END_DECLS
 #endif /* __KMS_BASE_SDP_ENDPOINT_H__ */

@@ -80,7 +80,7 @@ static std::once_flag check_openh264, certificates_flag;
 static std::string defaultCertificateRSA, defaultCertificateECDSA;
 
 // "H264" gets added at runtime by check_support_for_h264()
-static std::vector<std::string> supported_codecs = { "AV1", "VP9", "VP8", "opus", "PCMU", "PCMA" };
+static std::vector<std::string> supported_codecs = { "AV1", "VP9", "VP8", "opus", "PCMU", "PCMA", "G722", "G729", "G726", "telephone-event"};
 
 static void
 remove_not_supported_codecs_from_array (GstElement *element, GArray *codecs)
@@ -107,7 +107,7 @@ remove_not_supported_codecs_from_array (GstElement *element, GArray *codecs)
 
     for (auto &supported_codec : supported_codecs) {
 
-      if (boost::istarts_with(codec_name, supported_codec)) {
+      if (boost::istarts_with (codec_name, supported_codec) ) {
         supported = TRUE;
         break;
       }
@@ -138,7 +138,7 @@ remove_not_supported_codecs (GstElement *element)
 static void
 add_support_for_h265 ()
 {
-  supported_codecs.emplace_back("H265");
+  supported_codecs.emplace_back ("H265");
 }
 
 static void
@@ -153,7 +153,7 @@ check_support_for_h264 ()
     return;
   }
 
-  supported_codecs.emplace_back("H264");
+  supported_codecs.emplace_back ("H264");
   gst_object_unref (plugin);
 }
 
@@ -164,8 +164,9 @@ WebRtcEndpointImpl::generateDefaultCertificates ()
   defaultCertificateRSA = "";
 
   std::string pemUriRSA;
+
   if (getConfigValue <std::string, WebRtcEndpoint> (&pemUriRSA,
-      "pemCertificateRSA")) {
+      "pemCertificateRSA") ) {
     defaultCertificateRSA = getCerficateFromFile (pemUriRSA);
   } else {
     GST_INFO ("Unable to load the RSA certificate from file. Using the default certificate.");
@@ -173,8 +174,9 @@ WebRtcEndpointImpl::generateDefaultCertificates ()
   }
 
   std::string pemUriECDSA;
+
   if (getConfigValue <std::string, WebRtcEndpoint> (&pemUriECDSA,
-      "pemCertificateECDSA")) {
+      "pemCertificateECDSA") ) {
     defaultCertificateECDSA = getCerficateFromFile (pemUriECDSA);
   } else {
     GST_INFO ("Unable to load the ECDSA certificate from file. Using the default certificate.");
@@ -187,7 +189,8 @@ void WebRtcEndpointImpl::checkUri (std::string &uri)
   //Check if uri is an absolute or relative path.
   if (! boost::starts_with (uri, "/") ) {
     std::string path;
-    if (!getConfigValue <std::string, WebRtcEndpoint> (&path, CONFIG_PATH)) {
+
+    if (!getConfigValue <std::string, WebRtcEndpoint> (&path, CONFIG_PATH) ) {
       GST_DEBUG ("WebRtcEndpoint config file doesn't contain a default path");
       getConfigValue <std::string> (&path, CONFIG_PATH, DEFAULT_PATH);
     }
@@ -207,24 +210,24 @@ void WebRtcEndpointImpl::onIceCandidate (gchar *sessId,
 
   try {
     IceCandidateFound event (shared_from_this(),
-        IceCandidateFound::getName (), cand);
-    sigcSignalEmit(signalIceCandidateFound, event);
+                             IceCandidateFound::getName (), cand);
+    sigcSignalEmit (signalIceCandidateFound, event);
   } catch (const std::bad_weak_ptr &e) {
     // shared_from_this()
     GST_ERROR ("BUG creating %s: %s", IceCandidateFound::getName ().c_str (),
-        e.what ());
+               e.what () );
   }
 }
 
 void WebRtcEndpointImpl::onIceGatheringDone (gchar *sessId)
 {
   try {
-    IceGatheringDone event (shared_from_this (), IceGatheringDone::getName ());
-    sigcSignalEmit(signalIceGatheringDone, event);
+    IceGatheringDone event (shared_from_this (), IceGatheringDone::getName () );
+    sigcSignalEmit (signalIceGatheringDone, event);
   } catch (const std::bad_weak_ptr &e) {
     // shared_from_this()
     GST_ERROR ("BUG creating %s: %s", IceGatheringDone::getName ().c_str (),
-        e.what ());
+               e.what () );
   }
 }
 
@@ -282,22 +285,24 @@ void WebRtcEndpointImpl::onIceComponentStateChanged (gchar *sessId,
 
   try {
     int streamId_int = 0;
+
     try {
-      streamId_int = std::stoi(streamId);
-    } catch (const std::invalid_argument& ia) {
-      GST_ERROR("Invalid streamId for IceComponentStateChanged event: %s", streamId);
-    } catch(std::exception &e) {
-      GST_ERROR("Error parsing streamId for IceComponentStateChanged event: %s, error: %s", streamId, e.what());
-    } 
+      streamId_int = std::stoi (streamId);
+    } catch (const std::invalid_argument &ia) {
+      GST_ERROR ("Invalid streamId for IceComponentStateChanged event: %s", streamId);
+    } catch (std::exception &e) {
+      GST_ERROR ("Error parsing streamId for IceComponentStateChanged event: %s, error: %s",
+                 streamId, e.what() );
+    }
 
     IceComponentStateChanged event (shared_from_this (),
-        IceComponentStateChanged::getName (), streamId_int, componentId,
-        std::shared_ptr<IceComponentState> (componentState_event));
-    sigcSignalEmit(signalIceComponentStateChanged, event);
+                                    IceComponentStateChanged::getName (), streamId_int, componentId,
+                                    std::shared_ptr<IceComponentState> (componentState_event) );
+    sigcSignalEmit (signalIceComponentStateChanged, event);
   } catch (const std::bad_weak_ptr &e) {
     // shared_from_this()
     GST_ERROR ("BUG creating %s: %s",
-        IceComponentStateChanged::getName ().c_str (), e.what ());
+               IceComponentStateChanged::getName ().c_str (), e.what () );
   }
 }
 
@@ -339,7 +344,8 @@ void WebRtcEndpointImpl::onDtlsConnectionStateChanged (gchar *sessId,
   DtlsConnectionState *newComponentState_event = new DtlsConnectionState (type);
   DtlsConnectionState *componentState_property = new DtlsConnectionState (type);
 
-  connectionState = std::make_shared<DtlsConnection> (std::string(streamId), std::string(componentId), std::string(connection_id),
+  connectionState = std::make_shared<DtlsConnection> (std::string (streamId),
+                    std::string (componentId), std::string (connection_id),
                     std::shared_ptr<DtlsConnectionState> (componentState_property) );
 
   key = std::string (streamId) + '_' + std::string (componentId);
@@ -348,19 +354,22 @@ void WebRtcEndpointImpl::onDtlsConnectionStateChanged (gchar *sessId,
   it = dtlsConnectionState.find (key);
   dtlsConnectionState[key] = connectionState;
   dtlsConnectionState.insert (std::pair
-                             <std::string, std::shared_ptr <DtlsConnection>> (key, connectionState) );
+                              <std::string, std::shared_ptr <DtlsConnection>> (key, connectionState) );
 
   try {
     DtlsConnectionStateChange event (shared_from_this (),
-        DtlsConnectionStateChange::getName (), streamId, componentId, connection_id,
-        std::shared_ptr<DtlsConnectionState> (newComponentState_event));
-    GST_DEBUG_OBJECT(element,"DTLS connection state change sesId: %s, connId: %s, comp: %s, source: %s, stream: %s, state: %s", 
-              sessId, connection_id,  event.getComponentId().c_str(), event.getSource()->getId().c_str(), event.getStreamId().c_str(), event.getState()->getString().c_str());
-    sigcSignalEmit(signalDtlsConnectionStateChange, event);
+                                     DtlsConnectionStateChange::getName (), streamId, componentId, connection_id,
+                                     std::shared_ptr<DtlsConnectionState> (newComponentState_event) );
+    GST_DEBUG_OBJECT (element,
+                      "DTLS connection state change sesId: %s, connId: %s, comp: %s, source: %s, stream: %s, state: %s",
+                      sessId, connection_id,  event.getComponentId().c_str(),
+                      event.getSource()->getId().c_str(), event.getStreamId().c_str(),
+                      event.getState()->getString().c_str() );
+    sigcSignalEmit (signalDtlsConnectionStateChange, event);
   } catch (const std::bad_weak_ptr &e) {
     // shared_from_this()
     GST_ERROR ("BUG creating %s: %s",
-        DtlsConnectionStateChange::getName ().c_str (), e.what ());
+               DtlsConnectionStateChange::getName ().c_str (), e.what () );
   }
 }
 
@@ -374,11 +383,11 @@ void WebRtcEndpointImpl::newSelectedPairFull (gchar *sessId,
   std::map<std::string, std::shared_ptr <IceCandidatePair>>::iterator it;
 
   GST_DEBUG_OBJECT (element,
-      "New candidate pair selected, local: '%s', remote: '%s'"
-      ", stream_id: '%s', component_id: %d",
-      kms_ice_candidate_get_candidate (localCandidate),
-      kms_ice_candidate_get_candidate (remoteCandidate),
-      streamId, componentId);
+                    "New candidate pair selected, local: '%s', remote: '%s'"
+                    ", stream_id: '%s', component_id: %d",
+                    kms_ice_candidate_get_candidate (localCandidate),
+                    kms_ice_candidate_get_candidate (remoteCandidate),
+                    streamId, componentId);
 
   candidatePair = std::make_shared< IceCandidatePair > (streamId, componentId,
                   kms_ice_candidate_get_candidate (localCandidate),
@@ -396,12 +405,12 @@ void WebRtcEndpointImpl::newSelectedPairFull (gchar *sessId,
 
   try {
     NewCandidatePairSelected event (shared_from_this (),
-        NewCandidatePairSelected::getName (), candidatePair);
-    sigcSignalEmit(signalNewCandidatePairSelected, event);
+                                    NewCandidatePairSelected::getName (), candidatePair);
+    sigcSignalEmit (signalNewCandidatePairSelected, event);
   } catch (const std::bad_weak_ptr &e) {
     // shared_from_this()
     GST_ERROR ("BUG creating %s: %s",
-        NewCandidatePairSelected::getName ().c_str (), e.what ());
+               NewCandidatePairSelected::getName ().c_str (), e.what () );
   }
 }
 
@@ -410,22 +419,22 @@ WebRtcEndpointImpl::onDataChannelOpened (gchar *sessId, guint stream_id)
 {
   try {
     DataChannelOpened event (shared_from_this (), DataChannelOpened::getName (),
-        stream_id);
-    sigcSignalEmit(signalDataChannelOpened, event);
+                             stream_id);
+    sigcSignalEmit (signalDataChannelOpened, event);
   } catch (const std::bad_weak_ptr &e) {
     // shared_from_this()
     GST_ERROR ("BUG creating %s: %s", DataChannelOpened::getName ().c_str (),
-        e.what ());
+               e.what () );
   }
 
   try {
     DataChannelOpened event (shared_from_this (), DataChannelOpened::getName (),
-        stream_id);
-    sigcSignalEmit(signalDataChannelOpened, event);
+                             stream_id);
+    sigcSignalEmit (signalDataChannelOpened, event);
   } catch (const std::bad_weak_ptr &e) {
     // shared_from_this()
     GST_ERROR ("BUG creating %s: %s", DataChannelOpened::getName ().c_str (),
-        e.what ());
+               e.what () );
   }
 }
 
@@ -434,22 +443,22 @@ WebRtcEndpointImpl::onDataChannelClosed (gchar *sessId, guint stream_id)
 {
   try {
     DataChannelClosed event (shared_from_this (), DataChannelClosed::getName (),
-        stream_id);
-    sigcSignalEmit(signalDataChannelClosed, event);
+                             stream_id);
+    sigcSignalEmit (signalDataChannelClosed, event);
   } catch (const std::bad_weak_ptr &e) {
     // shared_from_this()
     GST_ERROR ("BUG creating %s: %s", DataChannelClosed::getName ().c_str (),
-        e.what ());
+               e.what () );
   }
 
   try {
     DataChannelClosed event (shared_from_this (), DataChannelClosed::getName (),
-        stream_id);
-    sigcSignalEmit(signalDataChannelClosed, event);
+                             stream_id);
+    sigcSignalEmit (signalDataChannelClosed, event);
   } catch (const std::bad_weak_ptr &e) {
     // shared_from_this()
     GST_ERROR ("BUG creating %s: %s", DataChannelClosed::getName ().c_str (),
-        e.what ());
+               e.what () );
   }
 }
 
@@ -482,14 +491,15 @@ void WebRtcEndpointImpl::postConstructor ()
                                       std::dynamic_pointer_cast<WebRtcEndpointImpl>
                                       (shared_from_this() ) );
 
-  handlerOnDtlsConnectionStateChanged = register_signal_handler (G_OBJECT (element),
-                                      "on-dtls-connection-state-changed",
-                                      std::function <void (GstElement *, gchar *, gchar *, gchar *, char *,guint) >
-                                      (std::bind (&WebRtcEndpointImpl::onDtlsConnectionStateChanged, this,
-                                          std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
-                                          std::placeholders::_5, std::placeholders::_6) ),
-                                      std::dynamic_pointer_cast<WebRtcEndpointImpl>
-                                      (shared_from_this() ) );
+  handlerOnDtlsConnectionStateChanged = register_signal_handler (G_OBJECT (
+                                          element),
+                                        "on-dtls-connection-state-changed",
+                                        std::function <void (GstElement *, gchar *, gchar *, gchar *, char *, guint) >
+                                        (std::bind (&WebRtcEndpointImpl::onDtlsConnectionStateChanged, this,
+                                            std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
+                                            std::placeholders::_5, std::placeholders::_6) ),
+                                        std::dynamic_pointer_cast<WebRtcEndpointImpl>
+                                        (shared_from_this() ) );
 
   handlerNewSelectedPairFull = register_signal_handler (G_OBJECT (element),
                                "new-selected-pair-full",
@@ -544,90 +554,130 @@ WebRtcEndpointImpl::getCerficateFromFile (std::string &path)
 static gint
 get_dscp_value (std::shared_ptr<DSCPValue> qosDscp)
 {
-  switch (qosDscp->getValue ())
-  {
+  switch (qosDscp->getValue () ) {
   case DSCPValue::CS0:
     return 0;
+
   case DSCPValue::CS1:
     return 8;
+
   case DSCPValue::CS2:
     return 16;
+
   case DSCPValue::CS3:
     return 24;
+
   case DSCPValue::CS4:
     return 32;
+
   case DSCPValue::CS5:
     return 40;
+
   case DSCPValue::CS6:
     return 48;
+
   case DSCPValue::CS7:
     return 56;
+
   case DSCPValue::AF11:
     return 10;
+
   case DSCPValue::AF12:
     return 12;
+
   case DSCPValue::AF13:
     return 14;
+
   case DSCPValue::AF21:
     return 18;
+
   case DSCPValue::AF22:
     return 20;
+
   case DSCPValue::AF23:
     return 22;
+
   case DSCPValue::AF31:
     return 26;
+
   case DSCPValue::AF32:
     return 28;
+
   case DSCPValue::AF33:
     return 30;
+
   case DSCPValue::AF41:
     return 34;
+
   case DSCPValue::AF42:
     return 36;
+
   case DSCPValue::AF43:
     return 38;
+
   case DSCPValue::EF:
     return 46;
+
   case DSCPValue::VOICEADMIT:
     return 44;
+
   case DSCPValue::LE:
     return 1;
+
   case DSCPValue::AUDIO_VERYLOW:
     return 1;
+
   case DSCPValue::AUDIO_LOW:
     return 0;
+
   case DSCPValue::AUDIO_MEDIUM:
     return 46;
+
   case DSCPValue::AUDIO_HIGH:
     return 46;
+
   case DSCPValue::VIDEO_VERYLOW:
     return 1;
+
   case DSCPValue::VIDEO_LOW:
     return 0;
+
   case DSCPValue::VIDEO_MEDIUM:
     return 36;
+
   case DSCPValue::VIDEO_MEDIUM_THROUGHPUT:
     return 38;
+
   case DSCPValue::VIDEO_HIGH:
     return 36;
+
   case DSCPValue::VIDEO_HIGH_THROUGHPUT:
     return 34;
+
   case DSCPValue::DATA_VERYLOW:
     return 1;
+
   case DSCPValue::DATA_LOW:
     return 0;
+
   case DSCPValue::DATA_MEDIUM:
     return 10;
+
   case DSCPValue::DATA_HIGH:
     return 18;
+
   case DSCPValue::CHROME_HIGH:
     return 56;
+
   case DSCPValue::CHROME_MEDIUM:
     return 56;
+
   case DSCPValue::CHROME_LOW:
     return 0;
+
   case DSCPValue::CHROME_VERYLOW:
     return 8;
+
   default:
     return -1;
   }
@@ -638,11 +688,12 @@ WebRtcEndpointImpl::WebRtcEndpointImpl (const boost::property_tree::ptree &conf,
                                         std::shared_ptr<MediaPipeline>
                                         mediaPipeline, bool recvonly,
                                         bool sendonly, bool useDataChannels,
-                                        std::shared_ptr<CertificateKeyType> certificateKeyType, 
-                                        std::shared_ptr<DSCPValue> qosDscp) :
+                                        std::shared_ptr<CertificateKeyType> certificateKeyType,
+                                        std::shared_ptr<DSCPValue> qosDscp,
+                                        guint16 min_port, guint16 max_port) :
   BaseRtpEndpointImpl (conf,
                        std::dynamic_pointer_cast<MediaObjectImpl>
-                       (mediaPipeline), FACTORY_NAME)
+                       (mediaPipeline), FACTORY_NAME, min_port, max_port)
 {
   std::call_once (check_openh264, check_support_for_h264);
   std::call_once (certificates_flag,
@@ -650,24 +701,30 @@ WebRtcEndpointImpl::WebRtcEndpointImpl (const boost::property_tree::ptree &conf,
 
   std::string enableH265;
 
-  if (getConfigValue<std::string,WebRtcEndpoint>(&enableH265, PARAM_ENABLE_H265)) {
-    GST_INFO ("ENABLE-H265 configured value is %s", enableH265.c_str());
+  if (getConfigValue<std::string, WebRtcEndpoint> (&enableH265,
+      PARAM_ENABLE_H265) ) {
+    GST_INFO ("ENABLE-H265 configured value is %s", enableH265.c_str() );
+
     if (enableH265 == "true") {
       add_support_for_h265 ();
     }
   }
 
   this->qosDscp = qosDscp;
+
   if (qosDscp->getValue () == DSCPValue::NO_VALUE) {
     std::string cfg_dscp_value;
-    if (getConfigValue<std::string,WebRtcEndpoint>(&cfg_dscp_value, PARAM_QOS_DSCP)) {
-      GST_INFO ("QOS-DSCP default configured value is %s", cfg_dscp_value.c_str());
+
+    if (getConfigValue<std::string, WebRtcEndpoint> (&cfg_dscp_value,
+        PARAM_QOS_DSCP) ) {
+      GST_INFO ("QOS-DSCP default configured value is %s", cfg_dscp_value.c_str() );
       qosDscp = std::make_shared<DSCPValue> (cfg_dscp_value);
     }
   }
 
-  if ((qosDscp->getValue () != DSCPValue::NO_VALUE) && (qosDscp->getValue() != DSCPValue::NO_DSCP)) {
-    GST_INFO ("Setting QOS-DSCP value to %s", qosDscp->getString().c_str());
+  if ( (qosDscp->getValue () != DSCPValue::NO_VALUE)
+       && (qosDscp->getValue() != DSCPValue::NO_DSCP) ) {
+    GST_INFO ("Setting QOS-DSCP value to %s", qosDscp->getString().c_str() );
     g_object_set (element, "qos-dscp", get_dscp_value (qosDscp), NULL);
   } else {
     GST_INFO ("No QOS-DSCP value set");
@@ -691,42 +748,46 @@ WebRtcEndpointImpl::WebRtcEndpointImpl (const boost::property_tree::ptree &conf,
   //set properties
 
   std::string externalIPv4;
+
   if (getConfigValue <std::string, WebRtcEndpoint> (&externalIPv4,
-      PARAM_EXTERNAL_IPV4)) {
-    GST_INFO ("Predefined external IPv4 address: %s", externalIPv4.c_str());
+      PARAM_EXTERNAL_IPV4) ) {
+    GST_INFO ("Predefined external IPv4 address: %s", externalIPv4.c_str() );
     g_object_set (G_OBJECT (element), PROP_EXTERNAL_IPV4,
-        externalIPv4.c_str(), NULL);
+                  externalIPv4.c_str(), NULL);
   } else {
     GST_DEBUG ("No predefined external IPv4 address found in config;"
                " you can set one or default to STUN automatic discovery");
   }
 
   std::string externalIPv6;
+
   if (getConfigValue <std::string, WebRtcEndpoint> (&externalIPv6,
-      PARAM_EXTERNAL_IPV6)) {
-    GST_INFO ("Predefined external IPv6 address: %s", externalIPv6.c_str());
+      PARAM_EXTERNAL_IPV6) ) {
+    GST_INFO ("Predefined external IPv6 address: %s", externalIPv6.c_str() );
     g_object_set (G_OBJECT (element), PROP_EXTERNAL_IPV6,
-        externalIPv6.c_str(), NULL);
+                  externalIPv6.c_str(), NULL);
   } else {
     GST_DEBUG ("No predefined external IPv6 address found in config;"
                " you can set one or default to STUN automatic discovery");
   }
 
   std::string networkInterfaces;
+
   if (getConfigValue <std::string, WebRtcEndpoint> (&networkInterfaces,
-      PARAM_NETWORK_INTERFACES)) {
-    GST_INFO ("Predefined network interfaces: %s", networkInterfaces.c_str());
+      PARAM_NETWORK_INTERFACES) ) {
+    GST_INFO ("Predefined network interfaces: %s", networkInterfaces.c_str() );
     g_object_set (G_OBJECT (element), PROP_NETWORK_INTERFACES,
-        networkInterfaces.c_str(), NULL);
+                  networkInterfaces.c_str(), NULL);
   } else {
     GST_DEBUG ("No predefined network interfaces found in config;"
                " you can set one or default to ICE automatic discovery");
   }
 
   gboolean iceTcp;
-  if (getConfigValue<gboolean, WebRtcEndpoint> (&iceTcp, PARAM_ICE_TCP)) {
+
+  if (getConfigValue<gboolean, WebRtcEndpoint> (&iceTcp, PARAM_ICE_TCP) ) {
     GST_INFO ("ICE-TCP candidate gathering is %s",
-        iceTcp ? "ENABLED" : "DISABLED");
+              iceTcp ? "ENABLED" : "DISABLED");
     g_object_set (G_OBJECT (element), PROP_ICE_TCP, iceTcp, NULL);
   } else {
     GST_DEBUG ("ICE-TCP option not found in config;"
@@ -734,6 +795,7 @@ WebRtcEndpointImpl::WebRtcEndpointImpl (const boost::property_tree::ptree &conf,
   }
 
   guint stunPort = 0;
+
   if (!getConfigValue <guint, WebRtcEndpoint> (&stunPort, "stunServerPort",
       DEFAULT_STUN_PORT) ) {
     GST_DEBUG ("STUN port not found in config;"
@@ -741,27 +803,31 @@ WebRtcEndpointImpl::WebRtcEndpointImpl (const boost::property_tree::ptree &conf,
   }
 
   std::string stunAddress;
+
   if (getConfigValue<std::string, WebRtcEndpoint> (&stunAddress,
-      "stunServerAddress")) {
+      "stunServerAddress") ) {
     GST_INFO ("Predefined STUN server: %s:%d", stunAddress.c_str (), stunPort);
 
     g_object_set (G_OBJECT (element), "stun-server-port", stunPort, NULL);
     g_object_set (G_OBJECT (element), "stun-server", stunAddress.c_str (),
-        NULL);
+                  NULL);
   } else {
     GST_DEBUG ("STUN server not found in config");
   }
 
   std::string turnURL;
-  if (getConfigValue <std::string, WebRtcEndpoint> (&turnURL, "turnURL")) {
+
+  if (getConfigValue <std::string, WebRtcEndpoint> (&turnURL, "turnURL") ) {
     std::string safeURL = "<user:password>";
-    size_t separatorPos = turnURL.find_last_of('@');
+    size_t separatorPos = turnURL.find_last_of ('@');
+
     if (separatorPos == std::string::npos) {
-      safeURL.append("@").append(turnURL);
+      safeURL.append ("@").append (turnURL);
     } else {
-      safeURL.append(turnURL.substr(separatorPos));
+      safeURL.append (turnURL.substr (separatorPos) );
     }
-    GST_INFO ("Predefined TURN relay server: %s", safeURL.c_str());
+
+    GST_INFO ("Predefined TURN relay server: %s", safeURL.c_str() );
 
     g_object_set (G_OBJECT (element), "turn-url", turnURL.c_str(), NULL);
   } else {
@@ -840,9 +906,9 @@ WebRtcEndpointImpl::getExternalIPv4 ()
 void
 WebRtcEndpointImpl::setExternalIPv4 (const std::string &externalIPv4)
 {
-  GST_INFO ("Set external IPv4 address: %s", externalIPv4.c_str());
+  GST_INFO ("Set external IPv4 address: %s", externalIPv4.c_str() );
   g_object_set (G_OBJECT (element), PROP_EXTERNAL_IPV4,
-      externalIPv4.c_str(), NULL);
+                externalIPv4.c_str(), NULL);
 }
 
 std::string
@@ -864,9 +930,9 @@ WebRtcEndpointImpl::getExternalIPv6 ()
 void
 WebRtcEndpointImpl::setExternalIPv6 (const std::string &externalIPv6)
 {
-  GST_INFO ("Set external IPv6 address: %s", externalIPv6.c_str());
+  GST_INFO ("Set external IPv6 address: %s", externalIPv6.c_str() );
   g_object_set (G_OBJECT (element), PROP_EXTERNAL_IPV6,
-      externalIPv6.c_str(), NULL);
+                externalIPv6.c_str(), NULL);
 }
 
 std::string
@@ -888,9 +954,9 @@ WebRtcEndpointImpl::getNetworkInterfaces ()
 void
 WebRtcEndpointImpl::setNetworkInterfaces (const std::string &networkInterfaces)
 {
-  GST_INFO ("Set network interfaces: %s", networkInterfaces.c_str());
+  GST_INFO ("Set network interfaces: %s", networkInterfaces.c_str() );
   g_object_set (G_OBJECT (element), PROP_NETWORK_INTERFACES,
-      networkInterfaces.c_str(), NULL);
+                networkInterfaces.c_str(), NULL);
 }
 
 bool
@@ -1037,14 +1103,14 @@ WebRtcEndpointImpl::addIceCandidate (std::shared_ptr<IceCandidate> candidate)
   std::string mid_str = candidate->getSdpMid ();
   guint8 sdp_m_line_index = candidate->getSdpMLineIndex ();
 
-  if (cand_str.empty()) {
+  if (cand_str.empty() ) {
     // This is an end-of-candidates notification, part of Trickle ICE.
     // Just ignore it.
     return;
   }
 
-  KmsIceCandidate *cand = kms_ice_candidate_new(
-      cand_str.c_str(), mid_str.c_str(), sdp_m_line_index, nullptr);
+  KmsIceCandidate *cand = kms_ice_candidate_new (
+                            cand_str.c_str(), mid_str.c_str(), sdp_m_line_index, nullptr);
 
   if (cand) {
     g_signal_emit_by_name (element, "add-ice-candidate", this->sessId.c_str (),
@@ -1307,12 +1373,13 @@ MediaObjectImpl *
 WebRtcEndpointImplFactory::createObject (const boost::property_tree::ptree
     &conf, std::shared_ptr<MediaPipeline>
     mediaPipeline, bool recvonly, bool sendonly, bool useDataChannels,
-    std::shared_ptr<CertificateKeyType> certificateKeyType, 
-    std::shared_ptr<DSCPValue> qosDscp) const
+    std::shared_ptr<CertificateKeyType> certificateKeyType,
+    std::shared_ptr<DSCPValue> qosDscp, int minPort, int maxPort) const
 {
   return new WebRtcEndpointImpl (conf, mediaPipeline, recvonly,
                                  sendonly, useDataChannels,
-                                 certificateKeyType, qosDscp);
+                                 certificateKeyType, qosDscp,
+                                 minPort, maxPort);
 }
 
 WebRtcEndpointImpl::StaticConstructor WebRtcEndpointImpl::staticConstructor;

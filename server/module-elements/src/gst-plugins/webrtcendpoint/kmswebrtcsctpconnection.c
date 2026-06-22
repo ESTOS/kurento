@@ -40,7 +40,10 @@ enum
   PROP_CONNECTED,
   PROP_IS_CLIENT,
   PROP_MIN_PORT,
-  PROP_MAX_PORT
+  PROP_MAX_PORT,
+  PROP_FINALIZE_SOCKET,
+  PROP_RTP_SOCKET,
+  PROP_RTCP_SOCKET
 };
 
 struct _KmsWebRtcSctpConnectionPrivate
@@ -60,8 +63,8 @@ G_DEFINE_TYPE_WITH_CODE (KmsWebRtcSctpConnection, kms_webrtc_sctp_connection,
         kms_webrtc_rtp_connection_interface_init));
 
 static gchar *
-kms_webrtc_sctp_connection_get_certificate_pem (KmsWebRtcBaseConnection *
-    base_conn)
+kms_webrtc_sctp_connection_get_certificate_pem (KmsWebRtcBaseConnection
+    *base_conn)
 {
   KmsWebRtcSctpConnection *self = KMS_WEBRTC_SCTP_CONNECTION (base_conn);
   gchar *pem;
@@ -72,14 +75,14 @@ kms_webrtc_sctp_connection_get_certificate_pem (KmsWebRtcBaseConnection *
 }
 
 static void
-kms_webrtc_sctp_connection_add (KmsIRtpConnection * base_conn, GstBin * bin,
+kms_webrtc_sctp_connection_add (KmsIRtpConnection *base_conn, GstBin *bin,
     gboolean active)
 {
   KmsWebRtcSctpConnection *self = KMS_WEBRTC_SCTP_CONNECTION (base_conn);
   KmsWebRtcSctpConnectionPrivate *priv = self->priv;
   KmsWebRtcTransport *tr = priv->tr;
 
-  kms_webrtc_transport_sink_set_dtls_is_client(tr->sink, active);
+  kms_webrtc_transport_sink_set_dtls_is_client (tr->sink, active);
   kms_webrtc_transport_src_set_dtls_is_client (tr->src, active);
 
   gst_bin_add (bin, GST_ELEMENT (g_object_ref (self->priv->tr->src)));
@@ -87,8 +90,8 @@ kms_webrtc_sctp_connection_add (KmsIRtpConnection * base_conn, GstBin * bin,
 }
 
 static void
-kms_webrtc_sctp_connection_src_sync_state_with_parent (KmsIRtpConnection *
-    base_conn)
+kms_webrtc_sctp_connection_src_sync_state_with_parent (KmsIRtpConnection
+    *base_conn)
 {
   KmsWebRtcSctpConnection *self = KMS_WEBRTC_SCTP_CONNECTION (base_conn);
   GstElement *element = GST_ELEMENT (self->priv->tr->src);
@@ -97,8 +100,8 @@ kms_webrtc_sctp_connection_src_sync_state_with_parent (KmsIRtpConnection *
 }
 
 static void
-kms_webrtc_sctp_connection_sink_sync_state_with_parent (KmsIRtpConnection *
-    base_conn)
+kms_webrtc_sctp_connection_sink_sync_state_with_parent (KmsIRtpConnection
+    *base_conn)
 {
   KmsWebRtcSctpConnection *self = KMS_WEBRTC_SCTP_CONNECTION (base_conn);
   GstElement *element = GST_ELEMENT (self->priv->tr->sink);
@@ -107,7 +110,7 @@ kms_webrtc_sctp_connection_sink_sync_state_with_parent (KmsIRtpConnection *
 }
 
 static GstPad *
-kms_webrtc_sctp_connection_request_rtp_sink (KmsIRtpConnection * base_conn)
+kms_webrtc_sctp_connection_request_rtp_sink (KmsIRtpConnection *base_conn)
 {
   GST_WARNING_OBJECT (base_conn, "Unsupported operation");
 
@@ -115,7 +118,7 @@ kms_webrtc_sctp_connection_request_rtp_sink (KmsIRtpConnection * base_conn)
 }
 
 static GstPad *
-kms_webrtc_sctp_connection_request_rtp_src (KmsIRtpConnection * base_conn)
+kms_webrtc_sctp_connection_request_rtp_src (KmsIRtpConnection *base_conn)
 {
   GST_WARNING_OBJECT (base_conn, "Unsupported operation");
 
@@ -123,7 +126,7 @@ kms_webrtc_sctp_connection_request_rtp_src (KmsIRtpConnection * base_conn)
 }
 
 static GstPad *
-kms_webrtc_sctp_connection_request_rtcp_sink (KmsIRtpConnection * base_conn)
+kms_webrtc_sctp_connection_request_rtcp_sink (KmsIRtpConnection *base_conn)
 {
   GST_WARNING_OBJECT (base_conn, "Unsupported operation");
 
@@ -131,7 +134,7 @@ kms_webrtc_sctp_connection_request_rtcp_sink (KmsIRtpConnection * base_conn)
 }
 
 static GstPad *
-kms_webrtc_sctp_connection_request_rtcp_src (KmsIRtpConnection * base_conn)
+kms_webrtc_sctp_connection_request_rtcp_src (KmsIRtpConnection *base_conn)
 {
   GST_WARNING_OBJECT (base_conn, "Unsupported operation");
 
@@ -139,7 +142,7 @@ kms_webrtc_sctp_connection_request_rtcp_src (KmsIRtpConnection * base_conn)
 }
 
 static GstPad *
-kms_webrtc_sctp_connection_request_data_src (KmsIRtpConnection * base_conn)
+kms_webrtc_sctp_connection_request_data_src (KmsIRtpConnection *base_conn)
 {
   KmsWebRtcSctpConnection *self = KMS_WEBRTC_SCTP_CONNECTION (base_conn);
 
@@ -148,7 +151,7 @@ kms_webrtc_sctp_connection_request_data_src (KmsIRtpConnection * base_conn)
 }
 
 static GstPad *
-kms_webrtc_sctp_connection_request_data_sink (KmsIRtpConnection * base_conn)
+kms_webrtc_sctp_connection_request_data_sink (KmsIRtpConnection *base_conn)
 {
   KmsWebRtcSctpConnection *self = KMS_WEBRTC_SCTP_CONNECTION (base_conn);
 
@@ -157,8 +160,8 @@ kms_webrtc_sctp_connection_request_data_sink (KmsIRtpConnection * base_conn)
 }
 
 static void
-kms_webrtc_sctp_connection_set_property (GObject * object, guint prop_id,
-    const GValue * value, GParamSpec * pspec)
+kms_webrtc_sctp_connection_set_property (GObject *object, guint prop_id,
+    const GValue *value, GParamSpec *pspec)
 {
   KmsWebRtcSctpConnection *self = KMS_WEBRTC_SCTP_CONNECTION (object);
 
@@ -182,8 +185,8 @@ kms_webrtc_sctp_connection_set_property (GObject * object, guint prop_id,
 }
 
 static void
-kms_webrtc_sctp_connection_get_property (GObject * object,
-    guint prop_id, GValue * value, GParamSpec * pspec)
+kms_webrtc_sctp_connection_get_property (GObject *object,
+    guint prop_id, GValue *value, GParamSpec *pspec)
 {
   KmsWebRtcSctpConnection *self = KMS_WEBRTC_SCTP_CONNECTION (object);
 
@@ -215,15 +218,15 @@ kms_webrtc_sctp_connection_get_property (GObject * object,
 }
 
 static void
-dtls_connected_cb (GstElement * dtlssrtpenc, gpointer self)
+dtls_connected_cb (GstElement *dtlssrtpenc, gpointer self)
 {
   kms_i_rtp_connection_connected_signal (self);
 }
 
 KmsWebRtcSctpConnection *
-kms_webrtc_sctp_connection_new (KmsIceBaseAgent * agent, GMainContext * context,
-    const gchar * name, guint16 min_port, guint16 max_port,
-    gchar * pem_certificate)
+kms_webrtc_sctp_connection_new (KmsIceBaseAgent *agent, GMainContext *context,
+    const gchar *name, guint16 min_port, guint16 max_port,
+    gchar *pem_certificate)
 {
   GObject *obj;
   KmsWebRtcBaseConnection *base_conn;
@@ -255,14 +258,16 @@ kms_webrtc_sctp_connection_new (KmsIceBaseAgent * agent, GMainContext * context,
   g_signal_connect (priv->tr->sink->dtlssrtpenc, "on-key-set",
       G_CALLBACK (dtls_connected_cb), conn);
 
-  kms_webrtc_base_connection_add_dtls_component (KMS_WEBRTC_BASE_CONNECTION(conn), priv->tr->sink->dtlssrtpenc, "sctp", "dtlssrtpenc");
-  kms_webrtc_base_connection_add_dtls_component (KMS_WEBRTC_BASE_CONNECTION(conn), priv->tr->src->dtlssrtpdec, "sctp", "dtlssrtpdec");
-  
+  kms_webrtc_base_connection_add_dtls_component (KMS_WEBRTC_BASE_CONNECTION
+      (conn), priv->tr->sink->dtlssrtpenc, "sctp", "dtlssrtpenc");
+  kms_webrtc_base_connection_add_dtls_component (KMS_WEBRTC_BASE_CONNECTION
+      (conn), priv->tr->src->dtlssrtpdec, "sctp", "dtlssrtpdec");
+
   return conn;
 }
 
 static void
-kms_webrtc_sctp_connection_finalize (GObject * object)
+kms_webrtc_sctp_connection_finalize (GObject *object)
 {
   KmsWebRtcSctpConnection *self = KMS_WEBRTC_SCTP_CONNECTION (object);
   KmsWebRtcSctpConnectionPrivate *priv = self->priv;
@@ -276,14 +281,14 @@ kms_webrtc_sctp_connection_finalize (GObject * object)
 }
 
 static void
-kms_webrtc_sctp_connection_init (KmsWebRtcSctpConnection * self)
+kms_webrtc_sctp_connection_init (KmsWebRtcSctpConnection *self)
 {
   self->priv = KMS_WEBRTC_SCTP_CONNECTION_GET_PRIVATE (self);
   self->priv->connected = FALSE;
 }
 
 static void
-kms_webrtc_sctp_connection_class_init (KmsWebRtcSctpConnectionClass * klass)
+kms_webrtc_sctp_connection_class_init (KmsWebRtcSctpConnectionClass *klass)
 {
   GObjectClass *gobject_class;
   KmsWebRtcBaseConnectionClass *base_conn_class;
@@ -307,10 +312,16 @@ kms_webrtc_sctp_connection_class_init (KmsWebRtcSctpConnectionClass * klass)
   g_object_class_override_property (gobject_class, PROP_IS_CLIENT, "is-client");
   g_object_class_override_property (gobject_class, PROP_MAX_PORT, "max-port");
   g_object_class_override_property (gobject_class, PROP_MIN_PORT, "min-port");
+  g_object_class_override_property (gobject_class, PROP_FINALIZE_SOCKET,
+      "finalize-socket");
+  g_object_class_override_property (gobject_class, PROP_RTP_SOCKET,
+      "rtp-socket");
+  g_object_class_override_property (gobject_class, PROP_RTCP_SOCKET,
+      "rtcp-socket");
 }
 
 static void
-kms_webrtc_rtp_connection_interface_init (KmsIRtpConnectionInterface * iface)
+kms_webrtc_rtp_connection_interface_init (KmsIRtpConnectionInterface *iface)
 {
   iface->add = kms_webrtc_sctp_connection_add;
   iface->src_sync_state_with_parent =

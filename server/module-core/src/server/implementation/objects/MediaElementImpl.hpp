@@ -119,7 +119,7 @@ public:
 
   virtual void dumpGstreamerDot ();
   virtual void dumpGstreamerDot (std::shared_ptr<GstreamerDotDetails>
-                                       details);
+                                 details);
 
   bool isMediaFlowingIn (std::shared_ptr<MediaType> mediaType) override;
   bool isMediaFlowingIn (std::shared_ptr<MediaType> mediaType,
@@ -148,7 +148,8 @@ public:
   sigc::signal<void, ElementDisconnected> signalElementDisconnected;
   sigc::signal<void, MediaFlowOutStateChanged> signalMediaFlowOutStateChanged;
   sigc::signal<void, MediaFlowInStateChanged> signalMediaFlowInStateChanged;
-  sigc::signal<void, MediaTranscodingStateChanged> signalMediaTranscodingStateChanged;
+  sigc::signal<void, MediaTranscodingStateChanged>
+  signalMediaTranscodingStateChanged;
 
   virtual void invoke (std::shared_ptr<MediaObjectImpl> obj,
                        const std::string &methodName, const Json::Value &params,
@@ -160,7 +161,8 @@ protected:
   GstElement *element;
   std::map <std::string, std::shared_ptr <MediaFlowState>> mediaFlowInStates;
   std::map <std::string, std::shared_ptr <MediaFlowState>> mediaFlowOutStates;
-  std::map <std::string, std::shared_ptr <MediaTranscodingState>> mediaTranscodingStates;
+  std::map <std::string, std::shared_ptr <MediaTranscodingState>>
+      mediaTranscodingStates;
 
   virtual void postConstructor () override;
   void collectLatencyStats (std::vector<std::shared_ptr<MediaLatencyStat>>
@@ -179,9 +181,9 @@ private:
   std::recursive_timed_mutex sinksMutex;
 
   std::map < std::shared_ptr <MediaType>, std::map < std::string,
-      std::shared_ptr<ElementConnectionDataInternal >> , MediaTypeCmp > sources;
+      std::shared_ptr<ElementConnectionDataInternal >>, MediaTypeCmp > sources;
   std::map < std::shared_ptr <MediaType>, std::map < std::string,
-      std::set<std::shared_ptr<ElementConnectionDataInternal> >> , MediaTypeCmp >
+      std::set<std::shared_ptr<ElementConnectionDataInternal> >>, MediaTypeCmp >
       sinks;
 
   gulong padAddedHandlerId = 0;
@@ -197,9 +199,9 @@ private:
   void mediaFlowOutStateChanged (gboolean isFlowing, gchar *padName,
                                  KmsElementPadType type);
   void mediaFlowInStateChanged (gboolean isFlowing, gchar *padName,
-                               KmsElementPadType type);
+                                KmsElementPadType type);
   void onMediaTranscodingStateChanged (gboolean isTranscoding, gchar *binName,
-                                      KmsElementPadType type);
+                                       KmsElementPadType type);
   void processBusMessage (GstMessage *msg);
 
   class StaticConstructor
@@ -212,6 +214,9 @@ private:
 
   friend void _media_element_pad_added (GstElement *elem, GstPad *pad,
                                         gpointer data);
+
+  std::list <std::string> audio_codecs_list; //ru-bu
+  std::list <std::string> video_codecs_list;
 };
 
 } /* kurento */
