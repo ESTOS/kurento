@@ -65,23 +65,23 @@ MediaPipelineImpl::~MediaPipelineImpl ()
 {
   gst_element_set_state (pipeline, GST_STATE_NULL);
 
-  if (rtp_socket_reuse_audio != NULL) { //ru-bu
-    g_object_set (pipeline, "rtp-socket-close", rtp_socket_reuse_audio, NULL);
+  if (rtp_socket_reuse_audio != NULL) {
+    g_object_unref (rtp_socket_reuse_audio);
     rtp_socket_reuse_audio = NULL;
   }
 
   if (rtcp_socket_reuse_audio != NULL) {
-    g_object_set (pipeline, "rtp-socket-close", rtcp_socket_reuse_audio, NULL);
+    g_object_unref (rtcp_socket_reuse_audio);
     rtcp_socket_reuse_audio = NULL;
   }
 
-  if (rtp_socket_reuse_video != NULL) { //ru-bu
-    g_object_set (pipeline, "rtp-socket-close", rtp_socket_reuse_video, NULL);
+  if (rtp_socket_reuse_video != NULL) {
+    g_object_unref (rtp_socket_reuse_video);
     rtp_socket_reuse_video = NULL;
   }
 
   if (rtcp_socket_reuse_video != NULL) {
-    g_object_set (pipeline, "rtp-socket-close", rtcp_socket_reuse_video, NULL);
+    g_object_unref (rtcp_socket_reuse_video);
     rtcp_socket_reuse_video = NULL;
   }
 
@@ -211,28 +211,28 @@ MediaPipelineImpl::setSockets (GSocket *rtp_socket_audio,
 {
   if ( (rtp_socket_reuse_audio != NULL)
        && (rtp_socket_reuse_audio != rtp_socket_audio) ) {
-    g_object_set (pipeline, "rtp-socket-close", rtp_socket_reuse_audio, NULL);
+    g_object_unref (rtp_socket_reuse_audio);
   }
 
   rtp_socket_reuse_audio = rtp_socket_audio;
 
   if ( (rtcp_socket_reuse_audio != NULL)
        && (rtcp_socket_reuse_audio != rtcp_socket_audio) ) {
-    g_object_set (pipeline, "rtp-socket-close", rtcp_socket_reuse_audio, NULL);
+    g_object_unref (rtcp_socket_reuse_audio);
   }
 
   rtcp_socket_reuse_audio = rtcp_socket_audio;
 
   if ( (rtp_socket_reuse_video != NULL)
        && (rtp_socket_reuse_video != rtp_socket_video) ) {
-    g_object_set (pipeline, "rtp-socket-close", rtp_socket_reuse_video, NULL);
+    g_object_unref (rtp_socket_reuse_video);
   }
 
   rtp_socket_reuse_video = rtp_socket_video;
 
   if ( (rtcp_socket_reuse_video != NULL)
        && (rtcp_socket_reuse_video != rtcp_socket_video) ) {
-    g_object_set (pipeline, "rtp-socket-close", rtcp_socket_reuse_video, NULL);
+    g_object_unref (rtcp_socket_reuse_video);
   }
 
   rtcp_socket_reuse_video = rtcp_socket_video;
