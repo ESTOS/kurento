@@ -3765,6 +3765,9 @@ kms_base_rtp_endpoint_init (KmsBaseRtpEndpoint *self)
     return;
   }
 
+  /* Use capture time for RTCP SR; live pipelines often lack send-path latency. */
+  g_object_set (self->priv->rtpbin, "rtcp-sync-send-time", FALSE, NULL);
+
   g_signal_connect (self->priv->rtpbin, "request-pt-map",
       G_CALLBACK (kms_base_rtp_endpoint_rtpbin_request_pt_map), self);
 
