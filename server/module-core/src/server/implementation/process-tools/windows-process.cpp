@@ -17,126 +17,76 @@
 
 #include "windows-process.hpp"
 
+#include <windows.h>
+#include <psapi.h>
+
+// ----------------------------------------------------------------------------
+
+static unsigned long long
+fileTimeToTicks (const FILETIME &ft)
+{
+  ULARGE_INTEGER u;
+
+  u.LowPart = ft.dwLowDateTime;
+  u.HighPart = ft.dwHighDateTime;
+  return u.QuadPart;
+}
+
 // ----------------------------------------------------------------------------
 
 unsigned long
 cpuCount ()
 {
-#if 0
-  // Try checking current process' affinity mask
-  {
-    cpu_set_t set;
-    if (sched_getaffinity (0, sizeof (set), &set) == 0) {
-      unsigned long count = (unsigned long) CPU_COUNT (&set);
-      if (count > 0) {
-        return count;
-      }
-    }
+  DWORD count = GetActiveProcessorCount (ALL_PROCESSOR_GROUPS);
+
+  if (count > 0) {
+    return (unsigned long) count;
   }
 
-  // Try with `sysconf (_SC_NPROCESSORS_ONLN)`
-#if defined _SC_NPROCESSORS_ONLN
-  {
-    long count = sysconf (_SC_NPROCESSORS_ONLN);
-    if (count > 0) {
-      return (unsigned long) count;
-    }
-  }
-#endif
-#endif
-  return 1;
+  SYSTEM_INFO info;
+
+  GetNativeSystemInfo (&info);
+  return info.dwNumberOfProcessors > 0 ? info.dwNumberOfProcessors : 1;
 }
 
 // ----------------------------------------------------------------------------
 
 /**
- * Total amount of time that this process has been scheduled, in clock ticks.
+ * Total amount of time that this process has been scheduled, in 100-ns units.
  *
- * Data is obtained from "/proc/self/stat", as per man proc(5). This value
- * includes time scheduled in user and kernel modes.
+ * Data is obtained from GetProcessTimes(). This value includes time scheduled
+ * in user and kernel modes.
  */
 static unsigned long
 processTicks ()
 {
-#if 0
-  std::ifstream stat (SELF_STAT_PATH);
-  if (!stat) {
+  FILETIME create, exit, kernel, user;
+
+  if (!GetProcessTimes (GetCurrentProcess (), &create, &exit, &kernel, &user)) {
     return 0;
   }
 
-  // Skip unwanted fields
-  for (int field = 1; field < SELF_STAT_UTIME_FIELD; ++field) {
-    std::string unused;
-    stat >> unused;
-  }
-
-  // (14) utime %lu
-  // Amount of time that this process has been scheduled in user mode,
-  // measured in clock ticks
-  long unsigned utimeTicks;
-  stat >> utimeTicks;
-
-  // (15) stime %lu
-  // Amount of time that this process has been scheduled in kernel mode,
-  // measured in clock ticks
-  long unsigned stimeTicks;
-  stat >> stimeTicks;
-
-  if (!stat) {
-    return 0;
-  }
-
-  return utimeTicks + stimeTicks;
-#else
-  return 0;
-#endif
+  return (unsigned long) (fileTimeToTicks (kernel) + fileTimeToTicks (user));
 }
 
 // ----------------------------------------------------------------------------
 
 /**
- * Total amount of time that the system has spent, in clock ticks.
+ * Total amount of time that the system has spent, in 100-ns units.
  *
- * Data is obtained from "/proc/stat", as per man proc(5). This value includes
- * time scheduled in all possible states.
+ * Data is obtained from GetSystemTimes(). This value includes time scheduled
+ * on all CPUs, analogous to the aggregate "cpu" line in Linux /proc/stat.
  */
 static unsigned long
 systemTicks ()
 {
-#if 0
-  std::ifstream stat (STAT_PATH);
-  if (!stat) {
+  FILETIME idle, kernel, user;
+
+  if (!GetSystemTimes (&idle, &kernel, &user)) {
     return 0;
   }
 
-  std::string line;
-  std::getline(stat, line);
-  std::istringstream cpu(line);
-
-  // Get first field; should be "cpu" (not "cpu0")
-  std::string entryName;
-  cpu >> entryName;
-  if (entryName != "cpu") {
-    return 0;
-  }
-
-  // Sum all other fields in the line
-  unsigned long cpuTicks[10] = {0};
-  unsigned long ticks = 0;
-
-  for (int i = 0; i < 10 && cpu >> cpuTicks[i]; ++i) {
-    ticks += cpuTicks[i];
-  }
-
-  // Guest time is already accounted in usertime
-  // https://github.com/hishamhm/htop/blob/402e46bb82964366746b86d77eb5afa69c279539/linux/LinuxProcessList.c#L992
-  ticks -= cpuTicks[8];  // man proc(5): guest (9)
-  ticks -= cpuTicks[9];  // man proc(5): guest_nice (10)
-
-  return ticks;
-#else
-  return 0;
-#endif
+  return (unsigned long) (fileTimeToTicks (kernel) + fileTimeToTicks (user));
 }
 
 // ----------------------------------------------------------------------------
@@ -150,7 +100,8 @@ cpuPercentBegin (struct cpustat_t *cpustat)
 
 // ----------------------------------------------------------------------------
 
-float cpuPercentEnd (const struct cpustat_t *cpustat)
+float
+cpuPercentEnd (const struct cpustat_t *cpustat)
 {
   const unsigned long processTicksInc = processTicks() - cpustat->processTicks;
 
@@ -158,40 +109,28 @@ float cpuPercentEnd (const struct cpustat_t *cpustat)
   const unsigned long systemTicksInc = (systemTicks() - cpustat->systemTicks)
       / cpuCount();
 
+  if (systemTicksInc == 0) {
+    return 0.0f;
+  }
+
   // https://github.com/hishamhm/htop/blob/402e46bb82964366746b86d77eb5afa69c279539/linux/LinuxProcessList.c#L832
   return 100.0f * processTicksInc / systemTicksInc;
 }
 
 // ----------------------------------------------------------------------------
 
-long int memoryUse ()
+long int
+memoryUse ()
 {
-#if 0
-  std::ifstream statm (SELF_STATM_FILE_PATH);
+  PROCESS_MEMORY_COUNTERS pmc;
 
-  if (!statm) {
+  pmc.cb = sizeof (pmc);
+
+  if (!K32GetProcessMemoryInfo (GetCurrentProcess (), &pmc, sizeof (pmc))) {
     return 0;
   }
 
-  // (1) size - total program size (VmSize, in pages)
-  long int size_pages;
-  statm >> size_pages;
-
-  // (2) resident - resident set size (VmRSS, in pages)
-  long int resident_pages;
-  statm >> resident_pages;
-
-  if (!statm) {
-    return 0;
-  }
-
-  const long int pagesize_bytes = sysconf(_SC_PAGESIZE);
-  const long int resident_kbytes = resident_pages * pagesize_bytes / 1024;
-
-  return resident_kbytes;
-#else
-  return 0;
-#endif
+  return (long int) (pmc.WorkingSetSize / 1024);
 }
 
 // ----------------------------------------------------------------------------
