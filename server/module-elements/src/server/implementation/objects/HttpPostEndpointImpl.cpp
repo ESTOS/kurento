@@ -64,10 +64,10 @@ HttpPostEndpointImpl::HttpPostEndpointImpl (const boost::property_tree::ptree
           std::dynamic_pointer_cast< MediaObjectImpl > (mediaPipeline),
           disconnectionTimeout, FACTORY_NAME)
 {
-  g_object_set (G_OBJECT (element), USE_ENCODED_MEDIA, useEncodedMedia, NULL);
+  g_object_set (G_OBJECT (element), USE_ENCODED_MEDIA, useEncodedMedia, nullptr);
 
   /* Do not accept EOS */
-  g_object_set ( G_OBJECT (element), "accept-eos", false, NULL);
+  g_object_set ( G_OBJECT (element), "accept-eos", false, nullptr);
 
   register_end_point();
 

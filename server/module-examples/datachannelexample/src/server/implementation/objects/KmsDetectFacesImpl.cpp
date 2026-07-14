@@ -40,9 +40,9 @@ KmsDetectFacesImpl::KmsDetectFacesImpl (const boost::property_tree::ptree
   FilterImpl (config,
               std::dynamic_pointer_cast<MediaObjectImpl> ( mediaPipeline) )
 {
-  g_object_set (element, "filter-factory", "facedetectormetadata", NULL);
+  g_object_set (element, "filter-factory", "facedetectormetadata", nullptr);
 
-  g_object_get (G_OBJECT (element), "filter", &faceDetector, NULL);
+  g_object_get (G_OBJECT (element), "filter", &faceDetector, nullptr);
 
   if (faceDetector == NULL) {
     throw KurentoException (MEDIA_OBJECT_NOT_AVAILABLE,

@@ -38,9 +38,9 @@ ImageOverlayFilterImpl::ImageOverlayFilterImpl (const
   FilterImpl (config, std::dynamic_pointer_cast<MediaObjectImpl>
               ( mediaPipeline) )
 {
-  g_object_set (element, "filter-factory", "kmslogooverlay", NULL);
+  g_object_set (element, "filter-factory", "kmslogooverlay", nullptr);
 
-  g_object_get (G_OBJECT (element), "filter", &imageOverlay, NULL);
+  g_object_get (G_OBJECT (element), "filter", &imageOverlay, nullptr);
 
   if (imageOverlay == nullptr) {
     throw KurentoException (MEDIA_OBJECT_NOT_AVAILABLE,
@@ -57,7 +57,7 @@ void ImageOverlayFilterImpl::removeImage (const std::string &id)
 
   /* The function obtains the actual window list */
   g_object_get (G_OBJECT (imageOverlay), IMAGES_TO_OVERLAY, &imagesLayout,
-                NULL);
+                nullptr);
   len = gst_structure_n_fields (imagesLayout);
 
   if (len == 0) {
@@ -77,7 +77,7 @@ void ImageOverlayFilterImpl::removeImage (const std::string &id)
   }
 
   /* Set the buttons layout list without the window with id = id */
-  g_object_set (G_OBJECT (imageOverlay), IMAGES_TO_OVERLAY, imagesLayout, NULL);
+  g_object_set (G_OBJECT (imageOverlay), IMAGES_TO_OVERLAY, imagesLayout, nullptr);
 
   gst_structure_free (imagesLayout);
 }
@@ -98,16 +98,16 @@ void ImageOverlayFilterImpl::addImage (const std::string &id,
                                "heightPercent", G_TYPE_FLOAT, float (heightPercent),
                                "keepAspectRatio", G_TYPE_BOOLEAN, keepAspectRatio,
                                "center", G_TYPE_BOOLEAN, center,
-                               NULL);
+                               nullptr);
 
   /* The function obtains the actual window list */
   g_object_get (G_OBJECT (imageOverlay), IMAGES_TO_OVERLAY, &imagesLayout,
-                NULL);
+                nullptr);
   gst_structure_set (imagesLayout,
                      id.c_str(), GST_TYPE_STRUCTURE,
-                     imageSt, NULL);
+                     imageSt, nullptr);
 
-  g_object_set (G_OBJECT (imageOverlay), IMAGES_TO_OVERLAY, imagesLayout, NULL);
+  g_object_set (G_OBJECT (imageOverlay), IMAGES_TO_OVERLAY, imagesLayout, nullptr);
 
   gst_structure_free (imagesLayout);
   gst_structure_free (imageSt);

@@ -244,7 +244,7 @@ load_image (cv::Mat &out, gchar *url, gchar *dir, gchar *image_name)
     GST_INFO ("Not a local file, try to download first");
   }
 
-  file_name = g_strconcat (dir, "/", image_name, ".png", NULL);
+  file_name = g_strconcat (dir, "/", image_name, ".png", nullptr);
 
   if (!load_from_url (file_name, url)) {
     GST_ERROR ("Failed downloading from URL");
@@ -285,7 +285,7 @@ kms_logo_overlay_load_image_layout (KmsLogoOverlay *self)
     gboolean ret;
 
     ret = gst_structure_get (self->priv->image_layout, name, GST_TYPE_STRUCTURE,
-        &image, NULL);
+        &image, nullptr);
     if (ret) {
       ImageStruct *structAux = (ImageStruct *)g_malloc0 (sizeof (ImageStruct));
       cv::Mat aux;
@@ -293,19 +293,19 @@ kms_logo_overlay_load_image_layout (KmsLogoOverlay *self)
       int new_height;
 
       gst_structure_get (image, "offsetXPercent", G_TYPE_FLOAT,
-          &structAux->offsetXPercent, NULL);
+          &structAux->offsetXPercent, nullptr);
       gst_structure_get (image, "offsetYPercent", G_TYPE_FLOAT,
-          &structAux->offsetYPercent, NULL);
+          &structAux->offsetYPercent, nullptr);
       gst_structure_get (image, "widthPercent", G_TYPE_FLOAT,
-          &structAux->widthPercent, NULL);
+          &structAux->widthPercent, nullptr);
       gst_structure_get (image, "heightPercent", G_TYPE_FLOAT,
-          &structAux->heightPercent, NULL);
-      gst_structure_get (image, "id", G_TYPE_STRING, &structAux->id, NULL);
-      gst_structure_get (image, "uri", G_TYPE_STRING, &uri, NULL);
+          &structAux->heightPercent, nullptr);
+      gst_structure_get (image, "id", G_TYPE_STRING, &structAux->id, nullptr);
+      gst_structure_get (image, "uri", G_TYPE_STRING, &uri, nullptr);
       gst_structure_get (image, "keepAspectRatio", G_TYPE_BOOLEAN,
-          &structAux->keepAspectRatio, NULL);
+          &structAux->keepAspectRatio, nullptr);
       gst_structure_get (image, "center", G_TYPE_BOOLEAN, &structAux->center,
-          NULL);
+          nullptr);
 
       if ((structAux->widthPercent == 0) || (structAux->heightPercent == 0)) {
         continue;

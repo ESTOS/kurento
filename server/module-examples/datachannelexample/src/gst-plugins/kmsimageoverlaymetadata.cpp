@@ -164,15 +164,15 @@ get_faces (GstStructure *faces)
       continue;
     }
 
-    ret = gst_structure_get (faces, name, GST_TYPE_STRUCTURE, &face, NULL);
+    ret = gst_structure_get (faces, name, GST_TYPE_STRUCTURE, &face, nullptr);
 
     if (ret) {
       cv::Rect *aux = new cv::Rect ();
 
-      gst_structure_get (face, "x", G_TYPE_UINT, &aux->x, NULL);
-      gst_structure_get (face, "y", G_TYPE_UINT, &aux->y, NULL);
-      gst_structure_get (face, "width", G_TYPE_UINT, &aux->width, NULL);
-      gst_structure_get (face, "height", G_TYPE_UINT, &aux->height, NULL);
+      gst_structure_get (face, "x", G_TYPE_UINT, &aux->x, nullptr);
+      gst_structure_get (face, "y", G_TYPE_UINT, &aux->y, nullptr);
+      gst_structure_get (face, "width", G_TYPE_UINT, &aux->width, nullptr);
+      gst_structure_get (face, "height", G_TYPE_UINT, &aux->height, nullptr);
 
       gst_structure_free (face);
       list = g_slist_append (list, aux);

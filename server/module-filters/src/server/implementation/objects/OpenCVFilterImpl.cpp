@@ -36,9 +36,9 @@ OpenCVFilterImpl::OpenCVFilterImpl (const boost::property_tree::ptree &conf,
                                     mediaPipeline) : FilterImpl (conf, std::dynamic_pointer_cast<MediaPipelineImpl>
                                           (mediaPipeline) )
 {
-  g_object_set (element, "filter-factory", "kmsopencvfilter", NULL);
+  g_object_set (element, "filter-factory", "kmsopencvfilter", nullptr);
 
-  g_object_get (G_OBJECT (element), "filter", &opencvfilter, NULL);
+  g_object_get (G_OBJECT (element), "filter", &opencvfilter, nullptr);
 
   if (opencvfilter == nullptr) {
     throw KurentoException (MEDIA_OBJECT_NOT_AVAILABLE,
@@ -46,7 +46,7 @@ OpenCVFilterImpl::OpenCVFilterImpl (const boost::property_tree::ptree &conf,
   }
 
   g_object_set (opencvfilter, "target-object",
-                static_cast<kurento::OpenCVProcess *> (this), NULL);
+                static_cast<kurento::OpenCVProcess *> (this), nullptr);
 
   g_object_unref (opencvfilter);
 }

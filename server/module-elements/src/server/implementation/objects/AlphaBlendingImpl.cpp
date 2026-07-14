@@ -54,9 +54,9 @@ void AlphaBlendingImpl::setMaster (std::shared_ptr<HubPort> source, int zOrder)
   data = gst_structure_new ("data",
                             "port", G_TYPE_INT, mixerPort->getHandlerId(),
                             "z_order", G_TYPE_INT, zOrder,
-                            NULL);
+                            nullptr);
 
-  g_object_set (G_OBJECT (element), MASTER_PORT, data, NULL);
+  g_object_set (G_OBJECT (element), MASTER_PORT, data, nullptr);
 }
 
 void AlphaBlendingImpl::setPortProperties (float relativeX, float relativeY,
@@ -75,7 +75,7 @@ void AlphaBlendingImpl::setPortProperties (float relativeX, float relativeY,
                             "relative_width", G_TYPE_FLOAT, relativeWidth,
                             "relative_height", G_TYPE_FLOAT, relativeHeight,
                             "z_order", G_TYPE_INT, zOrder,
-                            NULL);
+                            nullptr);
 
   g_signal_emit_by_name (element, SET_PORT_PROPERTIES, data);
   gst_structure_free (data);

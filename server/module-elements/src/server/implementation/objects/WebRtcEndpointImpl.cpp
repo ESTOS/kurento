@@ -126,11 +126,11 @@ remove_not_supported_codecs (GstElement *element)
 {
   GArray *codecs;
 
-  g_object_get (element, "audio-codecs", &codecs, NULL);
+  g_object_get (element, "audio-codecs", &codecs, nullptr);
   remove_not_supported_codecs_from_array (element, codecs);
   g_array_unref (codecs);
 
-  g_object_get (element, "video-codecs", &codecs, NULL);
+  g_object_get (element, "video-codecs", &codecs, nullptr);
   remove_not_supported_codecs_from_array (element, codecs);
   g_array_unref (codecs);
 }
@@ -725,22 +725,22 @@ WebRtcEndpointImpl::WebRtcEndpointImpl (const boost::property_tree::ptree &conf,
   if ( (qosDscp->getValue () != DSCPValue::NO_VALUE)
        && (qosDscp->getValue() != DSCPValue::NO_DSCP) ) {
     GST_INFO ("Setting QOS-DSCP value to %s", qosDscp->getString().c_str() );
-    g_object_set (element, "qos-dscp", get_dscp_value (qosDscp), NULL);
+    g_object_set (element, "qos-dscp", get_dscp_value (qosDscp), nullptr);
   } else {
     GST_INFO ("No QOS-DSCP value set");
   }
 
 
   if (recvonly) {
-    g_object_set (element, "offer-dir", GST_SDP_DIRECTION_RECVONLY, NULL);
+    g_object_set (element, "offer-dir", GST_SDP_DIRECTION_RECVONLY, nullptr);
   }
 
   if (sendonly) {
-    g_object_set (element, "offer-dir", GST_SDP_DIRECTION_SENDONLY, NULL);
+    g_object_set (element, "offer-dir", GST_SDP_DIRECTION_SENDONLY, nullptr);
   }
 
   if (useDataChannels) {
-    g_object_set (element, "use-data-channels", TRUE, NULL);
+    g_object_set (element, "use-data-channels", TRUE, nullptr);
   }
 
   remove_not_supported_codecs (element);
@@ -753,7 +753,7 @@ WebRtcEndpointImpl::WebRtcEndpointImpl (const boost::property_tree::ptree &conf,
       PARAM_EXTERNAL_IPV4) ) {
     GST_INFO ("Predefined external IPv4 address: %s", externalIPv4.c_str() );
     g_object_set (G_OBJECT (element), PROP_EXTERNAL_IPV4,
-                  externalIPv4.c_str(), NULL);
+                  externalIPv4.c_str(), nullptr);
   } else {
     GST_DEBUG ("No predefined external IPv4 address found in config;"
                " you can set one or default to STUN automatic discovery");
@@ -765,7 +765,7 @@ WebRtcEndpointImpl::WebRtcEndpointImpl (const boost::property_tree::ptree &conf,
       PARAM_EXTERNAL_IPV6) ) {
     GST_INFO ("Predefined external IPv6 address: %s", externalIPv6.c_str() );
     g_object_set (G_OBJECT (element), PROP_EXTERNAL_IPV6,
-                  externalIPv6.c_str(), NULL);
+                  externalIPv6.c_str(), nullptr);
   } else {
     GST_DEBUG ("No predefined external IPv6 address found in config;"
                " you can set one or default to STUN automatic discovery");
@@ -777,7 +777,7 @@ WebRtcEndpointImpl::WebRtcEndpointImpl (const boost::property_tree::ptree &conf,
       PARAM_NETWORK_INTERFACES) ) {
     GST_INFO ("Predefined network interfaces: %s", networkInterfaces.c_str() );
     g_object_set (G_OBJECT (element), PROP_NETWORK_INTERFACES,
-                  networkInterfaces.c_str(), NULL);
+                  networkInterfaces.c_str(), nullptr);
   } else {
     GST_DEBUG ("No predefined network interfaces found in config;"
                " you can set one or default to ICE automatic discovery");
@@ -788,7 +788,7 @@ WebRtcEndpointImpl::WebRtcEndpointImpl (const boost::property_tree::ptree &conf,
   if (getConfigValue<gboolean, WebRtcEndpoint> (&iceTcp, PARAM_ICE_TCP) ) {
     GST_INFO ("ICE-TCP candidate gathering is %s",
               iceTcp ? "ENABLED" : "DISABLED");
-    g_object_set (G_OBJECT (element), PROP_ICE_TCP, iceTcp, NULL);
+    g_object_set (G_OBJECT (element), PROP_ICE_TCP, iceTcp, nullptr);
   } else {
     GST_DEBUG ("ICE-TCP option not found in config;"
                " you can set it or default to 1 (TRUE)");
@@ -808,9 +808,9 @@ WebRtcEndpointImpl::WebRtcEndpointImpl (const boost::property_tree::ptree &conf,
       "stunServerAddress") ) {
     GST_INFO ("Predefined STUN server: %s:%d", stunAddress.c_str (), stunPort);
 
-    g_object_set (G_OBJECT (element), "stun-server-port", stunPort, NULL);
+    g_object_set (G_OBJECT (element), "stun-server-port", stunPort, nullptr);
     g_object_set (G_OBJECT (element), "stun-server", stunAddress.c_str (),
-                  NULL);
+                  nullptr);
   } else {
     GST_DEBUG ("STUN server not found in config");
   }
@@ -829,7 +829,7 @@ WebRtcEndpointImpl::WebRtcEndpointImpl (const boost::property_tree::ptree &conf,
 
     GST_INFO ("Predefined TURN relay server: %s", safeURL.c_str() );
 
-    g_object_set (G_OBJECT (element), "turn-url", turnURL.c_str(), NULL);
+    g_object_set (G_OBJECT (element), "turn-url", turnURL.c_str(), nullptr);
   } else {
     GST_DEBUG ("TURN relay server not found in config");
   }
@@ -839,7 +839,7 @@ WebRtcEndpointImpl::WebRtcEndpointImpl (const boost::property_tree::ptree &conf,
     if (defaultCertificateRSA != "") {
       g_object_set ( G_OBJECT (element), "pem-certificate",
                      defaultCertificateRSA.c_str(),
-                     NULL);
+                     nullptr);
     }
 
     break;
@@ -849,7 +849,7 @@ WebRtcEndpointImpl::WebRtcEndpointImpl (const boost::property_tree::ptree &conf,
     if (defaultCertificateECDSA != "") {
       g_object_set ( G_OBJECT (element), "pem-certificate",
                      defaultCertificateECDSA.c_str(),
-                     NULL);
+                     nullptr);
     }
 
     break;
@@ -893,7 +893,7 @@ WebRtcEndpointImpl::getExternalIPv4 ()
   std::string externalIPv4;
   gchar *ret;
 
-  g_object_get (G_OBJECT (element), PROP_EXTERNAL_IPV4, &ret, NULL);
+  g_object_get (G_OBJECT (element), PROP_EXTERNAL_IPV4, &ret, nullptr);
 
   if (ret != nullptr) {
     externalIPv4 = std::string (ret);
@@ -908,7 +908,7 @@ WebRtcEndpointImpl::setExternalIPv4 (const std::string &externalIPv4)
 {
   GST_INFO ("Set external IPv4 address: %s", externalIPv4.c_str() );
   g_object_set (G_OBJECT (element), PROP_EXTERNAL_IPV4,
-                externalIPv4.c_str(), NULL);
+                externalIPv4.c_str(), nullptr);
 }
 
 std::string
@@ -917,7 +917,7 @@ WebRtcEndpointImpl::getExternalIPv6 ()
   std::string externalIPv6;
   gchar *ret;
 
-  g_object_get (G_OBJECT (element), PROP_EXTERNAL_IPV6, &ret, NULL);
+  g_object_get (G_OBJECT (element), PROP_EXTERNAL_IPV6, &ret, nullptr);
 
   if (ret != nullptr) {
     externalIPv6 = std::string (ret);
@@ -932,7 +932,7 @@ WebRtcEndpointImpl::setExternalIPv6 (const std::string &externalIPv6)
 {
   GST_INFO ("Set external IPv6 address: %s", externalIPv6.c_str() );
   g_object_set (G_OBJECT (element), PROP_EXTERNAL_IPV6,
-                externalIPv6.c_str(), NULL);
+                externalIPv6.c_str(), nullptr);
 }
 
 std::string
@@ -941,7 +941,7 @@ WebRtcEndpointImpl::getNetworkInterfaces ()
   std::string networkInterfaces;
   gchar *ret;
 
-  g_object_get (G_OBJECT (element), PROP_NETWORK_INTERFACES, &ret, NULL);
+  g_object_get (G_OBJECT (element), PROP_NETWORK_INTERFACES, &ret, nullptr);
 
   if (ret != nullptr) {
     networkInterfaces = std::string (ret);
@@ -956,7 +956,7 @@ WebRtcEndpointImpl::setNetworkInterfaces (const std::string &networkInterfaces)
 {
   GST_INFO ("Set network interfaces: %s", networkInterfaces.c_str() );
   g_object_set (G_OBJECT (element), PROP_NETWORK_INTERFACES,
-                networkInterfaces.c_str(), NULL);
+                networkInterfaces.c_str(), nullptr);
 }
 
 bool
@@ -964,7 +964,7 @@ WebRtcEndpointImpl::getIceTcp ()
 {
   bool ret;
 
-  g_object_get (G_OBJECT (element), "ice-tcp", &ret, NULL);
+  g_object_get (G_OBJECT (element), "ice-tcp", &ret, nullptr);
 
   return ret;
 }
@@ -972,7 +972,7 @@ WebRtcEndpointImpl::getIceTcp ()
 void
 WebRtcEndpointImpl::setIceTcp (bool iceTcp)
 {
-  g_object_set (G_OBJECT (element), "ice-tcp", iceTcp, NULL);
+  g_object_set (G_OBJECT (element), "ice-tcp", iceTcp, nullptr);
 }
 
 std::string
@@ -981,7 +981,7 @@ WebRtcEndpointImpl::getStunServerAddress ()
   std::string stunServerAddress;
   gchar *ret;
 
-  g_object_get ( G_OBJECT (element), "stun-server", &ret, NULL);
+  g_object_get ( G_OBJECT (element), "stun-server", &ret, nullptr);
 
   if (ret != nullptr) {
     stunServerAddress = std::string (ret);
@@ -996,7 +996,7 @@ WebRtcEndpointImpl::setStunServerAddress (const std::string &stunServerAddress)
 {
   g_object_set ( G_OBJECT (element), "stun-server",
                  stunServerAddress.c_str(),
-                 NULL);
+                 nullptr);
 }
 
 int
@@ -1004,7 +1004,7 @@ WebRtcEndpointImpl::getStunServerPort ()
 {
   int ret;
 
-  g_object_get ( G_OBJECT (element), "stun-server-port", &ret, NULL);
+  g_object_get ( G_OBJECT (element), "stun-server-port", &ret, nullptr);
 
   return ret;
 }
@@ -1013,7 +1013,7 @@ void
 WebRtcEndpointImpl::setStunServerPort (int stunServerPort)
 {
   g_object_set ( G_OBJECT (element), "stun-server-port",
-                 stunServerPort, NULL);
+                 stunServerPort, nullptr);
 }
 
 std::string
@@ -1022,7 +1022,7 @@ WebRtcEndpointImpl::getTurnUrl ()
   std::string turnUrl;
   gchar *ret;
 
-  g_object_get ( G_OBJECT (element), "turn-url", &ret, NULL);
+  g_object_get ( G_OBJECT (element), "turn-url", &ret, nullptr);
 
   if (ret != nullptr) {
     turnUrl = std::string (ret);
@@ -1037,7 +1037,7 @@ WebRtcEndpointImpl::setTurnUrl (const std::string &turnUrl)
 {
   g_object_set ( G_OBJECT (element), "turn-url",
                  turnUrl.c_str(),
-                 NULL);
+                 nullptr);
 }
 
 std::vector<std::shared_ptr<IceCandidatePair>>
@@ -1275,7 +1275,7 @@ createtRTCDataChannelStats (const GstStructure *stats)
                      G_TYPE_STRING, &id, "state", G_TYPE_UINT, &state, "bytes-sent",
                      G_TYPE_UINT64, &bytes_sent, "bytes-recv", G_TYPE_UINT64,
                      &bytes_recv, "messages-sent", G_TYPE_UINT64, &messages_sent,
-                     "messages-recv", G_TYPE_UINT64, &message_recv, NULL);
+                     "messages-recv", G_TYPE_UINT64, &message_recv, nullptr);
 
   std::shared_ptr<RTCDataChannelStats> rtcDataStats =
     std::make_shared <RTCDataChannelStats> (id,
@@ -1298,7 +1298,7 @@ createtRTCPeerConnectionStats (const GstStructure *stats)
 
   gst_structure_get (stats, "data-channels-opened", G_TYPE_UINT, &opened,
                      "data-channels-closed", G_TYPE_UINT, &closed,
-                     "id", G_TYPE_STRING, &id, NULL);
+                     "id", G_TYPE_STRING, &id, nullptr);
 
   std::shared_ptr<RTCPeerConnectionStats> peerConnStats =
     std::make_shared <RTCPeerConnectionStats> (id,

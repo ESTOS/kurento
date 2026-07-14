@@ -46,9 +46,9 @@ ChromaFilterImpl::ChromaFilterImpl (const boost::property_tree::ptree &config,
 {
   GstStructure *aux;
 
-  g_object_set (element, "filter-factory", "chroma", NULL);
+  g_object_set (element, "filter-factory", "chroma", nullptr);
 
-  g_object_get (G_OBJECT (element), "filter", &chroma, NULL);
+  g_object_get (G_OBJECT (element), "filter", &chroma, nullptr);
 
   if (chroma == NULL) {
     throw KurentoException (MEDIA_OBJECT_NOT_AVAILABLE,
@@ -60,14 +60,14 @@ ChromaFilterImpl::ChromaFilterImpl (const boost::property_tree::ptree &config,
                            "y", G_TYPE_INT, window->getTopRightCornerY(),
                            "width", G_TYPE_INT, window->getWidth(),
                            "height", G_TYPE_INT, window->getHeight(),
-                           NULL);
+                           nullptr);
 
-  g_object_set (G_OBJECT (chroma), SET_CALIBRATION_AREA, aux, NULL);
+  g_object_set (G_OBJECT (chroma), SET_CALIBRATION_AREA, aux, nullptr);
   gst_structure_free (aux);
 
   if (backgroundImage != "") {
     g_object_set (G_OBJECT (this->chroma), SET_BACKGROUND_URI,
-                  backgroundImage.c_str(), NULL);
+                  backgroundImage.c_str(), nullptr);
   }
 
   g_object_unref (chroma);
@@ -76,12 +76,12 @@ ChromaFilterImpl::ChromaFilterImpl (const boost::property_tree::ptree &config,
 void ChromaFilterImpl::setBackground (const std::string &uri)
 {
   g_object_set (G_OBJECT (chroma), SET_BACKGROUND_URI,
-                uri.c_str(), NULL);
+                uri.c_str(), nullptr);
 }
 
 void ChromaFilterImpl::unsetBackground ()
 {
-  g_object_set (G_OBJECT (chroma), SET_BACKGROUND_URI, NULL, NULL);
+  g_object_set (G_OBJECT (chroma), SET_BACKGROUND_URI, NULL, nullptr);
 }
 
 MediaObjectImpl *

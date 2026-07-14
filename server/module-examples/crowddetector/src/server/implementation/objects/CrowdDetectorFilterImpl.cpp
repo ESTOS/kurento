@@ -62,11 +62,11 @@ get_structure_from_roi (std::shared_ptr<RegionOfInterest> roi)
     pointSt = gst_structure_new (name.c_str(),
                                  "x", G_TYPE_FLOAT, point->getX(),
                                  "y", G_TYPE_FLOAT, point->getY(),
-                                 NULL);
+                                 nullptr);
 
     gst_structure_set (roiStructure,
                        name.c_str(), GST_TYPE_STRUCTURE, pointSt,
-                       NULL);
+                       nullptr);
 
     gst_structure_free (pointSt);
   }
@@ -90,10 +90,10 @@ get_structure_from_roi (std::shared_ptr<RegionOfInterest> roi)
                                    "optical_flow_num_frames_to_reset", G_TYPE_INT,
                                    config->getOpticalFlowNumFramesToReset(),
                                    "optical_flow_angle_offset", G_TYPE_INT, config->getOpticalFlowAngleOffset(),
-                                   NULL);
+                                   nullptr);
   gst_structure_set (roiStructure,
                      "config", GST_TYPE_STRUCTURE, configRoiSt,
-                     NULL);
+                     nullptr);
 
   gst_structure_free (configRoiSt);
 
@@ -115,7 +115,7 @@ void CrowdDetectorFilterImpl::busMessage (GstMessage *message)
   st = gst_message_get_structure (message);
   type = gst_structure_get_name (st);
 
-  if (!gst_structure_get (st, "roi", G_TYPE_STRING , &roiID, NULL) ) {
+  if (!gst_structure_get (st, "roi", G_TYPE_STRING , &roiID, nullptr) ) {
     GST_WARNING ("The message does not contain the roi ID");
     return;
   }
@@ -131,13 +131,13 @@ void CrowdDetectorFilterImpl::busMessage (GstMessage *message)
     int fluidity_level;
 
     if (! (gst_structure_get (st, "fluidity_percentage", G_TYPE_DOUBLE,
-                              &fluidity_percentage, NULL) ) ) {
+                              &fluidity_percentage, nullptr) ) ) {
       GST_WARNING ("The message does not contain the fluidity percentage");
       return;
     }
 
     if (! (gst_structure_get (st, "fluidity_level", G_TYPE_INT,
-                              &fluidity_level, NULL) ) ) {
+                              &fluidity_level, nullptr) ) ) {
       GST_WARNING ("The message does not contain the fluidity level");
       return;
     }
@@ -156,13 +156,13 @@ void CrowdDetectorFilterImpl::busMessage (GstMessage *message)
     int occupancy_level;
 
     if (! (gst_structure_get (st, "occupancy_percentage", G_TYPE_DOUBLE,
-                              &occupancy_percentage, NULL) ) ) {
+                              &occupancy_percentage, nullptr) ) ) {
       GST_WARNING ("The message does not contain the occupancy percentage");
       return;
     }
 
     if (! (gst_structure_get (st, "occupancy_level", G_TYPE_INT,
-                              &occupancy_level, NULL) ) ) {
+                              &occupancy_level, nullptr) ) ) {
       GST_WARNING ("The message does not contain the occupancy level");
       return;
     }
@@ -180,7 +180,7 @@ void CrowdDetectorFilterImpl::busMessage (GstMessage *message)
     double direction_angle;
 
     if (! (gst_structure_get (st, "direction_angle", G_TYPE_DOUBLE,
-                              &direction_angle, NULL) ) ) {
+                              &direction_angle, nullptr) ) ) {
       GST_WARNING ("The message does not contain the direction angle");
       return;
     }
@@ -228,9 +228,9 @@ CrowdDetectorFilterImpl::CrowdDetectorFilterImpl (const
 {
   GstStructure *roisStructure;
 
-  g_object_set (element, "filter-factory", "crowddetector", NULL);
+  g_object_set (element, "filter-factory", "crowddetector", nullptr);
 
-  g_object_get (G_OBJECT (element), "filter", &crowdDetector, NULL);
+  g_object_get (G_OBJECT (element), "filter", &crowdDetector, nullptr);
 
   if (crowdDetector == NULL) {
     throw KurentoException (MEDIA_OBJECT_NOT_AVAILABLE,
@@ -245,12 +245,12 @@ CrowdDetectorFilterImpl::CrowdDetectorFilterImpl (const
     gst_structure_set (roisStructure,
                        roi->getId().c_str(), GST_TYPE_STRUCTURE,
                        roiStructureAux,
-                       NULL);
+                       nullptr);
 
     gst_structure_free (roiStructureAux);
   }
 
-  g_object_set (G_OBJECT (crowdDetector), ROIS_PARAM, roisStructure, NULL);
+  g_object_set (G_OBJECT (crowdDetector), ROIS_PARAM, roisStructure, nullptr);
   gst_structure_free (roisStructure);
 
   bus_handler_id = 0;
@@ -274,7 +274,7 @@ int CrowdDetectorFilterImpl::getProcessingWidth ()
 {
   int ret;
 
-  g_object_get (G_OBJECT (crowdDetector), PROCESSING_WIDTH, &ret, NULL);
+  g_object_get (G_OBJECT (crowdDetector), PROCESSING_WIDTH, &ret, nullptr);
 
   return ret;
 }
@@ -282,7 +282,7 @@ int CrowdDetectorFilterImpl::getProcessingWidth ()
 void CrowdDetectorFilterImpl::setProcessingWidth (int processingWidth)
 {
   g_object_set (G_OBJECT (crowdDetector), PROCESSING_WIDTH, processingWidth,
-                NULL);
+                nullptr);
 }
 
 MediaObjectImpl *

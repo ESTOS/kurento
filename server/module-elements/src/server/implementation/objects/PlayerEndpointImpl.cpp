@@ -110,12 +110,12 @@ PlayerEndpointImpl::PlayerEndpointImpl (const boost::property_tree::ptree &conf,
   GstElement *element = getGstreamerElement();
 
   g_object_set (G_OBJECT (element), "use-encoded-media", useEncodedMedia,
-                "network-cache", networkCache, NULL);
+                "network-cache", networkCache, nullptr);
 
   std::string portRange;
   if (getConfigValue <std::string, PlayerEndpoint> (&portRange,
       RTSP_CLIENT_PORT_RANGE)) {
-    g_object_set (G_OBJECT (element), "port-range", portRange.c_str(), NULL);
+    g_object_set (G_OBJECT (element), "port-range", portRange.c_str(), nullptr);
   }
 }
 
@@ -143,7 +143,7 @@ std::shared_ptr<VideoInfo> PlayerEndpointImpl::getVideoInfo ()
   int64_t seekableInit, seekableEnd, duration;
   std::shared_ptr<VideoInfo> videoInfo;
 
-  g_object_get (G_OBJECT (element), VIDEO_DATA, &video_data, NULL);
+  g_object_get (G_OBJECT (element), VIDEO_DATA, &video_data, nullptr);
 
   if (video_data == nullptr) {
     GST_ERROR ("structure null");
@@ -152,7 +152,7 @@ std::shared_ptr<VideoInfo> PlayerEndpointImpl::getVideoInfo ()
   gst_structure_get (video_data, "isSeekable", G_TYPE_BOOLEAN, &isSeekable,
                      "seekableInit", G_TYPE_INT64, &seekableInit,
                      "seekableEnd", G_TYPE_INT64, &seekableEnd,
-                     "duration", G_TYPE_INT64, &duration, NULL);
+                     "duration", G_TYPE_INT64, &duration, nullptr);
 
   videoInfo = std::make_shared<VideoInfo> (VideoInfo (isSeekable,
               seekableInit / NS_TO_MS,
@@ -165,7 +165,7 @@ int64_t PlayerEndpointImpl::getPosition ()
 {
   int64_t position;
 
-  g_object_get (G_OBJECT (element), POSITION, &position, NULL);
+  g_object_get (G_OBJECT (element), POSITION, &position, nullptr);
 
   return position / NS_TO_MS;
 }
@@ -173,7 +173,7 @@ int64_t PlayerEndpointImpl::getPosition ()
 std::string PlayerEndpointImpl::getElementGstreamerDot ()
 {
   GValue *pipeline;
-  g_object_get (G_OBJECT (element), PIPELINE, &pipeline, NULL);
+  g_object_get (G_OBJECT (element), PIPELINE, &pipeline, nullptr);
   return generateDotGraph(
       GST_BIN(pipeline),
       std::make_shared<GstreamerDotDetails>(GstreamerDotDetails::SHOW_VERBOSE));

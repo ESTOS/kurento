@@ -470,7 +470,7 @@ kms_http_ep_server_post_handler (KmsHttpEPServer *self, SoupMessage *msg,
   }
 
   install_http_post_signals (httpep);
-  g_object_set (G_OBJECT (post_obj), "soup-message", msg, NULL);
+  g_object_set (G_OBJECT (post_obj), "soup-message", msg, nullptr);
 }
 
 static void
@@ -629,7 +629,7 @@ destroy_pending_message (SoupServerMessage *msg)
 
     if (httpep != nullptr) {
       /* Drop internal media flowing in the piepline */
-      g_object_set (G_OBJECT (httpep), "start", FALSE, NULL);
+      g_object_set (G_OBJECT (httpep), "start", FALSE, nullptr);
     }
 
     /* Do not call to finished callback */
@@ -648,7 +648,7 @@ destroy_pending_message (SoupServerMessage *msg)
                  key_param_post_controller_quark () );
 
     if (post_obj != nullptr) {
-      g_object_set (G_OBJECT (post_obj), "soup-message", NULL, NULL);
+      g_object_set (G_OBJECT (post_obj), "soup-message", NULL, nullptr);
     }
   }
 
@@ -760,7 +760,7 @@ kms_http_ep_server_manage_cookie_session (KmsHttpEPServer *self,
   SoupCookie *cookie;
   gchar *method = nullptr;
 
-  g_object_get (G_OBJECT (msg), "method", &method, NULL);
+  g_object_get (G_OBJECT (msg), "method", &method, nullptr);
 
   if (g_strcmp0 (method, SOUP_METHOD_OPTIONS) == 0) {
     g_free (method);
@@ -785,7 +785,7 @@ static void
 kms_http_ep_server_options_handler (KmsHttpEPServer *self, SoupMessage *msg,
                                     GstElement *httpep)
 {
-  g_object_set(msg, "status-code", SOUP_STATUS_OK, NULL);
+  g_object_set(msg, "status-code", SOUP_STATUS_OK, nullptr);
 
   add_access_control_headers (msg);
 }
@@ -803,13 +803,13 @@ got_headers_handler (SoupMessage *msg, gpointer data)
 
   if (httpep == nullptr) {
     /* URI is not registered */
-    g_object_set (msg, "status-code", SOUP_STATUS_NOT_FOUND, NULL);
+    g_object_set (msg, "status-code", SOUP_STATUS_NOT_FOUND, nullptr);
     return;
   }
 
   if (!kms_http_ep_server_manage_cookie_session (self, httpep, msg, path) ) {
     GST_WARNING ("Request declined because of a cookie error");
-    g_object_set (msg, "status-code", SOUP_STATUS_BAD_REQUEST, NULL);
+    g_object_set (msg, "status-code", SOUP_STATUS_BAD_REQUEST, nullptr);
     return;
   }
 
@@ -832,7 +832,7 @@ got_headers_handler (SoupMessage *msg, gpointer data)
     return;
   } else {
     GST_WARNING ("HTTP operation %s is not allowed", soup_message_get_method(msg));
-    g_object_set(msg, "status-cocde", SOUP_STATUS_METHOD_NOT_ALLOWED, NULL);
+    g_object_set(msg, "status-cocde", SOUP_STATUS_METHOD_NOT_ALLOWED, nullptr);
     return;
   }
 
@@ -853,8 +853,8 @@ kms_http_ep_server_create_server (KmsHttpEPServer *self, GSocketAddress *addr)
   GError *error = NULL;
   gboolean listening;
 
-  g_object_get (self->priv->loop, "context", &ctx, NULL);
-  self->priv->server = soup_server_new ("server-header", "simple-httpd ", NULL);
+  g_object_get (self->priv->loop, "context", &ctx, nullptr);
+  self->priv->server = soup_server_new ("server-header", "simple-httpd ", nullptr);
   g_main_context_unref (ctx);
 
   /* Connect server signals handlers */

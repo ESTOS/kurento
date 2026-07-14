@@ -145,7 +145,7 @@ BOOST_AUTO_TEST_CASE (check_media_element_uri)
   }
 
   g_object_get (G_OBJECT (uriEndpoint->getGstreamerElement() ), "uri", &uri_value,
-                NULL);
+                nullptr);
 
   if (g_strcmp0 (uri_value, expected_uri.c_str () ) != 0) {
     BOOST_ERROR ("Wrong URI returned by gstreamer element");

@@ -120,7 +120,7 @@ static std::shared_ptr<MediaElementImpl> createTestSrc() {
                             MediaSet::getMediaSet()->getMediaObject (mediaPipelineId),
                             "dummysrc") ) );
 
-  g_object_set (src->getGstreamerElement(), "audio", TRUE, "video", TRUE, NULL);
+  g_object_set (src->getGstreamerElement(), "audio", TRUE, "video", TRUE, nullptr);
 
   return std::dynamic_pointer_cast <MediaElementImpl> (src);
 }

@@ -221,28 +221,28 @@ SdpEndpointImpl::SdpEndpointImpl (const boost::property_tree::ptree &config,
   }
 
   g_object_set (element, "num-audio-medias", audio_medias, "audio-codecs",
-                audio_codecs, NULL);
+                audio_codecs, nullptr);
   g_object_set (element, "num-video-medias", video_medias, "video-codecs",
-                video_codecs, NULL);
-  g_object_set (element, "use-ipv6", useIpv6, NULL);
+                video_codecs, nullptr);
+  g_object_set (element, "use-ipv6", useIpv6, nullptr);
 
   /* set RtpEndpoints Address from config ru-bu */
   if ( (local_address.empty () == false) && (isrtpendpoint == TRUE) ) {
-    g_object_set (element, "addr", local_address.c_str(), NULL);
+    g_object_set (element, "addr", local_address.c_str(), nullptr);
   }
 
   bdosocketreuse = dosocketreuse;
-  g_object_set (element, "reuse-socket", bdosocketreuse, NULL);
-  g_object_set (element, "use-rtpep-avpf", rtpepavpfuse, NULL);
+  g_object_set (element, "reuse-socket", bdosocketreuse, nullptr);
+  g_object_set (element, "use-rtpep-avpf", rtpepavpfuse, nullptr);
 
   //RTCSP-1078 switch back to synched mode
   //RTCSP-973 we use none mode because the other modes gives problems in case of changing one mediaendpoint
   //RTCSP-1552 for conference mode "none" is not working so we must switch it on for webrtcendpoints
   //RTCSP-1701 delayed audio switching -> set both buffers to synced mode after the jitterbuffer mode created in rtpbin is set correctly
   if (isrtpendpoint == TRUE) {
-    g_object_set (element, "jitterbuffermode", jbuf_mode_rtp, NULL);
+    g_object_set (element, "jitterbuffermode", jbuf_mode_rtp, nullptr);
   } else {
-    g_object_set (element, "jitterbuffermode", jbuf_mode_webrtc, NULL);
+    g_object_set (element, "jitterbuffermode", jbuf_mode_webrtc, nullptr);
   }
 
   offerInProcess = false;
@@ -255,14 +255,14 @@ int SdpEndpointImpl::getMaxVideoRecvBandwidth ()
   int maxVideoRecvBandwidth;
 
   g_object_get (element, "max-video-recv-bandwidth", &maxVideoRecvBandwidth,
-                NULL);
+                nullptr);
 
   return maxVideoRecvBandwidth;
 }
 
 void SdpEndpointImpl::setMaxVideoRecvBandwidth (int maxVideoRecvBandwidth)
 {
-  g_object_set (element, "max-video-recv-bandwidth", maxVideoRecvBandwidth, NULL);
+  g_object_set (element, "max-video-recv-bandwidth", maxVideoRecvBandwidth, nullptr);
 }
 
 int SdpEndpointImpl::getMaxAudioRecvBandwidth ()
@@ -270,14 +270,14 @@ int SdpEndpointImpl::getMaxAudioRecvBandwidth ()
   int maxAudioRecvBandwidth;
 
   g_object_get (element, "max-audio-recv-bandwidth", &maxAudioRecvBandwidth,
-                NULL);
+                nullptr);
 
   return maxAudioRecvBandwidth;
 }
 
 void SdpEndpointImpl::setMaxAudioRecvBandwidth (int maxAudioRecvBandwidth)
 {
-  g_object_set (element, "max-audio-recv-bandwidth", maxAudioRecvBandwidth, NULL);
+  g_object_set (element, "max-audio-recv-bandwidth", maxAudioRecvBandwidth, nullptr);
 }
 
 std::string SdpEndpointImpl::generateOffer ()
@@ -305,12 +305,12 @@ std::string SdpEndpointImpl::generateOffer (std::shared_ptr<OfferOptions>
 
   if (options->isSetOfferToReceiveAudio ()
       && !options->getOfferToReceiveAudio () ) {
-    g_object_set (element, "num-audio-medias", 0, NULL);
+    g_object_set (element, "num-audio-medias", 0, nullptr);
   }
 
   if (options->isSetOfferToReceiveVideo ()
       && !options->getOfferToReceiveVideo () ) {
-    g_object_set (element, "num-video-medias", 0, NULL);
+    g_object_set (element, "num-video-medias", 0, nullptr);
   }
 
   g_signal_emit_by_name (element, "generate-offer", sessId.c_str (), &offer);

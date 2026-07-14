@@ -63,7 +63,7 @@ RtpEndpointImpl::RtpEndpointImpl (const boost::property_tree::ptree &conf,
   if (!crypto->isSetKey() && !crypto->isSetKeyBase64() ) {
     /* Use random key */
     g_object_set (element, "crypto-suite", crypto->getCrypto()->getValue(),
-                  NULL);
+                  nullptr);
     return;
   }
 
@@ -129,7 +129,7 @@ RtpEndpointImpl::RtpEndpointImpl (const boost::property_tree::ptree &conf,
   }
 
   g_object_set (element, "master-key", key_b64.data(),
-                "crypto-suite", crypto->getCrypto()->getValue(), NULL);
+                "crypto-suite", crypto->getCrypto()->getValue(), nullptr);
 }
 
 RtpEndpointImpl::~RtpEndpointImpl()

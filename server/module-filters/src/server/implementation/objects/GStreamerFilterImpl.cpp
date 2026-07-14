@@ -54,15 +54,15 @@ GStreamerFilterImpl::GStreamerFilterImpl (const boost::property_tree::ptree
 
   switch (filterType->getValue() ) {
   case FilterType::VIDEO:
-    g_object_set (element, "type", 2, NULL);
+    g_object_set (element, "type", 2, nullptr);
     break;
 
   case FilterType::AUDIO:
-    g_object_set (element, "type", 1, NULL);
+    g_object_set (element, "type", 1, nullptr);
     break;
 
   case FilterType::AUTODETECT:
-    g_object_set (element, "type", 0, NULL);
+    g_object_set (element, "type", 0, nullptr);
     break;
 
   default:
@@ -94,9 +94,9 @@ GStreamerFilterImpl::GStreamerFilterImpl (const boost::property_tree::ptree
                             "Given command is not valid, only one element can be created");
   }
 
-  g_object_set (element, "filter", filter, NULL);
+  g_object_set (element, "filter", filter, nullptr);
 
-  g_object_get (element, "filter", &filter_check, NULL);
+  g_object_get (element, "filter", &filter_check, nullptr);
 
   if (filter_check != filter) {
     g_object_unref (filter);

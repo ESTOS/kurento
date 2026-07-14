@@ -261,7 +261,7 @@ kms_ice_nice_agent_component_state_change (NiceAgent *agent, guint stream_id,
 
   GST_DEBUG_OBJECT (self,
       "[IceComponentStateChanged] state: %s, stream_id: %d, component_id: %d",
-      nice_component_state_to_string (ice_state), stream_id, component_id);
+      kms_ice_base_agent_state_to_string (ice_state), stream_id, component_id);
 
   OnComponentStateChangedData *data = g_new0 (OnComponentStateChangedData, 1);
 

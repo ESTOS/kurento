@@ -201,7 +201,7 @@ kms_chroma_load_image_to_overlay (KmsChroma *chroma)
   }
 
   if (kms_chroma_is_valid_uri (chroma->priv->background_uri)) {
-    gchar *file_name = g_strconcat (chroma->priv->dir, "/image.png", NULL);
+    gchar *file_name = g_strconcat (chroma->priv->dir, "/image.png", nullptr);
 
     GST_INFO ("Downloading background image from URL: %s",
         chroma->priv->background_uri);
@@ -254,10 +254,10 @@ kms_chroma_set_property (GObject *object,
     GstStructure *aux;
 
     aux = (GstStructure *)g_value_dup_boxed (value);
-    gst_structure_get (aux, "x", G_TYPE_INT, &chroma->priv->x, NULL);
-    gst_structure_get (aux, "y", G_TYPE_INT, &chroma->priv->y, NULL);
-    gst_structure_get (aux, "width", G_TYPE_INT, &chroma->priv->width, NULL);
-    gst_structure_get (aux, "height", G_TYPE_INT, &chroma->priv->height, NULL);
+    gst_structure_get (aux, "x", G_TYPE_INT, &chroma->priv->x, nullptr);
+    gst_structure_get (aux, "y", G_TYPE_INT, &chroma->priv->y, nullptr);
+    gst_structure_get (aux, "width", G_TYPE_INT, &chroma->priv->width, nullptr);
+    gst_structure_get (aux, "height", G_TYPE_INT, &chroma->priv->height, nullptr);
 
     if (chroma->priv->x < 0)
       chroma->priv->x = 0;
@@ -299,7 +299,7 @@ kms_chroma_get_property (GObject *object,
 
     aux = gst_structure_new ("calibration_area", "x", G_TYPE_INT,
         chroma->priv->x, "y", G_TYPE_INT, chroma->priv->y, "width", G_TYPE_INT,
-        chroma->priv->width, "height", G_TYPE_INT, chroma->priv->height, NULL);
+        chroma->priv->width, "height", G_TYPE_INT, chroma->priv->height, nullptr);
     g_value_set_boxed (value, aux);
     gst_structure_free (aux);
     break;

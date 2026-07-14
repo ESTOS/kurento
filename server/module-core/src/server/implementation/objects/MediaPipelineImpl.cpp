@@ -141,7 +141,7 @@ MediaPipelineImpl::setLatencyStats (bool latencyStats)
       GstElement *element = GST_ELEMENT (g_value_get_object (&item) );
 
       if (KMS_IS_ELEMENT (element) ) {
-        g_object_set (element, "media-stats", latencyStats, NULL);
+        g_object_set (element, "media-stats", latencyStats, nullptr);
       }
 
       g_value_reset (&item);
@@ -170,7 +170,7 @@ MediaPipelineImpl::addElement (GstElement *element)
   bool ret;
 
   if (KMS_IS_ELEMENT (element) ) {
-    g_object_set (element, "media-stats", latencyStats, NULL);
+    g_object_set (element, "media-stats", latencyStats, nullptr);
   }
 
   ret = gst_bin_add (GST_BIN (pipeline), element);

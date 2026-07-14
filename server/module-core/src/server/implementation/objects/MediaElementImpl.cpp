@@ -710,19 +710,19 @@ MediaElementImpl::MediaElementImpl (const boost::property_tree::ptree &config,
   if (getConfigValue<int, MediaElement> (&bitrate, "encoderBitrate") ) {
     GST_DEBUG ("Configured target video bitrate for media transcoding: %d bps",
                bitrate);
-    g_object_set (G_OBJECT (element), TARGET_ENCODER_BITRATE, bitrate, NULL);
+    g_object_set (G_OBJECT (element), TARGET_ENCODER_BITRATE, bitrate, nullptr);
   }
 
   if (getConfigValue<int, MediaElement> (&bitrate, "minEncoderBitrate") ) {
     GST_DEBUG ("Configured minimum video bitrate for media transcoding: %d bps",
                bitrate);
-    g_object_set (G_OBJECT (element), MIN_ENCODER_BITRATE, bitrate, NULL);
+    g_object_set (G_OBJECT (element), MIN_ENCODER_BITRATE, bitrate, nullptr);
   }
 
   if (getConfigValue<int, MediaElement> (&bitrate, "maxEncoderBitrate") ) {
     GST_DEBUG ("Configured maximum video bitrate for media transcoding: %d bps",
                bitrate);
-    g_object_set (G_OBJECT (element), MAX_ENCODER_BITRATE, bitrate, NULL);
+    g_object_set (G_OBJECT (element), MAX_ENCODER_BITRATE, bitrate, nullptr);
   }
 
   busMessageHandler = 0;
@@ -1284,19 +1284,19 @@ void MediaElementImpl::setAudioFormat (std::shared_ptr<AudioCaps> caps)
   str_caps = sstm.str ();
 
   c = gst_caps_from_string (str_caps.c_str() );
-  g_object_set (element, "audio-caps", c, NULL);
+  g_object_set (element, "audio-caps", c, nullptr);
   gst_caps_unref (c);
 
   audio_codecs = g_array_new (FALSE, TRUE, sizeof (GValue) ); //ru-bu
 
-  //g_object_get(G_OBJECT(element), "audio-codecs", &audio_codecs, NULL);
+  //g_object_get(G_OBJECT(element), "audio-codecs", &audio_codecs, nullptr);
   for (std::string audio_codecs_str : audio_codecs_list) {
     append_codec_to_array (audio_codecs, audio_codecs_str.c_str() );
   }
 
   if (audio_codecs_list.size() >= 1) {
-    g_object_set (element, "num-audio-medias", 1, NULL);
-    g_object_set (G_OBJECT (element), "audio-codecs", audio_codecs, NULL);
+    g_object_set (element, "num-audio-medias", 1, nullptr);
+    g_object_set (G_OBJECT (element), "audio-codecs", audio_codecs, nullptr);
   } else {
     g_array_free (audio_codecs, TRUE);
   }
@@ -1356,7 +1356,7 @@ void MediaElementImpl::setVideoFormat (std::shared_ptr<VideoCaps> caps)
   str_caps = sstm.str ();
 
   c = gst_caps_from_string (str_caps.c_str() );
-  g_object_set (element, "video-caps", c, NULL);
+  g_object_set (element, "video-caps", c, nullptr);
   gst_caps_unref (c);
 
   video_codecs = g_array_new (FALSE, TRUE, sizeof (GValue) );
@@ -1366,8 +1366,8 @@ void MediaElementImpl::setVideoFormat (std::shared_ptr<VideoCaps> caps)
   }
 
   if (video_codecs_list.size() >= 1) {
-    g_object_set (element, "num-video-medias", 1, NULL);
-    g_object_set (G_OBJECT (element), "video-codecs", video_codecs, NULL);
+    g_object_set (element, "num-video-medias", 1, nullptr);
+    g_object_set (G_OBJECT (element), "video-codecs", video_codecs, nullptr);
   } else {
     g_array_free (video_codecs, TRUE);
   }
@@ -1404,7 +1404,7 @@ MediaElementImpl::getEncoderBitrate ()
 {
   gint bitrate;
 
-  g_object_get (G_OBJECT (element), TARGET_ENCODER_BITRATE, &bitrate, NULL);
+  g_object_get (G_OBJECT (element), TARGET_ENCODER_BITRATE, &bitrate, nullptr);
 
   return bitrate;
 }
@@ -1413,7 +1413,7 @@ void
 MediaElementImpl::setEncoderBitrate (int encoderBitrate)
 {
   g_object_set (G_OBJECT (element), TARGET_ENCODER_BITRATE, encoderBitrate,
-                NULL);
+                nullptr);
 }
 
 int
@@ -1421,7 +1421,7 @@ MediaElementImpl::getMinEncoderBitrate ()
 {
   gint bitrate;
 
-  g_object_get (G_OBJECT (element), MIN_ENCODER_BITRATE, &bitrate, NULL);
+  g_object_get (G_OBJECT (element), MIN_ENCODER_BITRATE, &bitrate, nullptr);
 
   return bitrate;
 }
@@ -1430,7 +1430,7 @@ void
 MediaElementImpl::setMinEncoderBitrate (int minEncoderBitrate)
 {
   g_object_set (G_OBJECT (element), MIN_ENCODER_BITRATE, minEncoderBitrate,
-                NULL);
+                nullptr);
 }
 
 int
@@ -1438,7 +1438,7 @@ MediaElementImpl::getMaxEncoderBitrate ()
 {
   gint bitrate;
 
-  g_object_get (G_OBJECT (element), MAX_ENCODER_BITRATE, &bitrate, NULL);
+  g_object_get (G_OBJECT (element), MAX_ENCODER_BITRATE, &bitrate, nullptr);
 
   return bitrate;
 }
@@ -1447,7 +1447,7 @@ void
 MediaElementImpl::setMaxEncoderBitrate (int maxEncoderBitrate)
 {
   g_object_set (G_OBJECT (element), MAX_ENCODER_BITRATE, maxEncoderBitrate,
-                NULL);
+                nullptr);
 }
 
 std::map <std::string, std::shared_ptr<Stats>>
@@ -1538,7 +1538,7 @@ MediaElementImpl::collectLatencyStats (
     }
 
     gst_structure_get (gst_value_get_structure (val), "type", G_TYPE_STRING,
-                       &mediaType, "avg", G_TYPE_UINT64, &avg, NULL);
+                       &mediaType, "avg", G_TYPE_UINT64, &avg, nullptr);
 
     std::shared_ptr<MediaType> type = getMediaTypeFromTypeSelector (mediaType);
     std::shared_ptr<MediaLatencyStat> latency =
@@ -1580,7 +1580,7 @@ MediaElementImpl::fillStatsReport (
   std::vector<std::shared_ptr<MediaLatencyStat>> inputLatencies;
 
   if (gst_structure_get (gst_value_get_structure (value), "input-latencies",
-                         GST_TYPE_STRUCTURE, &latencies, NULL) ) {
+                         GST_TYPE_STRUCTURE, &latencies, nullptr) ) {
     collectLatencyStats (inputLatencies, latencies);
     gst_structure_free (latencies);
   }

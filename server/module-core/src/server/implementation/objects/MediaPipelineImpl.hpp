@@ -47,26 +47,26 @@ public:
     return pipeline;
   }
 
-  virtual std::string getGstreamerDot ();
+  virtual std::string getGstreamerDot () override;
   virtual std::string getGstreamerDot (std::shared_ptr<GstreamerDotDetails>
-                                       details);
+                                       details) override;
 
-  virtual void dumpGstreamerDot ();
+  virtual void dumpGstreamerDot () override;
   virtual void dumpGstreamerDot (std::shared_ptr<GstreamerDotDetails>
-                                 details);
+                                 details) override;
 
-  virtual bool getLatencyStats ();
-  virtual void setLatencyStats (bool latencyStats);
+  virtual bool getLatencyStats () override;
+  virtual void setLatencyStats (bool latencyStats) override;
 
   /* Next methods are automatically implemented by code generator */
   virtual bool connect (const std::string &eventType,
-                        std::shared_ptr<EventHandler> handler);
+                        std::shared_ptr<EventHandler> handler) override;
 
   virtual void invoke (std::shared_ptr<MediaObjectImpl> obj,
                        const std::string &methodName, const Json::Value &params,
-                       Json::Value &response);
+                       Json::Value &response) override;
 
-  virtual void Serialize (JsonSerializer &serializer);
+  virtual void Serialize (JsonSerializer &serializer) override;
 
   bool addElement (GstElement *element);
 
@@ -76,7 +76,7 @@ public:
                    GSocket *rtp_socket_video, GSocket *rtcp_socket_video);
 
 protected:
-  virtual void postConstructor ();
+  virtual void postConstructor () override;
 
 private:
   GstElement *pipeline;

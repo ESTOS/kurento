@@ -187,15 +187,15 @@ BaseRtpEndpointImpl::BaseRtpEndpointImpl (const boost::property_tree::ptree
 
     GST_DEBUG ("used min_port:%d", minPort);
     GST_DEBUG ("used max_port:%d", maxPort);
-    g_object_set (getGstreamerElement (), PROP_MIN_PORT, minPort, NULL);
-    g_object_set (getGstreamerElement (), PROP_MAX_PORT, maxPort, NULL);
+    g_object_set (getGstreamerElement (), PROP_MIN_PORT, minPort, nullptr);
+    g_object_set (getGstreamerElement (), PROP_MAX_PORT, maxPort, nullptr);
   }
 
   guint mtu;
 
   if (getConfigValue <guint, BaseRtpEndpoint> (&mtu, PARAM_MTU) ) {
     GST_INFO ("Predefined RTP MTU: %u", mtu);
-    g_object_set (G_OBJECT (element), PROP_MTU, mtu, NULL);
+    g_object_set (G_OBJECT (element), PROP_MTU, mtu, nullptr);
   } else {
     GST_DEBUG ("No predefined RTP MTU found in config; using default");
   }
@@ -204,7 +204,7 @@ BaseRtpEndpointImpl::BaseRtpEndpointImpl (const boost::property_tree::ptree
 
   if (getConfigValue <guint, BaseRtpEndpoint> (&latency, PARAM_AUDIOLATENCY) ) {
     GST_INFO ("Predefined latency: %u", latency);
-    g_object_set (getGstreamerElement(), PROP_AUDIOLATENCY, latency, NULL);
+    g_object_set (getGstreamerElement(), PROP_AUDIOLATENCY, latency, nullptr);
   } else {
     GST_DEBUG ("No predefined latency found in config; using default");
   }
@@ -332,14 +332,14 @@ void BaseRtpEndpointImpl::mybusMessage (GstMessage *message)
   "number", G_TYPE_INT, dtmf_payload.event,
   "volume", G_TYPE_INT, dtmf_payload.volume,
   "type", G_TYPE_INT, 1,
-  "method", G_TYPE_INT, 1, NULL);
+  "method", G_TYPE_INT, 1, nullptr);
 
   BUT gstrtpdtmfsrc.c expects to see the structure like below:
   structure = gst_structure_new("dtmf-event",
   "type", G_TYPE_INT, 1,
   "number", G_TYPE_INT, (gint)1,
   "volume", G_TYPE_INT, (gint)25,
-  "start", G_TYPE_BOOLEAN, (gboolean)TRUE, NULL);
+  "start", G_TYPE_BOOLEAN, (gboolean)TRUE, nullptr);
   */
 }
 
@@ -437,14 +437,14 @@ int BaseRtpEndpointImpl::getMinVideoRecvBandwidth ()
   int minVideoRecvBandwidth;
 
   g_object_get (element, "min-video-recv-bandwidth", &minVideoRecvBandwidth,
-                NULL);
+                nullptr);
 
   return minVideoRecvBandwidth;
 }
 
 void BaseRtpEndpointImpl::setMinVideoRecvBandwidth (int minVideoRecvBandwidth)
 {
-  g_object_set (element, "min-video-recv-bandwidth", minVideoRecvBandwidth, NULL);
+  g_object_set (element, "min-video-recv-bandwidth", minVideoRecvBandwidth, nullptr);
 }
 
 int BaseRtpEndpointImpl::getMinVideoSendBandwidth ()
@@ -452,14 +452,14 @@ int BaseRtpEndpointImpl::getMinVideoSendBandwidth ()
   int minVideoSendBandwidth;
 
   g_object_get (element, "min-video-send-bandwidth", &minVideoSendBandwidth,
-                NULL);
+                nullptr);
 
   return minVideoSendBandwidth;
 }
 
 void BaseRtpEndpointImpl::setMinVideoSendBandwidth (int minVideoSendBandwidth)
 {
-  g_object_set (element, "min-video-send-bandwidth", minVideoSendBandwidth, NULL);
+  g_object_set (element, "min-video-send-bandwidth", minVideoSendBandwidth, nullptr);
 }
 
 int BaseRtpEndpointImpl::getMaxVideoSendBandwidth ()
@@ -467,14 +467,14 @@ int BaseRtpEndpointImpl::getMaxVideoSendBandwidth ()
   int maxVideoSendBandwidth;
 
   g_object_get (element, "max-video-send-bandwidth", &maxVideoSendBandwidth,
-                NULL);
+                nullptr);
 
   return maxVideoSendBandwidth;
 }
 
 void BaseRtpEndpointImpl::setMaxVideoSendBandwidth (int maxVideoSendBandwidth)
 {
-  g_object_set (element, "max-video-send-bandwidth", maxVideoSendBandwidth, NULL);
+  g_object_set (element, "max-video-send-bandwidth", maxVideoSendBandwidth, nullptr);
 }
 
 std::shared_ptr<MediaState>
@@ -497,7 +497,7 @@ BaseRtpEndpointImpl::getRembParams ()
   gint auxi;
   gfloat auxf;
 
-  g_object_get (G_OBJECT (element), REMB_PARAMS, &params, NULL);
+  g_object_get (G_OBJECT (element), REMB_PARAMS, &params, nullptr);
 
   if (params == nullptr) {
     return ret;
@@ -505,30 +505,30 @@ BaseRtpEndpointImpl::getRembParams ()
 
   /* REMB local begin */
   gst_structure_get (params, "packets-recv-interval-top", G_TYPE_INT, &auxi,
-                     NULL);
+                     nullptr);
   ret->setPacketsRecvIntervalTop (auxi);
 
-  gst_structure_get (params, "exponential-factor", G_TYPE_FLOAT, &auxf, NULL);
+  gst_structure_get (params, "exponential-factor", G_TYPE_FLOAT, &auxf, nullptr);
   ret->setExponentialFactor (auxf);
 
-  gst_structure_get (params, "lineal-factor-min", G_TYPE_INT, &auxi, NULL);
+  gst_structure_get (params, "lineal-factor-min", G_TYPE_INT, &auxi, nullptr);
   ret->setLinealFactorMin (auxi);
 
-  gst_structure_get (params, "lineal-factor-grade", G_TYPE_FLOAT, &auxf, NULL);
+  gst_structure_get (params, "lineal-factor-grade", G_TYPE_FLOAT, &auxf, nullptr);
   ret->setLinealFactorGrade (auxf);
 
-  gst_structure_get (params, "decrement-factor", G_TYPE_FLOAT, &auxf, NULL);
+  gst_structure_get (params, "decrement-factor", G_TYPE_FLOAT, &auxf, nullptr);
   ret->setDecrementFactor (auxf);
 
-  gst_structure_get (params, "threshold-factor", G_TYPE_FLOAT, &auxf, NULL);
+  gst_structure_get (params, "threshold-factor", G_TYPE_FLOAT, &auxf, nullptr);
   ret->setThresholdFactor (auxf);
 
-  gst_structure_get (params, "up-losses", G_TYPE_INT, &auxi, NULL);
+  gst_structure_get (params, "up-losses", G_TYPE_INT, &auxi, nullptr);
   ret->setUpLosses (auxi);
   /* REMB local end */
 
   /* REMB remote begin */
-  gst_structure_get (params, "remb-on-connect", G_TYPE_INT, &auxi, NULL);
+  gst_structure_get (params, "remb-on-connect", G_TYPE_INT, &auxi, nullptr);
   ret->setRembOnConnect (auxi);
   /* REMB remote end */
 
@@ -545,49 +545,49 @@ BaseRtpEndpointImpl::setRembParams (std::shared_ptr<RembParams> rembParams)
   /* REMB local begin */
   if (rembParams->isSetPacketsRecvIntervalTop () ) {
     gst_structure_set (params, "packets-recv-interval-top", G_TYPE_INT,
-                       rembParams->getPacketsRecvIntervalTop(), NULL);
+                       rembParams->getPacketsRecvIntervalTop(), nullptr);
     GST_DEBUG_OBJECT (element, "New 'packetsRecvIntervalTop' value: %d",
                       rembParams->getPacketsRecvIntervalTop() );
   }
 
   if (rembParams->isSetExponentialFactor () ) {
     gst_structure_set (params, "exponential-factor", G_TYPE_FLOAT,
-                       rembParams->getExponentialFactor(), NULL);
+                       rembParams->getExponentialFactor(), nullptr);
     GST_DEBUG_OBJECT (element, "New 'exponentialFactor' value: %g",
                       rembParams->getExponentialFactor() );
   }
 
   if (rembParams->isSetLinealFactorMin () ) {
     gst_structure_set (params, "lineal-factor-min", G_TYPE_INT,
-                       rembParams->getLinealFactorMin(), NULL);
+                       rembParams->getLinealFactorMin(), nullptr);
     GST_DEBUG_OBJECT (element, "New 'linealFactorMin' value: %d",
                       rembParams->getLinealFactorMin() );
   }
 
   if (rembParams->isSetLinealFactorGrade () ) {
     gst_structure_set (params, "lineal-factor-grade", G_TYPE_FLOAT,
-                       rembParams->getLinealFactorGrade(), NULL);
+                       rembParams->getLinealFactorGrade(), nullptr);
     GST_DEBUG_OBJECT (element, "New 'linealFactorGrade' value: %g",
                       rembParams->getLinealFactorGrade() );
   }
 
   if (rembParams->isSetDecrementFactor () ) {
     gst_structure_set (params, "decrement-factor", G_TYPE_FLOAT,
-                       rembParams->getDecrementFactor(), NULL);
+                       rembParams->getDecrementFactor(), nullptr);
     GST_DEBUG_OBJECT (element, "New 'decrementFactor' value: %g",
                       rembParams->getDecrementFactor() );
   }
 
   if (rembParams->isSetThresholdFactor () ) {
     gst_structure_set (params, "threshold-factor", G_TYPE_FLOAT,
-                       rembParams->getThresholdFactor(), NULL);
+                       rembParams->getThresholdFactor(), nullptr);
     GST_DEBUG_OBJECT (element, "New 'thresholdFactor' value: %g",
                       rembParams->getThresholdFactor() );
   }
 
   if (rembParams->isSetUpLosses () ) {
     gst_structure_set (params, "up-losses", G_TYPE_INT,
-                       rembParams->getUpLosses(), NULL);
+                       rembParams->getUpLosses(), nullptr);
     GST_DEBUG_OBJECT (element, "New 'upLosses' value: %d",
                       rembParams->getUpLosses() );
   }
@@ -597,14 +597,14 @@ BaseRtpEndpointImpl::setRembParams (std::shared_ptr<RembParams> rembParams)
   /* REMB remote begin */
   if (rembParams->isSetRembOnConnect () ) {
     gst_structure_set (params, "remb-on-connect", G_TYPE_INT,
-                       rembParams->getRembOnConnect(), NULL);
+                       rembParams->getRembOnConnect(), nullptr);
     GST_DEBUG_OBJECT (element, "New 'rembOnConnect' value: %d",
                       rembParams->getRembOnConnect() );
   }
 
   /* REMB remote end */
 
-  g_object_set (G_OBJECT (element), REMB_PARAMS, params, NULL);
+  g_object_set (G_OBJECT (element), REMB_PARAMS, params, nullptr);
   gst_structure_free (params);
 }
 
@@ -613,7 +613,7 @@ BaseRtpEndpointImpl::getMtu ()
 {
   int mtu;
 
-  g_object_get (G_OBJECT (element), PROP_MTU, &mtu, NULL);
+  g_object_get (G_OBJECT (element), PROP_MTU, &mtu, nullptr);
 
   return mtu;
 }
@@ -622,7 +622,7 @@ void
 BaseRtpEndpointImpl::setMtu (int mtu)
 {
   GST_INFO ("Set MTU for RTP: %d", mtu);
-  g_object_set (G_OBJECT (element), PROP_MTU, mtu, NULL);
+  g_object_set (G_OBJECT (element), PROP_MTU, mtu, nullptr);
 }
 
 /******************/
@@ -651,7 +651,7 @@ createRTCInboundRTPStreamStats (const GstStructure *source_stats,
                      "sent-rb-fractionlost", G_TYPE_UINT, &fractionLost,
                      "clock-rate", G_TYPE_INT, &clock_rate,
                      "jitter", G_TYPE_UINT, &jitter,
-                     NULL);
+                     nullptr);
 
   /* jitter is computed in timestamp units. Convert it to seconds */
   if (clock_rate > 0) {
@@ -661,11 +661,11 @@ createRTCInboundRTPStreamStats (const GstStructure *source_stats,
   /* Next fields are only available with PLI and FIR statistics patches so */
   /* hey are prone to fail if these patches are not applied in Gstreamer */
   if (!gst_structure_get (source_stats, "sent-pli-count", G_TYPE_UINT, &pliCount,
-                          "sent-fir-count", G_TYPE_UINT, &firCount, NULL) ) {
+                          "sent-fir-count", G_TYPE_UINT, &firCount, nullptr) ) {
     GST_WARNING ("Current version of gstreamer has neither PLI nor FIR statistics patches applied.");
   }
 
-  if (!gst_structure_get (source_stats, "remb", G_TYPE_UINT, &remb, NULL) ) {
+  if (!gst_structure_get (source_stats, "remb", G_TYPE_UINT, &remb, nullptr) ) {
     GST_TRACE ("No remb stats collected");
   }
 
@@ -696,7 +696,7 @@ createRTCOutboundRTPStreamStats (const GstStructure *source_stats,
                      "round-trip-time", G_TYPE_UINT, &rtt,
                      "outbound-fraction-lost", G_TYPE_UINT, &fractionLost,
                      "outbound-packet-lost", G_TYPE_INT, &packetLost,
-                     NULL);
+                     nullptr);
 
   /* the round-trip time (in NTP Short Format, 16.16 fixed point) */
   roundTripTime = FP2D (rtt);
@@ -704,11 +704,11 @@ createRTCOutboundRTPStreamStats (const GstStructure *source_stats,
   /* Next fields are only available with PLI and FIR statistics patches so */
   /* hey are prone to fail if these patches are not applied in Gstreamer */
   if (!gst_structure_get (source_stats, "recv-pli-count", G_TYPE_UINT, &pliCount,
-                          "recv-fir-count", G_TYPE_UINT, &firCount, NULL) ) {
+                          "recv-fir-count", G_TYPE_UINT, &firCount, nullptr) ) {
     GST_WARNING ("Current version of gstreamer has neither PLI nor FIR statistics patches applied.");
   }
 
-  if (!gst_structure_get (source_stats, "remb", G_TYPE_UINT, &remb, NULL) ) {
+  if (!gst_structure_get (source_stats, "remb", G_TYPE_UINT, &remb, nullptr) ) {
     GST_TRACE ("No remb stats collected");
   }
 
@@ -729,7 +729,7 @@ createRTCRTPStreamStats (guint nackSent, guint nackRecv,
   guint ssrc;
 
   gst_structure_get (source_stats, "ssrc", G_TYPE_UINT, &ssrc, "internal",
-                     G_TYPE_BOOLEAN, &internal, "id", G_TYPE_STRING, &id, NULL);
+                     G_TYPE_BOOLEAN, &internal, "id", G_TYPE_STRING, &id, nullptr);
 
   ssrc_str = g_strdup_printf ("%u", ssrc);
 
@@ -760,7 +760,7 @@ collectRTCRTPStreamStats (std::map <std::string, std::shared_ptr<Stats>>
   nackSent = nackRecv = 0;
 
   gst_structure_get (session_stats, "sent-nack-count", G_TYPE_UINT, &nackSent,
-                     "recv-nack-count", G_TYPE_UINT, &nackRecv, NULL);
+                     "recv-nack-count", G_TYPE_UINT, &nackRecv, nullptr);
 
   n = gst_structure_n_fields (session_stats);
 
@@ -848,7 +848,7 @@ BaseRtpEndpointImpl::collectEndpointStats (std::map
   std::vector<std::shared_ptr<MediaLatencyStat>> e2eStats;
 
   if (gst_structure_get (e_stats, "e2e-latencies", GST_TYPE_STRUCTURE,
-                         &e2e_stats, NULL) ) {
+                         &e2e_stats, nullptr) ) {
     collectLatencyStats (e2eStats, e2e_stats);
     gst_structure_free (e2e_stats);
   }

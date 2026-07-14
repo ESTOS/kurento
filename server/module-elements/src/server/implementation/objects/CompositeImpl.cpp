@@ -50,7 +50,7 @@ CompositeImpl::CompositeImpl (const boost::property_tree::ptree &conf,
   }
 
   if (this->width != 0) {
-    g_object_set (G_OBJECT (element), WIDTH_PROPERTY, this->width, NULL);
+    g_object_set (G_OBJECT (element), WIDTH_PROPERTY, this->width, nullptr);
   }
 
   if (this->height == 0) {
@@ -58,7 +58,7 @@ CompositeImpl::CompositeImpl (const boost::property_tree::ptree &conf,
   }
 
   if (this->height != 0) {
-    g_object_set (G_OBJECT (element), HEIGHT_PROPERTY, this->height, NULL);
+    g_object_set (G_OBJECT (element), HEIGHT_PROPERTY, this->height, nullptr);
   }
 
   if (this->framerate == 0) {
@@ -68,7 +68,7 @@ CompositeImpl::CompositeImpl (const boost::property_tree::ptree &conf,
 
   if (this->framerate != 0) {
     g_object_set (G_OBJECT (element), FRAMERATE_PROPERTY, this->framerate,
-                  NULL);
+                  nullptr);
   }
 }
 

@@ -239,7 +239,8 @@ HttpEndpointImpl::HttpEndpointImpl (const boost::property_tree::ptree &conf,
     }
 
     /* Send event */
-    if (!g_atomic_int_compare_and_exchange (& (sessionStarted), 0, 1) ) {
+    gint expected = 0;
+    if (!sessionStarted.compare_exchange_strong (expected, 1) ) {
       return;
     }
 
@@ -305,7 +306,8 @@ HttpEndpointImpl::HttpEndpointImpl (const boost::property_tree::ptree &conf,
 
     unregister_end_point ();
 
-    if (!g_atomic_int_compare_and_exchange (& (sessionStarted), 1, 0) ) {
+    gint expected = 1;
+    if (!sessionStarted.compare_exchange_strong (expected, 0) ) {
       return;
     }
 

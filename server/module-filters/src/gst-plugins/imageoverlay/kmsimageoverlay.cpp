@@ -214,19 +214,19 @@ kms_image_overlay_load_image_to_overlay (KmsImageOverlay *self)
 
   fields_ok = fields_ok
       && gst_structure_get (self->priv->image_to_overlay, "offsetXPercent",
-          G_TYPE_DOUBLE, &self->priv->offsetXPercent, NULL);
+          G_TYPE_DOUBLE, &self->priv->offsetXPercent, nullptr);
   fields_ok = fields_ok
       && gst_structure_get (self->priv->image_to_overlay, "offsetYPercent",
-          G_TYPE_DOUBLE, &self->priv->offsetYPercent, NULL);
+          G_TYPE_DOUBLE, &self->priv->offsetYPercent, nullptr);
   fields_ok = fields_ok
       && gst_structure_get (self->priv->image_to_overlay, "widthPercent",
-          G_TYPE_DOUBLE, &self->priv->widthPercent, NULL);
+          G_TYPE_DOUBLE, &self->priv->widthPercent, nullptr);
   fields_ok = fields_ok
       && gst_structure_get (self->priv->image_to_overlay, "heightPercent",
-          G_TYPE_DOUBLE, &self->priv->heightPercent, NULL);
+          G_TYPE_DOUBLE, &self->priv->heightPercent, nullptr);
   fields_ok = fields_ok
       && gst_structure_get (self->priv->image_to_overlay, "url", G_TYPE_STRING,
-          &url, NULL);
+          &url, nullptr);
 
   if (!fields_ok) {
     GST_ERROR_OBJECT (self, "Invalid image structure received");
@@ -262,7 +262,7 @@ kms_image_overlay_load_image_to_overlay (KmsImageOverlay *self)
     GST_DEBUG ("Created temp dir: %s", self->priv->dir);
   }
 
-  file_name = g_strconcat (self->priv->dir, "/image.png", NULL);
+  file_name = g_strconcat (self->priv->dir, "/image.png", nullptr);
 
   if (!load_from_url (file_name, url)) {
     GST_ERROR ("Failed downloading from URL");
@@ -482,15 +482,15 @@ get_faces (GstStructure *faces)
       continue;
     }
 
-    ret = gst_structure_get (faces, name, GST_TYPE_STRUCTURE, &face, NULL);
+    ret = gst_structure_get (faces, name, GST_TYPE_STRUCTURE, &face, nullptr);
 
     if (ret) {
       cv::Rect *aux = new cv::Rect ();
 
-      gst_structure_get (face, "x", G_TYPE_UINT, &aux->x, NULL);
-      gst_structure_get (face, "y", G_TYPE_UINT, &aux->y, NULL);
-      gst_structure_get (face, "width", G_TYPE_UINT, &aux->width, NULL);
-      gst_structure_get (face, "height", G_TYPE_UINT, &aux->height, NULL);
+      gst_structure_get (face, "x", G_TYPE_UINT, &aux->x, nullptr);
+      gst_structure_get (face, "y", G_TYPE_UINT, &aux->y, nullptr);
+      gst_structure_get (face, "width", G_TYPE_UINT, &aux->width, nullptr);
+      gst_structure_get (face, "height", G_TYPE_UINT, &aux->height, nullptr);
 
       gst_structure_free (face);
       list = g_slist_append (list, aux);
@@ -506,10 +506,10 @@ kms_image_overlay_get_timestamp (KmsImageOverlay *self, GstStructure *faces)
   gboolean ret;
 
   ret = gst_structure_get (faces, "timestamp", GST_TYPE_STRUCTURE, &timestamp,
-      NULL);
+      nullptr);
   if (ret) {
-    gst_structure_get (timestamp, "dts", G_TYPE_UINT64, &self->priv->dts, NULL);
-    gst_structure_get (timestamp, "pts", G_TYPE_UINT64, &self->priv->pts, NULL);
+    gst_structure_get (timestamp, "dts", G_TYPE_UINT64, &self->priv->dts, nullptr);
+    gst_structure_get (timestamp, "pts", G_TYPE_UINT64, &self->priv->pts, nullptr);
     gst_structure_free (timestamp);
   }
 }

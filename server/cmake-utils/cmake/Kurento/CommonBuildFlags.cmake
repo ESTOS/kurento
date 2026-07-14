@@ -98,15 +98,18 @@ function(common_buildflags_set)
   # ------------
 
   # Build all targets with `-fPIC` / `-fPIE` and link with `-pie`.
-  set(CMAKE_POSITION_INDEPENDENT_CODE ON PARENT_SCOPE)
+  # PIE is a Linux ELF feature; skip on Windows where Clang rejects `-pie`.
+  if (NOT WIN32)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON PARENT_SCOPE)
 
-  # FIXME: CMake < 3.14 doesn't link executables with '-pie', even if
-  # CMAKE_POSITION_INDEPENDENT_CODE is ON.
-  # See CMP0083: https://cmake.org/cmake/help/latest/policy/CMP0083.html
-  # Affects CMake < 3.14 (up to Ubuntu 18.04 "Bionic").
-  # Release 7.1: We're targeting Ubuntu 24.04 "noble" (CMake 3.28), but still
-  # keeping this, to keep `cmake_minimum_required(VERSION 3.0)`.
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pie" PARENT_SCOPE)
+    # FIXME: CMake < 3.14 doesn't link executables with '-pie', even if
+    # CMAKE_POSITION_INDEPENDENT_CODE is ON.
+    # See CMP0083: https://cmake.org/cmake/help/latest/policy/CMP0083.html
+    # Affects CMake < 3.14 (up to Ubuntu 18.04 "Bionic").
+    # Release 7.1: We're targeting Ubuntu 24.04 "noble" (CMake 3.28), but still
+    # keeping this, to keep `cmake_minimum_required(VERSION 3.0)`.
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pie" PARENT_SCOPE)
+  endif()
 
   # ------------
 

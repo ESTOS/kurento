@@ -21,6 +21,7 @@
 #include "HttpEndpoint.hpp"
 #include <EventHandler.hpp>
 #include "HttpServer/HttpEndPointServer.hpp"
+#include <atomic>
 
 namespace kurento
 {
@@ -77,7 +78,7 @@ private:
   gulong actionRequestedHandlerId;
   gulong urlRemovedHandlerId;
   gulong urlExpiredHandlerId;
-  gint sessionStarted = 0;
+  std::atomic<gint> sessionStarted{0};
 
   std::function<void (const gchar *uri, KmsHttpEndPointAction action) >
   actionRequestedLambda;

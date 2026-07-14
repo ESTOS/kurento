@@ -127,10 +127,10 @@ UriEndpointImpl::UriEndpointImpl (const boost::property_tree::ptree &config,
   checkUri();
   g_object_set (G_OBJECT (getGstreamerElement() ), "uri",
                 this->absolute_uri.c_str(),
-                NULL);
+                nullptr);
 
   g_object_get (G_OBJECT (getGstreamerElement() ), "state",
-                &uriState, NULL);
+                &uriState, nullptr);
 
   state = wrap_c_state (uriState);
 }

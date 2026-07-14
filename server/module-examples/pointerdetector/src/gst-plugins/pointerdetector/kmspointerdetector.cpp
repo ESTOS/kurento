@@ -201,7 +201,7 @@ load_image (gchar * uri, gchar * dir, gchar * image_name,
       gchar *file_name;
 
       file_name =
-          g_strconcat (dir, "/", image_name, name_variant, ".png", NULL);
+          g_strconcat (dir, "/", image_name, name_variant, ".png", nullptr);
       load_from_url (file_name, uri);
       aux = cv::imread (file_name, CV_LOAD_IMAGE_UNCHANGED);
       g_remove (file_name);
@@ -235,29 +235,29 @@ kms_pointer_detector_load_buttonsLayout (KmsPointerDetector * pointerdetector)
 
     ret =
         gst_structure_get (pointerdetector->priv->buttonsLayout, name,
-        GST_TYPE_STRUCTURE, &button, NULL);
+        GST_TYPE_STRUCTURE, &button, nullptr);
     if (ret) {
       ButtonStruct *structAux = (ButtonStruct*)g_malloc0 (sizeof (ButtonStruct));
       cv::Mat aux;
 
       gst_structure_get (button, "upRightCornerX", G_TYPE_INT,
-          &structAux->cvButtonLayout.x, NULL);
+          &structAux->cvButtonLayout.x, nullptr);
       gst_structure_get (button, "upRightCornerY", G_TYPE_INT,
-          &structAux->cvButtonLayout.y, NULL);
+          &structAux->cvButtonLayout.y, nullptr);
       gst_structure_get (button, "width", G_TYPE_INT,
-          &structAux->cvButtonLayout.width, NULL);
+          &structAux->cvButtonLayout.width, nullptr);
       gst_structure_get (button, "height", G_TYPE_INT,
-          &structAux->cvButtonLayout.height, NULL);
-      gst_structure_get (button, "id", G_TYPE_STRING, &structAux->id, NULL);
+          &structAux->cvButtonLayout.height, nullptr);
+      gst_structure_get (button, "id", G_TYPE_STRING, &structAux->id, nullptr);
       have_inactive_icon =
           gst_structure_get (button, "inactive_uri", G_TYPE_STRING,
-          &inactive_uri, NULL);
+          &inactive_uri, nullptr);
       have_transparency =
           gst_structure_get (button, "transparency", G_TYPE_DOUBLE,
-          &structAux->transparency, NULL);
+          &structAux->transparency, nullptr);
       have_active_icon =
           gst_structure_get (button, "active_uri", G_TYPE_STRING, &active_uri,
-          NULL);
+          nullptr);
 
       if (have_inactive_icon) {
         aux =
@@ -454,13 +454,13 @@ kms_pointer_detector_set_property (GObject * object, guint property_id,
 
       aux = (GstStructure*)g_value_dup_boxed (value);
       gst_structure_get (aux, "x", G_TYPE_INT,
-          &pointerdetector->priv->x_calibration, NULL);
+          &pointerdetector->priv->x_calibration, nullptr);
       gst_structure_get (aux, "y", G_TYPE_INT,
-          &pointerdetector->priv->y_calibration, NULL);
+          &pointerdetector->priv->y_calibration, nullptr);
       gst_structure_get (aux, "width", G_TYPE_INT,
-          &pointerdetector->priv->width_calibration, NULL);
+          &pointerdetector->priv->width_calibration, nullptr);
       gst_structure_get (aux, "height", G_TYPE_INT,
-          &pointerdetector->priv->height_calibration, NULL);
+          &pointerdetector->priv->height_calibration, nullptr);
       gst_structure_free (aux);
       break;
     }
@@ -502,7 +502,7 @@ kms_pointer_detector_get_property (GObject * object, guint property_id,
           "y", G_TYPE_INT, pointerdetector->priv->y_calibration,
           "width", G_TYPE_INT, pointerdetector->priv->width_calibration,
           "height", G_TYPE_INT, pointerdetector->priv->height_calibration,
-          NULL);
+          nullptr);
       g_value_set_boxed (value, aux);
       gst_structure_free (aux);
       break;
@@ -771,7 +771,7 @@ kms_pointer_detector_check_pointer_position (KmsPointerDetector *
       if (pointerdetector->priv->putMessage) {
         s = gst_structure_new ("window-out",
             "window", G_TYPE_STRING,
-            pointerdetector->priv->previousButtonClickedId, NULL);
+            pointerdetector->priv->previousButtonClickedId, nullptr);
         m = gst_message_new_element (GST_OBJECT (pointerdetector), s);
         gst_element_post_message (GST_ELEMENT (pointerdetector), m);
       }
@@ -788,7 +788,7 @@ kms_pointer_detector_check_pointer_position (KmsPointerDetector *
       GST_DEBUG ("into window: %s", actualButtonClickedId);
       if (pointerdetector->priv->putMessage) {
         s = gst_structure_new ("window-in",
-            "window", G_TYPE_STRING, actualButtonClickedId, NULL);
+            "window", G_TYPE_STRING, actualButtonClickedId, nullptr);
         m = gst_message_new_element (GST_OBJECT (pointerdetector), s);
         gst_element_post_message (GST_ELEMENT (pointerdetector), m);
       }

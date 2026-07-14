@@ -46,12 +46,12 @@ void DispatcherOneToManyImpl::setSource (std::shared_ptr<HubPort> source)
   std::shared_ptr<HubPortImpl> sourcePort =
     std::dynamic_pointer_cast<HubPortImpl> (source);
 
-  g_object_set (G_OBJECT (element), MAIN_PORT, sourcePort->getHandlerId (), NULL);
+  g_object_set (G_OBJECT (element), MAIN_PORT, sourcePort->getHandlerId (), nullptr);
 }
 
 void DispatcherOneToManyImpl::removeSource ()
 {
-  g_object_set (G_OBJECT (element), MAIN_PORT, -1, NULL);
+  g_object_set (G_OBJECT (element), MAIN_PORT, -1, nullptr);
 }
 
 MediaObjectImpl *

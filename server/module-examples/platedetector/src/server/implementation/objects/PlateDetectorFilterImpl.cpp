@@ -58,7 +58,7 @@ void PlateDetectorFilterImpl::busMessage (GstMessage *message)
   }
 
   if (! (gst_structure_get (st, "plate", G_TYPE_STRING , &plateNumber,
-                            NULL) ) ) {
+                            nullptr) ) ) {
     GST_WARNING ("The message does not contain the plate number");
     return;
   }
@@ -103,9 +103,9 @@ PlateDetectorFilterImpl::PlateDetectorFilterImpl (const
           std::dynamic_pointer_cast<MediaPipelineImpl>
           (mediaPipeline) )
 {
-  g_object_set (element, "filter-factory", "platedetector", NULL);
+  g_object_set (element, "filter-factory", "platedetector", nullptr);
 
-  g_object_get (G_OBJECT (element), "filter", &plateDetector, NULL);
+  g_object_get (G_OBJECT (element), "filter", &plateDetector, nullptr);
 
   bus_handler_id = 0;
 
@@ -130,7 +130,7 @@ void PlateDetectorFilterImpl::setPlateWidthPercentage (float
 {
   g_object_set (G_OBJECT (plateDetector), PLATE_WIDTH_PERCENTAGE,
                 plateWidthPercentage,
-                NULL);
+                nullptr);
 }
 
 MediaObjectImpl *

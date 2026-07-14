@@ -74,17 +74,17 @@ public:
 
   virtual ~ChromaFilterImpl () {};
 
-  void setBackground (const std::string &uri);
-  void unsetBackground ();
+  void setBackground (const std::string &uri) override;
+  void unsetBackground () override;
 
   /* Next methods are automatically implemented by code generator */
   virtual bool connect (const std::string &eventType,
-                        std::shared_ptr<EventHandler> handler);
+                        std::shared_ptr<EventHandler> handler) override;
   virtual void invoke (std::shared_ptr<MediaObjectImpl> obj,
                        const std::string &methodName, const Json::Value &params,
-                       Json::Value &response);
+                       Json::Value &response) override;
 
-  virtual void Serialize (JsonSerializer &serializer);
+  virtual void Serialize (JsonSerializer &serializer) override;
 
 private:
 

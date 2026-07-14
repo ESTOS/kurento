@@ -854,7 +854,7 @@ kms_plate_detector_extract_final_plate (KmsPlateDetector * platedetector)
       /* post a plate-detected message to bus */
       s = gst_structure_new ("plate-detected",
           "plate", G_TYPE_STRING, platedetector->priv->previousFinalPlate,
-          NULL);
+          nullptr);
       m = gst_message_new_element (GST_OBJECT (platedetector), s);
       gst_element_post_message (GST_ELEMENT (platedetector), m);
     }

@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_CASE (port_range)
   MediaSet::getMediaSet()->ref ("", mediaObject);
 
   g_object_get (rtpEndpoint->getGstreamerElement (), "min-port", &min_port,
-                "max-port", &max_port, NULL);
+                "max-port", &max_port, nullptr);
 
   BOOST_CHECK_EQUAL (MIN_PORT, min_port);
   BOOST_CHECK_EQUAL (MAX_PORT, max_port);

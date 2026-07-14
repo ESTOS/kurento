@@ -157,7 +157,7 @@ HttpEndPointServer::getPort ()
 {
   guint port;
 
-  g_object_get (G_OBJECT (server), KMS_HTTP_EP_SERVER_PORT, &port, NULL);
+  g_object_get (G_OBJECT (server), KMS_HTTP_EP_SERVER_PORT, &port, nullptr);
 
   return port;
 }
@@ -168,7 +168,7 @@ HttpEndPointServer::getInterface()
   std::string iface;
   gchar *iface_c;
 
-  g_object_get (G_OBJECT (server), KMS_HTTP_EP_SERVER_INTERFACE, &iface_c, NULL);
+  g_object_get (G_OBJECT (server), KMS_HTTP_EP_SERVER_INTERFACE, &iface_c, nullptr);
   iface = iface_c;
   g_free (iface_c);
 
@@ -182,7 +182,7 @@ HttpEndPointServer::getAnnouncedAddress()
   gchar *addr_c;
 
   g_object_get (G_OBJECT (server), KMS_HTTP_EP_SERVER_ANNOUNCED_IP, &addr_c,
-                NULL);
+                nullptr);
   addr = addr_c;
   g_free (addr_c);
 

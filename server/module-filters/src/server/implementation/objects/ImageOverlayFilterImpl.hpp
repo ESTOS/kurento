@@ -53,20 +53,20 @@ public:
 
   virtual ~ImageOverlayFilterImpl () {};
 
-  void removeImage (const std::string &id);
+  void removeImage (const std::string &id) override;
   void addImage (const std::string &id, const std::string &uri,
                  float offsetXPercent, float offsetYPercent, float widthPercent,
-                 float heightPercent, bool keepAspectRatio, bool center);
+                 float heightPercent, bool keepAspectRatio, bool center) override;
 
   /* Next methods are automatically implemented by code generator */
   using FilterImpl::connect;
   virtual bool connect (const std::string &eventType,
-                        std::shared_ptr<EventHandler> handler);
+                        std::shared_ptr<EventHandler> handler) override;
   virtual void invoke (std::shared_ptr<MediaObjectImpl> obj,
                        const std::string &methodName, const Json::Value &params,
-                       Json::Value &response);
+                       Json::Value &response) override;
 
-  virtual void Serialize (JsonSerializer &serializer);
+  virtual void Serialize (JsonSerializer &serializer) override;
 
 private:
   GstElement *imageOverlay{};

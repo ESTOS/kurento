@@ -40,9 +40,9 @@ GStreamerExampleImpl::GStreamerExampleImpl (
 {
   GstElement *plugin;
 
-  g_object_set (element, "filter-factory", "gstreamerexample", NULL);
+  g_object_set (element, "filter-factory", "gstreamerexample", nullptr);
 
-  g_object_get (G_OBJECT (element), "filter", &plugin, NULL);
+  g_object_get (G_OBJECT (element), "filter", &plugin, nullptr);
 
   if (plugin == NULL) {
     throw KurentoException (MEDIA_OBJECT_NOT_AVAILABLE,
@@ -55,13 +55,13 @@ GStreamerExampleImpl::GStreamerExampleImpl (
 void
 GStreamerExampleImpl::setFilterType (int filterType)
 {
-  g_object_set (element, "type", filterType, NULL);
+  g_object_set (element, "type", filterType, nullptr);
 }
 
 void
 GStreamerExampleImpl::setEdgeThreshold (int edgeValue)
 {
-  g_object_set (element, "edge-value", edgeValue, NULL);
+  g_object_set (element, "edge-value", edgeValue, nullptr);
 }
 
 MediaObjectImpl *

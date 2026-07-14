@@ -35,9 +35,9 @@ FaceOverlayFilterImpl::FaceOverlayFilterImpl (const boost::property_tree::ptree
     mediaPipeline) : FilterImpl ( conf,
                                     std::dynamic_pointer_cast<MediaObjectImpl> ( mediaPipeline) )
 {
-  g_object_set (element, "filter-factory", "kmsfaceoverlay", NULL);
+  g_object_set (element, "filter-factory", "kmsfaceoverlay", nullptr);
 
-  g_object_get (G_OBJECT (element), "filter", &faceOverlay, NULL);
+  g_object_get (G_OBJECT (element), "filter", &faceOverlay, nullptr);
 
   if (faceOverlay == nullptr) {
     throw KurentoException (MEDIA_OBJECT_NOT_AVAILABLE,
@@ -56,8 +56,8 @@ void FaceOverlayFilterImpl::unsetOverlayedImage ()
                                "widthPercent", G_TYPE_DOUBLE, 0.0,
                                "heightPercent", G_TYPE_DOUBLE, 0.0,
                                "url", G_TYPE_STRING, NULL,
-                               NULL);
-  g_object_set (G_OBJECT (faceOverlay), "image-to-overlay", imageSt, NULL);
+                               nullptr);
+  g_object_set (G_OBJECT (faceOverlay), "image-to-overlay", imageSt, nullptr);
   gst_structure_free (imageSt);
 }
 
@@ -72,8 +72,8 @@ void FaceOverlayFilterImpl::setOverlayedImage (const std::string &uri,
                                "widthPercent", G_TYPE_DOUBLE, double (widthPercent),
                                "heightPercent", G_TYPE_DOUBLE, double (heightPercent),
                                "url", G_TYPE_STRING, uri.c_str(),
-                               NULL);
-  g_object_set (G_OBJECT (faceOverlay), "image-to-overlay", imageSt, NULL);
+                               nullptr);
+  g_object_set (G_OBJECT (faceOverlay), "image-to-overlay", imageSt, nullptr);
   gst_structure_free (imageSt);
 }
 

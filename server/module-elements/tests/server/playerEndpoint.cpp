@@ -99,7 +99,7 @@ static std::shared_ptr<MediaElementImpl> createTestSink() {
                             MediaSet::getMediaSet()->getMediaObject (mediaPipelineId),
                             "dummysink") ) );
 
-  g_object_set (src->getGstreamerElement(), "audio", TRUE, "video", TRUE, NULL);
+  g_object_set (src->getGstreamerElement(), "audio", TRUE, "video", TRUE, nullptr);
 
   return std::dynamic_pointer_cast <MediaElementImpl> (src);
 }
@@ -171,7 +171,7 @@ eos_received_with_no_accept_eos_sink ()
   g_mutex_init (&mutex);
   g_cond_init (&cond);
 
-  g_object_set (sink->getGstreamerElement(), "accept-eos", FALSE, NULL);
+  g_object_set (sink->getGstreamerElement(), "accept-eos", FALSE, nullptr);
 
   player->signalEndOfStream.connect ([&] (EndOfStream event) {
     std::cout << "EOS received" << std::endl;

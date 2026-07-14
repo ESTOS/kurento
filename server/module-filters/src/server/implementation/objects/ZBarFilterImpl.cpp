@@ -48,7 +48,7 @@ void ZBarFilterImpl::busMessage (GstMessage *message)
 
     if (!gst_structure_get (st, "timestamp", G_TYPE_UINT64, &ts,
                             "type", G_TYPE_STRING, &type, "symbol",
-                            G_TYPE_STRING, &symbol, NULL) ) {
+                            G_TYPE_STRING, &symbol, nullptr) ) {
       return;
     }
 
@@ -87,14 +87,14 @@ ZBarFilterImpl::ZBarFilterImpl (const boost::property_tree::ptree &conf,
                                 std::shared_ptr<MediaPipeline> mediaPipeline) :
   FilterImpl (conf, std::dynamic_pointer_cast<MediaObjectImpl> ( mediaPipeline) )
 {
-  g_object_set (element, "filter-factory", "zbar", NULL);
-  g_object_get (G_OBJECT (element), "filter", &zbar, NULL);
+  g_object_set (element, "filter-factory", "zbar", nullptr);
+  g_object_get (G_OBJECT (element), "filter", &zbar, nullptr);
 
   if (zbar == nullptr) {
     throw KurentoException (MEDIA_OBJECT_NOT_FOUND, "ZBarFilter plugin not available: zbar");
   }
 
-  g_object_set (G_OBJECT (zbar), "qos", FALSE, NULL);
+  g_object_set (G_OBJECT (zbar), "qos", FALSE, nullptr);
 
   bus_handler_id = 0;
   // There is no need to reference zbar becase its live cycle is the same as the filter live cycle

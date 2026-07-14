@@ -39,9 +39,9 @@ KmsShowFacesImpl::KmsShowFacesImpl (const boost::property_tree::ptree &config,
   FilterImpl (config,
               std::dynamic_pointer_cast<MediaObjectImpl> ( mediaPipeline) )
 {
-  g_object_set (element, "filter-factory", "imageoverlaymetadata", NULL);
+  g_object_set (element, "filter-factory", "imageoverlaymetadata", nullptr);
 
-  g_object_get (G_OBJECT (element), "filter", &imageOverlay, NULL);
+  g_object_get (G_OBJECT (element), "filter", &imageOverlay, nullptr);
 
   if (imageOverlay == NULL) {
     throw KurentoException (MEDIA_OBJECT_NOT_AVAILABLE,

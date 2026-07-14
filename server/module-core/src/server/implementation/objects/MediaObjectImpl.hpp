@@ -50,29 +50,29 @@ public:
 
   virtual ~MediaObjectImpl () {}
 
-  void addTag (const std::string &key, const std::string &value);
-  void removeTag (const std::string &key);
-  std::string getTag (const std::string &key);
-  std::vector<std::shared_ptr<Tag>> getTags ();
+  void addTag (const std::string &key, const std::string &value) override;
+  void removeTag (const std::string &key) override;
+  std::string getTag (const std::string &key) override;
+  std::vector<std::shared_ptr<Tag>> getTags () override;
 
-  virtual std::shared_ptr<MediaPipeline> getMediaPipeline ();
+  virtual std::shared_ptr<MediaPipeline> getMediaPipeline () override;
 
-  virtual std::shared_ptr<MediaObject> getParent ()
+  virtual std::shared_ptr<MediaObject> getParent () override
   {
     return parent;
   }
 
-  virtual std::vector<std::shared_ptr<MediaObject>> getChildren ();
+  virtual std::vector<std::shared_ptr<MediaObject>> getChildren () override;
 
-  virtual std::string getId ();
+  virtual std::string getId () override;
 
-  virtual std::string getName ();
-  virtual void setName (const std::string &name);
+  virtual std::string getName () override;
+  virtual void setName (const std::string &name) override;
 
-  virtual bool getSendTagsInEvents ();
-  virtual void setSendTagsInEvents (bool sendTagsInEvents);
+  virtual bool getSendTagsInEvents () override;
+  virtual void setSendTagsInEvents (bool sendTagsInEvents) override;
 
-  virtual int getCreationTime ();
+  virtual int getCreationTime () override;
 
   virtual void release ()
   {
@@ -89,7 +89,7 @@ public:
                        const std::string &methodName, const Json::Value &params,
                        Json::Value &response);
 
-  virtual void Serialize (JsonSerializer &serializer);
+  virtual void Serialize (JsonSerializer &serializer) override;
 
   template <class T>
   static bool getConfigValue (T *value, const std::string &key,

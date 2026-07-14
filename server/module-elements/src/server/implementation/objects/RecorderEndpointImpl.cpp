@@ -79,63 +79,63 @@ RecorderEndpointImpl::RecorderEndpointImpl (const boost::property_tree::ptree
           std::dynamic_pointer_cast<MediaObjectImpl> (mediaPipeline), FACTORY_NAME, uri)
 {
   g_object_set (G_OBJECT (getGstreamerElement() ), "accept-eos",
-                stopOnEndOfStream, NULL);
+                stopOnEndOfStream, nullptr);
 
   switch (mediaProfile->getValue() ) {
   case MediaProfileSpecType::WEBM:
-    g_object_set ( G_OBJECT (element), "profile", KMS_RECORDING_PROFILE_WEBM, NULL);
+    g_object_set ( G_OBJECT (element), "profile", KMS_RECORDING_PROFILE_WEBM, nullptr);
     GST_INFO ("Set WEBM profile");
     break;
 
   case MediaProfileSpecType::MP4:
-    g_object_set ( G_OBJECT (element), "profile", KMS_RECORDING_PROFILE_MP4, NULL);
+    g_object_set ( G_OBJECT (element), "profile", KMS_RECORDING_PROFILE_MP4, nullptr);
     GST_INFO ("Set MP4 profile");
     break;
 
   case MediaProfileSpecType::MKV:
-    g_object_set ( G_OBJECT (element), "profile", KMS_RECORDING_PROFILE_MKV, NULL);
+    g_object_set ( G_OBJECT (element), "profile", KMS_RECORDING_PROFILE_MKV, nullptr);
     GST_INFO ("Set MKV profile");
     break;
 
   case MediaProfileSpecType::WEBM_VIDEO_ONLY:
     g_object_set ( G_OBJECT (element), "profile",
-                   KMS_RECORDING_PROFILE_WEBM_VIDEO_ONLY, NULL);
+                   KMS_RECORDING_PROFILE_WEBM_VIDEO_ONLY, nullptr);
     GST_INFO ("Set WEBM VIDEO ONLY profile");
     break;
 
   case MediaProfileSpecType::WEBM_AUDIO_ONLY:
     g_object_set ( G_OBJECT (element), "profile",
-                   KMS_RECORDING_PROFILE_WEBM_AUDIO_ONLY, NULL);
+                   KMS_RECORDING_PROFILE_WEBM_AUDIO_ONLY, nullptr);
     GST_INFO ("Set WEBM AUDIO ONLY profile");
     break;
 
   case MediaProfileSpecType::MKV_VIDEO_ONLY:
     g_object_set ( G_OBJECT (element), "profile",
-                   KMS_RECORDING_PROFILE_MKV_VIDEO_ONLY, NULL);
+                   KMS_RECORDING_PROFILE_MKV_VIDEO_ONLY, nullptr);
     GST_INFO ("Set MKV VIDEO ONLY profile");
     break;
 
   case MediaProfileSpecType::MKV_AUDIO_ONLY:
     g_object_set ( G_OBJECT (element), "profile",
-                   KMS_RECORDING_PROFILE_MKV_AUDIO_ONLY, NULL);
+                   KMS_RECORDING_PROFILE_MKV_AUDIO_ONLY, nullptr);
     GST_INFO ("Set MKV AUDIO ONLY profile");
     break;
 
   case MediaProfileSpecType::MP4_VIDEO_ONLY:
     g_object_set ( G_OBJECT (element), "profile",
-                   KMS_RECORDING_PROFILE_MP4_VIDEO_ONLY, NULL);
+                   KMS_RECORDING_PROFILE_MP4_VIDEO_ONLY, nullptr);
     GST_INFO ("Set MP4 VIDEO ONLY profile");
     break;
 
   case MediaProfileSpecType::MP4_AUDIO_ONLY:
     g_object_set ( G_OBJECT (element), "profile",
-                   KMS_RECORDING_PROFILE_MP4_AUDIO_ONLY, NULL);
+                   KMS_RECORDING_PROFILE_MP4_AUDIO_ONLY, nullptr);
     GST_INFO ("Set MP4 AUDIO ONLY profile");
     break;
 
   case MediaProfileSpecType::JPEG_VIDEO_ONLY:
     g_object_set ( G_OBJECT (element), "profile",
-                   KMS_RECORDING_PROFILE_JPEG_VIDEO_ONLY, NULL);
+                   KMS_RECORDING_PROFILE_JPEG_VIDEO_ONLY, nullptr);
     GST_INFO ("Set JPEG profile");
     break;
 
@@ -145,12 +145,12 @@ RecorderEndpointImpl::RecorderEndpointImpl (const boost::property_tree::ptree
                               "Kurento Split Recorder not supported");
     }
 
-    g_object_set ( G_OBJECT (element), "profile", KMS_RECORDING_PROFILE_KSR, NULL);
+    g_object_set ( G_OBJECT (element), "profile", KMS_RECORDING_PROFILE_KSR, nullptr);
     GST_INFO ("Set KSR profile");
     break;
     
   case MediaProfileSpecType::FLV:
-    g_object_set ( G_OBJECT (element), "profile", KMS_RECORDING_PROFILE_FLV, NULL);
+    g_object_set ( G_OBJECT (element), "profile", KMS_RECORDING_PROFILE_FLV, nullptr);
     GST_INFO ("Set FLV profile");
     break;
   }
@@ -161,7 +161,7 @@ RecorderEndpointImpl::RecorderEndpointImpl (const boost::property_tree::ptree
     GST_INFO ("Set RecorderEndpoint gaps fix mode: %s",
         gapsFix.getString ().c_str ());
     g_object_set (getGstreamerElement (),
-        PROP_GAPS_FIX, gapsFix.getValue (), NULL);
+        PROP_GAPS_FIX, gapsFix.getValue (), nullptr);
   }
 }
 
@@ -245,7 +245,7 @@ RecorderEndpointImpl::release ()
 {
   gint state = -1;
 
-  g_object_get (getGstreamerElement(), "state", &state, NULL);
+  g_object_get (getGstreamerElement(), "state", &state, nullptr);
 
   if (state == 0 /* stop */) {
     goto end;
@@ -265,7 +265,7 @@ RecorderEndpointImpl::~RecorderEndpointImpl()
     unregister_signal_handler (element, handlerOnStateChanged);
   }
 
-  g_object_get (getGstreamerElement(), "state", &state, NULL);
+  g_object_get (getGstreamerElement(), "state", &state, nullptr);
 
   if (state != 0 /* stop */) {
     GST_ERROR ("Recorder should be stopped when reaching this point");
@@ -296,7 +296,7 @@ RecorderEndpointImpl::collectEndpointStats (std::map
   std::vector<std::shared_ptr<MediaLatencyStat>> e2eStats;
 
   if (gst_structure_get (stats, "e2e-latencies", GST_TYPE_STRUCTURE,
-                         &e2e_stats, NULL) ) {
+                         &e2e_stats, nullptr) ) {
     collectLatencyStats (e2eStats, e2e_stats);
     gst_structure_free (e2e_stats);
   }

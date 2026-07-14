@@ -93,7 +93,7 @@ VideoSamplerGRPC::VideoSamplerGRPC (const boost::property_tree::ptree &config,
                         "height", height,
                         "width", width,
                         "image-encoding", encoding->getString().c_str(),
-                        NULL);
+                        nullptr);
   if (getEndpointUrl() != "") {
     std::shared_ptr<grpc::Channel> channel =  grpc::CreateChannel (getEndpointUrl(),grpc::InsecureChannelCredentials());
 

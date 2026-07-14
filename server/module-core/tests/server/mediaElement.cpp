@@ -98,9 +98,9 @@ BOOST_AUTO_TEST_CASE (connection_test)
   }
 
   g_object_set (src->getGstreamerElement(), "audio", TRUE, "video", TRUE,
-                "data", TRUE, NULL);
+                "data", TRUE, nullptr);
   g_object_set (sink->getGstreamerElement(), "audio", TRUE, "video", TRUE,
-                "data", TRUE, NULL);
+                "data", TRUE, nullptr);
 
   connections = src->getSinkConnections ();
 
@@ -175,15 +175,15 @@ BOOST_AUTO_TEST_CASE (release_before_real_connection)
   src->setName ("SOURCE");
   sink->setName ("SINK");
 
-  g_object_set (sink->getGstreamerElement(), "audio", TRUE, "video", TRUE, NULL);
+  g_object_set (sink->getGstreamerElement(), "audio", TRUE, "video", TRUE, nullptr);
   srcElement = (GstElement *) g_object_ref (src->getGstreamerElement() );
-  g_object_set (srcElement, "audio", TRUE, NULL);
+  g_object_set (srcElement, "audio", TRUE, nullptr);
 
   src->connect (sink);
 
   src->disconnect (sink);
 
-  g_object_set (srcElement, "audio", TRUE, "video", TRUE, NULL);
+  g_object_set (srcElement, "audio", TRUE, "video", TRUE, nullptr);
   g_object_unref (srcElement);
 
   releaseMediaObject (src->getId() );
@@ -207,7 +207,7 @@ BOOST_AUTO_TEST_CASE (loopback)
   duplex->setName ("DUPLEX");
 
   g_object_set (duplex->getGstreamerElement(), "src-audio", TRUE, "src-video",
-                TRUE, "sink-audio", TRUE, "sink-video", TRUE, NULL);
+                TRUE, "sink-audio", TRUE, "sink-video", TRUE, nullptr);
 
   duplex->connect (duplex);
 
@@ -268,8 +268,8 @@ BOOST_AUTO_TEST_CASE (dot_test)
       <MediaPipelineImpl> (MediaSet::getMediaSet()->getMediaObject (
                              mediaPipelineId) );
 
-  g_object_set (src->getGstreamerElement(), "audio", TRUE, "video", TRUE, NULL);
-  g_object_set (sink->getGstreamerElement(), "audio", TRUE, "video", TRUE, NULL);
+  g_object_set (src->getGstreamerElement(), "audio", TRUE, "video", TRUE, nullptr);
+  g_object_set (sink->getGstreamerElement(), "audio", TRUE, "video", TRUE, nullptr);
 
   src->connect (sink);
 

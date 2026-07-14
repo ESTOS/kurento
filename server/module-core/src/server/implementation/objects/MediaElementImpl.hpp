@@ -117,9 +117,9 @@ public:
   virtual std::string getGstreamerDot (std::shared_ptr<GstreamerDotDetails>
                                        details) override;
 
-  virtual void dumpGstreamerDot ();
+  virtual void dumpGstreamerDot () override;
   virtual void dumpGstreamerDot (std::shared_ptr<GstreamerDotDetails>
-                                 details);
+                                 details) override;
 
   bool isMediaFlowingIn (std::shared_ptr<MediaType> mediaType) override;
   bool isMediaFlowingIn (std::shared_ptr<MediaType> mediaType,

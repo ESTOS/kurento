@@ -170,10 +170,10 @@ kms_face_detector_metadata_send_metadata (KmsFaceDetectorMetadata *facedetector,
   GstStructure *timestamp = gst_structure_new ("time",
       "pts", G_TYPE_UINT64, GST_BUFFER_PTS (frame->buffer),
       "dts", G_TYPE_UINT64, GST_BUFFER_DTS (frame->buffer),
-      NULL);
+      nullptr);
   // clang-format on
 
-  gst_structure_set (faces, "timestamp", GST_TYPE_STRUCTURE, timestamp, NULL);
+  gst_structure_set (faces, "timestamp", GST_TYPE_STRUCTURE, timestamp, nullptr);
   gst_structure_free (timestamp);
 
   guint id = 0;
@@ -184,11 +184,11 @@ kms_face_detector_metadata_send_metadata (KmsFaceDetectorMetadata *facedetector,
         "y", G_TYPE_UINT, (guint)(face_rect.y * facedetector->priv->resize_factor),
         "width", G_TYPE_UINT, (guint)(face_rect.width * facedetector->priv->resize_factor),
         "height", G_TYPE_UINT, (guint)(face_rect.height * facedetector->priv->resize_factor),
-        NULL);
+        nullptr);
     // clang-format on
 
     gchar *id_str = g_strdup_printf ("%d", id);
-    gst_structure_set (faces, id_str, GST_TYPE_STRUCTURE, face, NULL);
+    gst_structure_set (faces, id_str, GST_TYPE_STRUCTURE, face, nullptr);
     gst_structure_free (face);
     g_free (id_str);
 

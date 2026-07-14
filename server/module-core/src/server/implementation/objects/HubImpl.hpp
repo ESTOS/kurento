@@ -45,23 +45,23 @@ public:
     return element;
   }
 
-  virtual std::string getGstreamerDot ();
+  virtual std::string getGstreamerDot () override;
   virtual std::string getGstreamerDot (std::shared_ptr<GstreamerDotDetails>
-                                       details);
+                                       details) override;
 
-  virtual void dumpGstreamerDot ();
+  virtual void dumpGstreamerDot () override;
   virtual void dumpGstreamerDot (std::shared_ptr<GstreamerDotDetails>
-                                       details);
+                                       details) override;
 
   /* Next methods are automatically implemented by code generator */
   virtual bool connect (const std::string &eventType,
-                        std::shared_ptr<EventHandler> handler);
+                        std::shared_ptr<EventHandler> handler) override;
 
   virtual void invoke (std::shared_ptr<MediaObjectImpl> obj,
                        const std::string &methodName, const Json::Value &params,
-                       Json::Value &response);
+                       Json::Value &response) override;
 
-  virtual void Serialize (JsonSerializer &serializer);
+  virtual void Serialize (JsonSerializer &serializer) override;
 
 protected:
   GstElement *element;
