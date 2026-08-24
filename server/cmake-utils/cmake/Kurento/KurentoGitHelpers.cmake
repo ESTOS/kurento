@@ -55,6 +55,7 @@ endfunction()
 include(VersionHelpers)
 
 set (CALCULATE_VERSION_WITH_GIT TRUE CACHE BOOL "Use git (if available) to get project version")
+set (GIT_VERSION_HASH "" CACHE STRING "Optional git hash used instead of `git rev-parse --short HEAD`")
 
 function(get_git_version version_output_variable default_version)
   get_git_dir(GIT_DIR)
@@ -82,11 +83,15 @@ function(get_git_version version_output_variable default_version)
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
 
-    execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
-      OUTPUT_VARIABLE LAST_HASH
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    )
+    if(GIT_VERSION_HASH)
+      set(LAST_HASH "${GIT_VERSION_HASH}")
+    else()
+      execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+        OUTPUT_VARIABLE LAST_HASH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+      )
+    endif()
 
     string(REPLACE
       "-dev" "~${N_COMMITS}.g${LAST_HASH}"

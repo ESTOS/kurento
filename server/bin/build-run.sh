@@ -149,6 +149,13 @@
 #/
 #/   Optional. Default: Disabled.
 #/   Implies `--release`.
+#/
+#/ --git-hash <hash>
+#/
+#/   Git commit hash used in the project version string instead of
+#/   `git rev-parse --short HEAD` (CMake cache var `GIT_VERSION_HASH`).
+#/
+#/   Optional. Default: empty (hash is taken from git).
 
 
 
@@ -183,6 +190,7 @@ CFG_UNDEFINED_SANITIZER="false"
 CFG_KMS_ARGS=""
 CFG_MSYS="false"
 CFG_ADD_CMAKE_ARGS="false"
+CFG_GIT_HASH=""
 
 while [[ $# -gt 0 ]]; do
     case "${1-}" in
@@ -204,6 +212,10 @@ while [[ $# -gt 0 ]]; do
             CFG_ADD_CMAKE_ARGS="${2-}"
 			shift
 			;;
+        --git-hash)
+            CFG_GIT_HASH="${2-}"
+            shift
+            ;;
         *)
             log "Argument '${1-}' will be passed to KMS"
             CFG_KMS_ARGS+=" ${1-}"
@@ -267,6 +279,7 @@ log "CFG_THREAD_SANITIZER=$CFG_THREAD_SANITIZER"
 log "CFG_UNDEFINED_SANITIZER=$CFG_UNDEFINED_SANITIZER"
 log "CFG_MSYS=$CFG_MSYS"
 log "CFG_ADD_CMAKE_ARGS=$CFG_ADD_CMAKE_ARGS"
+log "CFG_GIT_HASH=$CFG_GIT_HASH"
 
 
 
@@ -293,6 +306,10 @@ fi
 
 if [[ "$CFG_ADD_CMAKE_ARGS" != "false" ]]; then
     CMAKE_ARGS+=" ${CFG_ADD_CMAKE_ARGS}"
+fi
+
+if [[ -n "$CFG_GIT_HASH" ]]; then
+    CMAKE_ARGS+=("-DGIT_VERSION_HASH=$CFG_GIT_HASH")
 fi
 
 if [[ "$CFG_CLANG" == "true" ]]; then
